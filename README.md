@@ -173,7 +173,7 @@ If WiFi file not found the below will display on Serial Console:
 
 Note: If something went wrong obtaining WiFi credentials the credentials in non volatile memory are used.
 
-### Particle Console - Device Functions - DoAction
+### DoAction Functions on Particle Cloud Console
 
 On the view device screen on the Particle Console there is a FUNCTIONS area at the lower right. This is used to send commands to the online device.
 
@@ -206,18 +206,21 @@ Format Tool: SD Card Formatter by TUXERA <https://www.sdcard.org/downloads/forma
 Format: MS-DOS (FAT32) Format  
 
 Files and Directories:
-
-- /OBS              Directory containing observation files.  
-- /OBS/20231024.LOG Dated observation file. One file per day. Data in JSON format  
-- /N2SOBS.TXT       Need to Send file. Stores observations that have not been
-transmitted. If file is greater than 512 *60* 48 bytes. File is
-- deleted and we start over. File is deleted when all N2S  
-observations have been sent.  
-- /A4RAIN.TXT  Set pin A4 to be a 2nd rain gauge.  
-- /A4DIST.TXT  Set pin A4 to be a distance gauge of type 10m  
-- /5MDIST.TXT  Set distance gauge of type 5m  
-- /SIM.TXT  Support 3rd party SIM.  
-- /WIFI.TXT  Support for Argon WiFi Boards. Stores WiFi information  
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+  /OBS              Directory containing observation files.  
+  /OBS/20231024.LOG Dated observation file. One file per day. Data in JSON format  
+  /N2SOBS.TXT       Need to Send file. Stores observations that have not been
+                    transmitted. If file is greater than 512 *60* 48 bytes. 
+                    File is deleted and we start over. File is deleted when all
+                    N2S observations have been sent.  
+  /A4RAIN.TXT  Set pin A4 to be a 2nd rain gauge.  
+  /A4DIST.TXT  Set pin A4 to be a distance gauge of type 10m  
+  /5MDIST.TXT  Set distance gauge of type 5m  
+  /SIM.TXT  Support 3rd party SIM.  
+  /WIFI.TXT  Support for Argon WiFi Boards. Stores WiFi information  
+</pre>
+</div>
 
 ## Code Operation
 
@@ -265,21 +268,26 @@ When a LoRa stream gauge message is received, the message is saved and later add
  Battery Voltage (sg1v)
 
 ### Rain and Soil Moisture
+
 After the Full Station 1 minute observations are sent at the 15 minute window. LoRa rain and soil moisture observations (RS) which were received and stored since the last 15 minute transmit will be sent.
 
 RS observations are sent to Particle Cloud with Particle Event Name "RS".
 
 The Full Station can support receiving from 10 different LoRa RS devices. The RS devices are configured to transmit a unique ID which maps to a Chords ID.  The Full Station will transmit a separate message to Particle's Cloud service for each RS device. If the Full Station receives multiple messages from a RS device in the 15 minute window, rain gauge data is  summed. Rest of the observation data is overwritten with the newer observation received.
 
-Observation Time (at)
-Chords ID (id)
-Battery Voltage bv
-Health (hth)
-Rain Gauge (rg)
-Soil Temperature and Moisture (st1, sm1, st1, sm1)
-BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
+### Example of Particle Webhook for Full Station Observations (FS)
 
-Example of Particle Webhook for Full Station Observations (FS)
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+
+Observation Time (at)  
+Chords ID (id)  
+Battery Voltage bv  
+Health (hth)  
+Rain Gauge (rg)  
+Soil Temperature and Moisture (st1, sm1, st1, sm1)  
+BMX Sensor Readings (p1, t1, h1, p2, t2, h2)  
+
 {
  "name": "station-01 -> FS for chordsrt.com",
  "event": "FS",
@@ -328,8 +336,12 @@ Example of Particle Webhook for Full Station Observations (FS)
      "sg1h2": "{{sg1h2}}"
  }
 }
+</pre>
+</div>
 Example of Particle Webhook for LoRa Rain and Soil (RS)
-With no "deviceID" defined in the below webhook. It can be used by multiple devices.
+With no "deviceID" defined in the below webhook. It can be used by multiple devices.  
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
 {
  "name": "RS for chordsrt.com",
  "event": "RS",
@@ -357,9 +369,13 @@ With no "deviceID" defined in the below webhook. It can be used by multiple devi
      "hth": "{{hth}}"
  }
 }
-Transmitted Health Information
+</pre>
+</div>
 
-Battery Charger Status (bcs)
+
+### Battery Charger Status (bcs)
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 140px; border: 1px solid black; padding: 10px;">
+<pre>
 0 = BATTERY_STATE_UNKNOWN
 1 = BATTERY_STATE_NOT_CHARGING
 2 = BATTERY_STATE_CHARGING
@@ -370,11 +386,17 @@ Battery Charger Status (bcs)
 
 Battery Percent Charge (bpc)
 Cell Signal Strength (css)
+</pre>
+</div>
 
+### Transmitted Health Information (hth)
+Many of the below bits will be set at initialization. Then cleared after the first observation is made after startup. If a sensor existed then disappeared, a bit will be set until the sensor returns or a reboot occurs.
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
+<pre>
 Health bits (hth)
- AREA  BIT  COMMENT
-OKAY                   0x0  Normal Operation
-PWRON        0x1        Set at power on, but cleared after first observation
+ AREA        BIT       COMMENT
+OKAY         0x0       Normal Operation
+PWRON        0x1       Set at power on, but cleared after first observation
 SD           0x2       Set if SD missing at boot or other SD related issues
 RTC          0x4       Set if RTC missing at boot
 OLED         0x8       Set if OLED missing at boot, but cleared after first observation
@@ -382,50 +404,57 @@ N2S          0x10      Set when Need to Send observations exist
 FROM_N2S     0x20      Set in transmitted N2S observation when finally transmitted
 AS5600       0x40      Set if wind direction sensor AS5600 has issues
 BMX_1        0x80      Set if Barometric Pressure & Altitude Sensor missing
-BMX_2        0x100       Set if Barometric Pressure & Altitude Sensor missing
-HTU21DF      0x200       Set if Humidity & Temp Sensor missing
-SI1145       0x400       Set if UV index & IR & Visible Sensor missing
-MCP_1        0x800       Set if Precision I2C Temperature Sensor missing
-MCP_2        0x1000     Set if Precision I2C Temperature Sensor missing
-LORA         0x2000     Set if LoRa Radio missing at startup
-SHT_1        0x4000     Set if SHTX1 Sensor missing
-SHT_2        0x8000     Set if SHTX2 Sensor missing
+BMX_2        0x100     Set if Barometric Pressure & Altitude Sensor missing
+HTU21DF      0x200     Set if Humidity & Temp Sensor missing
+SI1145       0x400     Set if UV index & IR & Visible Sensor missing
+MCP_1        0x800     Set if Precision I2C Temperature Sensor missing
+MCP_2        0x1000    Set if Precision I2C Temperature Sensor missing
+LORA         0x2000    Set if LoRa Radio missing at startup
+SHT_1        0x4000    Set if SHTX1 Sensor missing
+SHT_2        0x8000    Set if SHTX2 Sensor missing
 HIH8         0x10000   Set if HIH8000 Sensor missing
 LUX          0x20000   Set if VEML7700 Sensor missing
 PM25AQI      0x40000   Set if PM25AQI Sensor missing
-
-Many of the above bits will be set at initialization. Then cleared after the first observation is made after startup. If a sensor existed then disappeared, a bit will be set until the sensor returns or a reboot occurs.
-
+</pre>
+</div>
 Interpreting health bits in relation to Need to Send observations.
-  0 = All is well, no data needing to be sent, this observation is not from the N2S file
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 100px; border: 1px solid black; padding: 10px;">
+<pre>
+ 0 = All is well, no data needing to be sent, this observation is not from the N2S file
 16 = There is N2S data, This observation is not from the N2S file
 32 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file
         did not exist. So it is the first observation from the file.
 48 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file
         existed and this observation was appended.
+</pre>
+</div>
 
-Time Management
+### Time Management
 A valid time source is required for normal operation and for observations to be made. There are 3 time clocks involved.
 Network Time
 When a network connection is made, time is obtained from the network and the System Clock is updated. A request can be made in software to perform this action. This is done every 4 hours.
-Realtime Clock (RTC)
+#### Realtime Clock (RTC)
 If the RTC is found at initialization and has a year greater equal to 2023 and less than or equal to 2031. We assume time on the RTC is valid. And we set the System Clock with this time.
 If the RTC is not found or has invalid time. We must wait and get time from the network before we can make any observations.  
-System Clock (STC)
+#### System Clock (STC)
 This clock is maintained by the microcontroller. At start-up it has no valid time and must be set from the RTC or Network time. The System clock is updated every 4 hours from Network time.
 
 Clock handling output messages during boot initialization
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 100px; border: 1px solid black; padding: 10px;">
+<pre>
 2000-01-01T00:00:15+ - System Time
 2023-10-26T18:07:24*   - RTC Time
 RTC:VALID                     - RTC Year >= 2023 and RTC Year <= 2031
 STC: Valid  - STC set from RTC and we have a valid clock source.
 2023-10-26T18:07:24= - System Time
+</pre>
+</div>
 
 In the main code loop when System time is valid a check. The RTC clock is serviced. If the RTC invalid time. It is set from the System time clock. Which was set from network time.  Every 2 hours we update the RTC from System time.
 
 In the main code loop when System time is valid and we are network connected, then every 4 hours we request network time. Which results in the System clock being updated.
 
-Daily Reboot
+### Daily Reboot
 A loop counter is maintained and set so around every 22 hours the system reboots itself. This is done to try and bring back online any missing sensors.  If a WatchDog board is not connected a System reset is performed.
 
 Particle Boron Power Down when no USB power and LiPo at 10%
@@ -433,6 +462,9 @@ Random board shut offs could cause SD corruption when in the middle of writing t
 
 Pins Assignments as of release FSAC-240223
 See the releases code and Fritzing Wiring Drawings current information
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 300px; border: 1px solid black; padding: 10px;">
+<pre>
+
  D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
  D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
  D6   = Not in use - Not on Grove Shield
@@ -442,7 +474,7 @@ See the releases code and Fritzing Wiring Drawings current information
  D2   = SPI1 SCK  - Reserved for LoRa
  D1   = I2C SCL
  D0   = I2C SDA
-  
+
  A0   = WatchDog Monitor/Relay Reset Trigger
  A1   = WatchDog Monitor Heartbeat
  A2   = Wind Speed IRQ
@@ -454,10 +486,15 @@ See the releases code and Fritzing Wiring Drawings current information
  D11  = SPI0 MISO  SD Card
  D10  = UART1 RX - Reserved for LoRa CS
  D9   = UART1 TX - Reserved for LoRa RESET
+</pre>
+</div>
 
-PM25AQI - I2C - Air Quality Sensor
+### PM25AQI - I2C - Air Quality Sensor
 
 Data variables returned
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
+<pre>
+
   pm10_standard  < Standard Particle PM1.0 concentration unit µg 𝑚3
   pm25_standard  < Standard Particle PM2.5 concentration unit µg 𝑚3
   pm100_standard < Standard Particle PM10.0 concentration unit µg 𝑚3
@@ -471,13 +508,15 @@ Data variables returned
   particles_50um < Particles with diameter beyond 5.0 µ 𝑚 in 0.1L of air
   particles_100um   < Particles with diameter beyond 10.0 µ 𝑚 in 0.1L of air
 
-   pms = Particulate Matter Standard
-   pme = Particulate Matter Environmental
+  pms = Particulate Matter Standard
+  pme = Particulate Matter Environmental
 
-   Variable Tags for what we monitor and report on
+  Variable Tags for what we monitor and report on
   pm1s10
   pm1s25
   pm1s100
   pm1e10
   pm1e25
   pm1e100
+</pre>
+</div>
