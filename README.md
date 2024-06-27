@@ -367,7 +367,7 @@ With no "deviceID" defined in the below webhook. It can be used by multiple devi
      "h2": "{{h2}}",
      "bv": "{{bv}}",
      "hth": "{{hth}}"
- }
+  }
 }
 </pre>
 </div>
@@ -394,7 +394,7 @@ Many of the below bits will be set at initialization. Then cleared after the fir
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
 <pre>
 Health bits (hth)
- AREA        BIT       COMMENT
+AREA         BIT       COMMENT
 OKAY         0x0       Normal Operation
 PWRON        0x1       Set at power on, but cleared after first observation
 SD           0x2       Set if SD missing at boot or other SD related issues
