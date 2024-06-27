@@ -334,7 +334,7 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "sg1p2": "{{sg1p2}}",
      "sg1t2": "{{sg1t2}}",
      "sg1h2": "{{sg1h2}}"
- }
+  }
 }
 </pre>
 </div>
