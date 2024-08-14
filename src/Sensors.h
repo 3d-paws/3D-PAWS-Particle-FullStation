@@ -19,7 +19,7 @@
  *  https://forecast.weather.gov/product.php?issuedby=BOU&product=OSO&site=bou 
  * ======================================================================================================================
  */
-#define BMX_STATION_ELEVATION 1017.272  // default 1013.25
+// #define BMX_STATION_ELEVATION 1017.272  // default 1013.25
 #define BMX_ADDRESS_1         0x77      // BMP Default Address - Connecting SDO to GND will change BMP to 0x76
 #define BMX_ADDRESS_2         0x76      // BME Default Address - Connecting SDO to GND will change BME to 0x77
 #define BMP280_CHIP_ID        0x58

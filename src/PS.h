@@ -237,6 +237,7 @@ int Function_DoAction(String s) {
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
           Output ("A4=CLR, DEL 5M:OK");
+          dg_adjustment = 2.5;
         }
         else {
           Output ("A4=CLR, DEL 5M:ERR");

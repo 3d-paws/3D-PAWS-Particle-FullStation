@@ -127,6 +127,7 @@ PRODUCT_VERSION(30);
  *                         Now prints message when CONFIG.TXT not found on SD
  *                         Added Apache Copyright License
  *                         Added printing of Copyright to Serial Console
+ *          2024-07-23 RJB Added dg_adjustment = 2.5 when removing 5MDIST.TXT
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -177,7 +178,7 @@ PRODUCT_VERSION(30);
  *  6 = BATTERY_STATE_DISCONNECTED
  *
  * Publish to Particle
- *  Event Name: FN
+ *  Event Name: FS
  *  Event Variables:
  *  at      timestamp
  *  rg      rain gauge 1
@@ -186,6 +187,10 @@ PRODUCT_VERSION(30);
  *  rg2     rain gauge 2
  *  rgt2    rain gauge 2 total today
  *  rgp2    rain gauge 2 total prior
+ *  ws      wind speed
+ *  wd      wind direction
+ *  wg      wind gust
+ *  wgd     wind gust direction
  *  bp1     bmx_pressure
  *  bt1     bmx_temp
  *  bh1     bmx_humid
@@ -202,6 +207,9 @@ PRODUCT_VERSION(30);
  *  sh2     sht_humid
  *  ht2     hih_temp
  *  hh2     hih_humid
+ *  sv1     si_visible
+ *  si1     si_infrared
+ *  su1     su_ultraviolet
  *  lx      lux
  *  sg      snow / stream gauge
  *  pm1s10  Standard Particle PM1.0

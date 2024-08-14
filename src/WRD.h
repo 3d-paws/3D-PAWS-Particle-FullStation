@@ -113,7 +113,7 @@ void anemometer_interrupt_handler()
 volatile unsigned int raingauge1_interrupt_count;
 uint64_t raingauge1_interrupt_stime; // Send Time
 uint64_t raingauge1_interrupt_ltime; // Last Time
-uint64_t raingauge1_interrupt_toi;   // Time of Interupt
+uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
 
 /*
  * ======================================================================================================================
@@ -123,7 +123,7 @@ uint64_t raingauge1_interrupt_toi;   // Time of Interupt
 #define RAINGAUGE1_IRQ_PIN A3
 void raingauge1_interrupt_handler()
 {
-  if ((System.millis() - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interupt
+  if ((System.millis() - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
     raingauge1_interrupt_ltime = System.millis();
     raingauge1_interrupt_count++;
     digitalWrite(LED_PIN, HIGH);
@@ -139,7 +139,7 @@ void raingauge1_interrupt_handler()
 volatile unsigned int raingauge2_interrupt_count;
 uint64_t raingauge2_interrupt_stime; // Send Time
 uint64_t raingauge2_interrupt_ltime; // Last Time
-uint64_t raingauge2_interrupt_toi;   // Time of Interupt
+uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
 
 /*
  * ======================================================================================================================
@@ -149,7 +149,7 @@ uint64_t raingauge2_interrupt_toi;   // Time of Interupt
 #define RAINGAUGE2_IRQ_PIN   A4
 void raingauge2_interrupt_handler()
 {
-  if ((System.millis() - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interupt
+  if ((System.millis() - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
     raingauge2_interrupt_ltime = System.millis();
     raingauge2_interrupt_count++;
     digitalWrite(LED_PIN, HIGH);
@@ -479,7 +479,7 @@ void Wind_GustUpdate() {
     rtod = 360 + rtod;
   }
 
-  // If all the winds speeds are 0 or we has a -1 direction then set -1 dor direction.
+  // If all the winds speeds are 0 or we have a -1 direction then set -1 for direction.
   if (ws_zero) {
     wind.gust_direction = -1;
   }
