@@ -62,10 +62,13 @@ bool HTU21DF_exists = false;
  */
 #define MCP_ADDRESS_1     0x18
 #define MCP_ADDRESS_2     0x19        // A0 set high, VDD
+#define MCP_ADDRESS_3     0x20        // A1 set high, VDD
 Adafruit_MCP9808 mcp1;
 Adafruit_MCP9808 mcp2;
+Adafruit_MCP9808 mcp3;
 bool MCP_1_exists = false;
 bool MCP_2_exists = false;
+bool MCP_3_exists = false;
 
 /*
  * ======================================================================================================================
@@ -464,6 +467,19 @@ void mcp9808_initialize() {
     msgp = (char *) "MCP2 OK";
   }
   Output (msgp);
+
+  // 3rd MCP9808 Precision I2C Temperature Sensor (I2C ADDRESS = 0x20)
+  mcp3 = Adafruit_MCP9808();
+  if (!mcp3.begin(MCP_ADDRESS_3)) {
+    msgp = (char *) "MCP3 NF";
+    MCP_3_exists = false;
+    SystemStatusBits |= SSB_MCP_3;  // Turn On Bit
+  }
+  else {
+    MCP_3_exists = true;
+    msgp = (char *) "MCP3 OK";
+  }
+  Output (msgp);
 }
 
 /* 
@@ -687,14 +703,19 @@ float hi_calculate(float T, float RH) {
 
 /* 
  *=======================================================================================================================
- * wbgt_initialize() - Wet Bulb Temperature
+ * wbgt_initialize() - Wet Bulb Globe Temperature
  *=======================================================================================================================
  */
 void wbgt_initialize() {
   Output("WBGT:INIT");
   if (MCP_1_exists && SHT_1_exists) {
     WBGT_exists = true;
-    Output ("WBGT:OK");
+    if (MCP_3_exists) {
+      Output ("WBGT:OK w/Glob");
+    }
+    else {
+      Output ("WBGT:OK wo/Globe");
+    }
   }
   else {
     Output ("WBGT:NF");
@@ -703,10 +724,11 @@ void wbgt_initialize() {
 
 /* 
  *=======================================================================================================================
- * wbgt_calculate() - Compute Web Bulb Globe Temperature
+ * wbgt_using_hi() - Compute Web Bulb Globe Temperature using Heat Index
  *=======================================================================================================================
  */
-double wbgt_calculate(double HIc) {
+double wbgt_using_hi(double HIc) {
+
   if (HIc == -999.9) {
     return (-999.9);
   }
@@ -722,46 +744,20 @@ double wbgt_calculate(double HIc) {
 
 /* 
  *=======================================================================================================================
- * wbgt_calculate_opt2() - Compute Web Bulb Globe Temperature
+ * wbgt_using_wbt() - Compute Web Bulb Globe Temperature using web bulb temperature
  *=======================================================================================================================
  */
-double wbgt_calculate_opt2(double Tc, double HIc) {
-  if ((Tc == -999.9) || (HIc == -999.9)) {
-    return (-999.9);
-  }
+double wbgt_using_wbt(double Td, double Tg, double Tw) {
+  // Td = mcp1 temp
+  // Tg = mcp3 temp
+  // Tw = wbt_calculate(Td, RH)
 
-  // Constants for the approximation
-  const float a = 0.7;
-  const float b = 0.2;
-  const float c = 0.1;
- 
-  // Using temperature as a proxy for dry bulb temperature (Td)
-  float Td = Tc * 9.0 / 5.0 + 32.0;
- 
-  // Using heat index as a proxy for wet bulb temperature (Tw)
-  float Tw = HIc * 9.0 / 5.0 + 32.0;
+  double wbgt = (0.7 * Tw) + (0.2 * Tg) + (0.1 * Td);  // This will be Celsius
 
-  // Assuming globe temperature (Tg) as average of temperature and heat index
-  float Tg = (Td + Tw) / 2;
+  wbgt = (isnan(wbgt) || (wbgt < QC_MIN_T)  || (wbgt >QC_MAX_T))  ? QC_ERR_T  : wbgt;
 
-  // Calculate WBGT using simplified formula
-  float WBGT = a * Tw + b * Tg + c * Td;
-
-  /*
-  sprintf (msgbuf, "Td[%d.%d] Tw[%d.%d] Tg[%d.%d] WBGT[%d.%d]", 
-    (int)Td, (int)(Td*100)%100, 
-    (int)Tw, (int)(Tw*100)%100,
-    (int)Tg, (int)(Tg*100)%100, 
-    (int)WBGT, (int)(WBGT*100)%100
-    );
-  Output (msgbuf);
-  */
-
-  // Convert Heat Index from Fahrenheit to Celsius
-  WBGT = (WBGT - 32.0) * 5.0 / 9.0;
-  return (WBGT);
+  return (wbgt);
 }
-
 
 /* 
  *=======================================================================================================================

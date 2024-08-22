@@ -660,7 +660,7 @@ void I2C_Check_Sensors() {
     }   
   }
 
-#ifdef NOWAY    // Sensor fails to update if this code is enabled
+#ifdef NOWAY    // MCP9808 Sensors fails to update temperature if this code is enabled
   // MCP9808 Precision I2C Temperature Sensor
   if (I2C_Device_Exist (MCP_ADDRESS_1)) {
     // Sensor online but our state had it offline

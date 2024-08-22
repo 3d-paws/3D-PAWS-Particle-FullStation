@@ -246,6 +246,7 @@ void JPO_ClearBits() {
     SystemStatusBits &= ~SSB_HTU21DF; // Turn Off HTU Not Found Bit
     SystemStatusBits &= ~SSB_MCP_1;   // Turn Off MCP_1 Not Found Bit
     SystemStatusBits &= ~SSB_MCP_2;   // Turn Off MCP_2 Not Found Bit
+    SystemStatusBits &= ~SSB_MCP_3;   // Turn Off MCP_2 Not Found Bit
     SystemStatusBits &= ~SSB_SHT_1;   // Turn Off SHT_1 Not Found Bit
     SystemStatusBits &= ~SSB_SHT_2;   // Turn Off SHT_1 Not Found Bit
     SystemStatusBits &= ~SSB_HIH8;    // Turn Off HIH Not Found Bit

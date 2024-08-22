@@ -1,6 +1,6 @@
-PRODUCT_VERSION(30);
+PRODUCT_VERSION(31);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-240620"
+#define VERSION_INFO "FSAC-240822"
 
 /*
  *======================================================================================================================
@@ -128,6 +128,9 @@ PRODUCT_VERSION(30);
  *                         Added Apache Copyright License
  *                         Added printing of Copyright to Serial Console
  *          2024-07-23 RJB Added dg_adjustment = 2.5 when removing 5MDIST.TXT
+ *          2024-08-22 RJB Addded support for Globe temperature.
+ *                         Added MCP_3 dedicated to Globe temperature will report as tg1
+ *                         tg1 will be used when calling wbt_calculate()
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -372,12 +375,13 @@ PRODUCT_VERSION(30);
 #define SSB_SI1145          0x400   // Set if UV index & IR & Visible Sensor missing
 #define SSB_MCP_1           0x800   // Set if Precision I2C Temperature Sensor missing
 #define SSB_MCP_2           0x1000  // Set if Precision I2C Temperature Sensor missing
-#define SSB_LORA            0x2000  // Set if LoRa Radio missing at startup
-#define SSB_SHT_1           0x4000  // Set if SHTX1 Sensor missing
-#define SSB_SHT_2           0x8000  // Set if SHTX2 Sensor missing
-#define SSB_HIH8            0x10000 // Set if HIH8000 Sensor missing
-#define SSB_LUX             0x20000 // Set if VEML7700 Sensor missing
-#define SSB_PM25AQI         0x40000 // Set if PM25AQI Sensor missing
+#define SSB_MCP_3           0x2000  // Set if Precision I2C Temperature Sensor missing
+#define SSB_LORA            0x4000  // Set if LoRa Radio missing at startup
+#define SSB_SHT_1           0x8000  // Set if SHTX1 Sensor missing
+#define SSB_SHT_2           0x10000  // Set if SHTX2 Sensor missing
+#define SSB_HIH8            0x20000 // Set if HIH8000 Sensor missing
+#define SSB_LUX             0x40000 // Set if VEML7700 Sensor missing
+#define SSB_PM25AQI         0x80000 // Set if PM25AQI Sensor missing
 
 /*
   0  = All is well, no data needing to be sent, this observation is not from the N2S file
