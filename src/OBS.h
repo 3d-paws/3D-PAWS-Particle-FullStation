@@ -843,15 +843,7 @@ void OBS_Do() {
 
   // 44 Wet Bulb Temperature
   if (WBT_exists) {
-    if (MCP_3_exists) {
-      // Use globe temperature
-      wetbulb_temp = wbt_calculate(mcp3_temp, sht1_humid);
-    }
-    else {
-      // Use air temperature, we don't have globe temperature
-      wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
-    }
-
+    wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "wbt");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) wetbulb_temp;
