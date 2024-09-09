@@ -63,12 +63,16 @@ bool HTU21DF_exists = false;
 #define MCP_ADDRESS_1     0x18
 #define MCP_ADDRESS_2     0x19        // A0 set high, VDD
 #define MCP_ADDRESS_3     0x20        // A1 set high, VDD
+#define MCP_ADDRESS_4     0x21        // A2 set high, VDD
+
 Adafruit_MCP9808 mcp1;
 Adafruit_MCP9808 mcp2;
 Adafruit_MCP9808 mcp3;
+Adafruit_MCP9808 mcp4;
 bool MCP_1_exists = false;
 bool MCP_2_exists = false;
 bool MCP_3_exists = false;
+bool MCP_4_exists = false;
 
 /*
  * ======================================================================================================================
@@ -478,6 +482,19 @@ void mcp9808_initialize() {
   else {
     MCP_3_exists = true;
     msgp = (char *) "MCP3 OK";
+  }
+  Output (msgp);
+
+  // 4rd MCP9808 Precision I2C Temperature Sensor (I2C ADDRESS = 0x21)
+  mcp4 = Adafruit_MCP9808();
+  if (!mcp4.begin(MCP_ADDRESS_4)) {
+    msgp = (char *) "MCP4 NF";
+    MCP_4_exists = false;
+    // SystemStatusBits |= SSB_MCP_4;  // Turn On Bit
+  }
+  else {
+    MCP_4_exists = true;
+    msgp = (char *) "MCP4 OK";
   }
   Output (msgp);
 }
