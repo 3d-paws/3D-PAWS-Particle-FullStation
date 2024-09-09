@@ -129,8 +129,9 @@ PRODUCT_VERSION(31);
  *                         Added printing of Copyright to Serial Console
  *          2024-07-23 RJB Added dg_adjustment = 2.5 when removing 5MDIST.TXT
  *          2024-08-22 RJB Addded support for Globe temperature.
- *                         Added MCP_3 dedicated to Globe temperature will report as tg1
- *                         tg1 will be used when calling wbt_calculate()
+ *                         Added MCP_3 dedicated to Globe temperature will report as gt1
+ *                         gt1 will be used when calling wbt_calculate()
+ *          2024-09-09 RJB Added MCP_4 dedicated to Globe temperature will report as gt2
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
