@@ -201,8 +201,10 @@ PRODUCT_VERSION(31);
  *  bp2     bmx_pressure
  *  bt2     bmx_temp
  *  bh2     bmx_humid
- *  mt1     mcp_temp
- *  mt2     mcp_temp
+ *  mt1     mcp_temp MCP1
+ *  mt2     mcp_temp MCP2
+ *  gt1     globe_temp MCP3
+ *  gt2     globe_temp MCP4
  *  hh1     htu_humid
  *  ht1     htu_temp
  *  st1     sht_temp
