@@ -132,6 +132,10 @@ PRODUCT_VERSION(31);
  *                         Added MCP_3 dedicated to Globe temperature will report as gt1
  *                         gt1 will be used when calling wbt_calculate()
  *          2024-09-09 RJB Added MCP_4 dedicated to Globe temperature will report as gt2
+ *          2024-09-11 RJB Station Monitor changed to provide wind speed not interrupt count
+ *                         When setting SIM to INTERNAL we now set changed = true to
+ *                         report success and reboot message.
+ *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.

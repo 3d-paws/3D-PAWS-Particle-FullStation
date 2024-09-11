@@ -36,8 +36,9 @@ void StationMonitor() {
   // Line 1 of OLED
   // =================================================================
   if (AS5600_exists) {
-    sprintf (msgbuf, "WD:%3d WS:%d", 
-      Wind_SampleDirection(), anemometer_interrupt_count);
+    float ws = Wind_SpeedAverage();
+    sprintf (msgbuf, "WD:%3d WS:%d.%02d", 
+      Wind_SampleDirection(), (int)ws, (int)(ws*100)%100);
   }
   else {
     sprintf (msgbuf, "WD/WS:NF ");
