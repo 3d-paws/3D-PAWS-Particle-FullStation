@@ -139,7 +139,7 @@ PRODUCT_VERSION(30);
  *                         Changed Td to Ta in the wbgt_using_wbt() function
  *          2024-09-14 RJB Modified WiFi Support for UNSEC allowing no password Ex:  "UNSEC,ssid,"
  * 
- *          Version 30 Released on 2024-xx-xx
+ *          Version 31 Released on 2024-xx-xx
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
