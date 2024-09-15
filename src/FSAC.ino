@@ -1,6 +1,6 @@
-PRODUCT_VERSION(31);
+PRODUCT_VERSION(30);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-240911"
+#define VERSION_INFO "FSAC-240914"
 
 /*
  *======================================================================================================================
@@ -123,8 +123,9 @@ PRODUCT_VERSION(31);
  *                         Bug Fix had 0.034 and and 0.0034 in WBGT eq.
  *                         Removed QC check for WBGT
  *                         Change QC for heat index to display a temperature
- *          2024-06-20 RJB Version 30 
- *                         Now prints message when CONFIG.TXT not found on SD
+ * 
+ *          Version 30 Released on 2024-09-14
+ *          2024-06-20 RJB Now prints message when CONFIG.TXT not found on SD
  *                         Added Apache Copyright License
  *                         Added printing of Copyright to Serial Console
  *          2024-07-23 RJB Added dg_adjustment = 2.5 when removing 5MDIST.TXT
@@ -135,6 +136,10 @@ PRODUCT_VERSION(31);
  *          2024-09-11 RJB Station Monitor changed to provide wind speed not interrupt count
  *                         When setting SIM to INTERNAL we now set changed = true to
  *                         report success and reboot message.
+ *                         Changed Td to Ta in the wbgt_using_wbt() function
+ *          2024-09-14 RJB Modified WiFi Support for UNSEC allowing no password Ex:  "UNSEC,ssid,"
+ * 
+ *          Version 30 Released on 2024-xx-xx
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 

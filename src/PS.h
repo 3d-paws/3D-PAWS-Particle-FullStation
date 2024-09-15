@@ -313,18 +313,25 @@ void WiFiChangeCheck() {
           }
           else if ( (strcmp (auth, "WEP") != 0)  &&
                     (strcmp (auth, "WPA") != 0)  &&
-                    (strcmp (auth, "WPA2") != 0) ){
+                    (strcmp (auth, "WPA2") != 0) &&
+                    (strcmp (auth, "UNSEC") != 0)) {
             sprintf (msgbuf, "WIFI:ATYPE[%s] Err", auth);          
             Output(msgbuf);
           }
           else {
             ssid = strtok_r(p, ",", &p);
             pw  = strtok_r(p, ",", &p);
+            
+            if (pw == NULL) {
+              pw = (char *) "";  // Handle the case when nothing is after the ","
+            }
 
             if (ssid == NULL) {
               Output("WIFI:SSID=Null Err");
             }
-            else if (pw == NULL) {
+
+            // UNSEC is allow to have no password just a ssid
+            else if ((strcmp (auth, "UNSEC") != 0)  && (pw == NULL)) {
               Output("WIFI:PW=Null Err");
             }
             else {
@@ -340,8 +347,14 @@ void WiFiChangeCheck() {
               if (strcmp (auth, "UNSEC") == 0) {
                 Output("WIFI:Credentials Cleared");
                 WiFi.clearCredentials();
-                Output("WIFI:Credentials Set UNSEC");
-                WiFi.setCredentials(ssid, pw, UNSEC);
+                if (strcmp (pw, "") == 0) {
+                  Output("WIFI:Credentials Set UNSEC NO PW");
+                  WiFi.setCredentials(ssid);
+                }
+                else {
+                  Output("WIFI:Credentials Set UNSEC");
+                  WiFi.setCredentials(ssid, pw);                 
+                }
               }
               else if (strcmp (auth, "WEP") == 0) {
                 Output("WIFI:Credentials Cleared");
