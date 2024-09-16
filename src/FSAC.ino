@@ -313,7 +313,9 @@ PRODUCT_VERSION(30);
  * 
  * AuthType,ssid,password
  * 
- * Where AuthType is one of these keywords (WEP WPA WPA2)
+ * Where AuthType is one of these keywords (WEP WPA WPA2 UNSEC)
+ * Blank password is supported for UNSEC
+ * ======================================================================================================================
  * 
  * Collecting Wind Data
  * Wind_SampleSpeed() - Return a wind speed based on how many interrupts and duration between calls to this function
