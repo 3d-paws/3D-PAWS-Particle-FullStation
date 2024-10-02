@@ -1,6 +1,6 @@
-PRODUCT_VERSION(30);
+PRODUCT_VERSION(31);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-240914"
+#define VERSION_INFO "FSAC-241002"
 
 /*
  *======================================================================================================================
@@ -139,7 +139,8 @@ PRODUCT_VERSION(30);
  *                         Changed Td to Ta in the wbgt_using_wbt() function
  *          2024-09-14 RJB Modified WiFi Support for UNSEC allowing no password Ex:  "UNSEC,ssid,"
  * 
- *          Version 31 Released on 2024-xx-xx
+ *          Version 31 Released on 2024-10-04
+ *          2024-10-02 RJB Tag name changes rg2t -> rgt2 and rg2p -> rgp2
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 

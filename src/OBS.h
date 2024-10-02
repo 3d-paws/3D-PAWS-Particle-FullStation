@@ -791,13 +791,13 @@ void OBS_Do() {
     // obs[oidx].sensor[sidx++].inuse = true;
 
     // 36 Rain Gauge 2 Total - Not Implemented
-    strcpy (obs[oidx].sensor[sidx].id, "rg2t");
+    strcpy (obs[oidx].sensor[sidx].id, "rgt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // 37 Rain Gauge 2 Prior Day - Not Implemented
-    strcpy (obs[oidx].sensor[sidx].id, "rg2p");
+    strcpy (obs[oidx].sensor[sidx].id, "rgp2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
     obs[oidx].sensor[sidx++].inuse = true;
