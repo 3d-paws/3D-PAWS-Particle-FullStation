@@ -1,6 +1,6 @@
-PRODUCT_VERSION(31);
+PRODUCT_VERSION(32);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241002"
+#define VERSION_INFO "FSAC-241007"
 
 /*
  *======================================================================================================================
@@ -141,6 +141,9 @@ PRODUCT_VERSION(31);
  * 
  *          Version 31 Released on 2024-10-04
  *          2024-10-02 RJB Tag name changes rg2t -> rgt2 and rg2p -> rgp2
+ * 
+ *          Version 32 Released on 2024-10-07
+ *          2024-10-07 RJB Improved hi_calculate() function. 
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
