@@ -521,7 +521,7 @@ Data variables returned
 
 ### MaxBotix Distance Sensors
 
-####The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
+#### The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
 <pre>
 Particle 12bit resolution (0-4095)
@@ -533,7 +533,7 @@ Sensor has a resolution of 0 - 5119mm
 Each unit of the 0-1023 resolution is 5mm
 </pre>
 </div>
-####The 10-meter sensors (MB7363, MB7366, MB7383, and MB7386) use a scale factor of (Vcc/10240) per 1-mm.
+#### The 10-meter sensors (MB7363, MB7366, MB7383, and MB7386) use a scale factor of (Vcc/10240) per 1-mm.
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
 <pre>
 Particle 12bit resolution (0-4095)
