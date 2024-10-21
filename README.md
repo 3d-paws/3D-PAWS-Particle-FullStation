@@ -187,11 +187,11 @@ Configures pin A4 to be a 2nd rain gauge. This function creates file A4RAIN.TXT 
 
 >A4RAIN
 
-Configures pin A4 to be a distance gauge. This function creates file A4DIST.TXT on the SD card. A reboot is necessary after running this command. By default the distance sensor is 10m. Values read from pin A4 are divided by 4.
+Configures pin A4 to be a distance gauge. This function creates file A4DIST.TXT on the SD card. A reboot is necessary after running this command. By default the distance sensor is 10m. Value read from pin A4 is multiplied by 2.5mm.
 
 >A4DIST
 
-Creates file 5MDIST.TXT and values read from pin A4 are divided by 8.
+Creates file 5MDIST.TXT and value read from pin A4 is multiplied by 1.25mm.
 >5MDIST
 
 Unassigns pin A4. Deletes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT if they exist
