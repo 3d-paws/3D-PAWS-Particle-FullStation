@@ -174,6 +174,7 @@ PRODUCT_VERSION(33);
  *  Adafruit_SI1145         https://github.com/adafruit/Adafruit_SI1145_Library - 1.1.1 - I2C ADDRESS 0x60
  *  Adafruit_SSD1306        https://github.com/adafruit/Adafruit_SSD1306 - 2.4.6 - I2C ADDRESS 0x3C  
  *  Adafruit_PM25AQI        https://github.com/adafruit/Adafruit_PM25AQI - 1.0.6 I2C ADDRESS 0x12 - Modified to Compile, Adafruit_PM25AQI.cpp" line 104
+ *  Adafruit_HDC302x        https://github.com/adafruit/Adafruit_HDC302x - 1.0.2 I2C ADDRESS 0x46 and 0x47 ( SHT uses 0x44 and x045)
  *  RTCLibrary              https://github.com/adafruit/RTClib - 1.13.0
  *  SdFat                   https://github.com/greiman/SdFat.git - 1.0.16 by Bill Greiman
  *  RF9X-RK-SPI1            https://github.com/rickkas7/AdafruitDataLoggerRK - 0.2.0 - Modified RadioHead LoRa for SPI1
