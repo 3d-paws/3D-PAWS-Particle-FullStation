@@ -237,7 +237,35 @@ void StationMonitor() {
     }      
   }
 
-  if (cycle == 8) {   
+  if (cycle == 8) {
+    if (HDC_1_exists) {
+      double t = -999.9;
+      double h = -999.9;
+      hdc1.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0);
+      sprintf (msgbuf, "HD1 T:%d.%02d H:%d.%02d", 
+         (int)t, (int)(t*100)%100,
+         (int)h, (int)(h*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "HD1 NF");
+    }
+  }
+
+  if (cycle == 9) {
+    if (HDC_2_exists) {
+      double t = -999.9;
+      double h = -999.9;
+      hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0);
+      sprintf (msgbuf, "HD2 T:%d.%02d H:%d.%02d", 
+         (int)t, (int)(t*100)%100,
+         (int)h, (int)(h*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "HD2 NF");
+    }
+  }
+
+  if (cycle == 10) {   
     if (HIH8_exists) {
       float t = 0.0;
       float h = 0.0;
@@ -255,7 +283,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 9) {
+  if (cycle == 11) {
     if (SI1145_exists) {
       float si_vis = uv.readVisible();
       float si_ir = uv.readIR();
@@ -270,7 +298,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 10) {
+  if (cycle == 12) {
     if (PM25AQI_exists) {
       sprintf (msgbuf, "PM 10:%d 25:%d 100:%d", 
         pm25aqi_obs.max_s10,
@@ -282,11 +310,11 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 11) {   
+  if (cycle == 13) {   
     sprintf (msgbuf, "HTH:%d", (int)SystemStatusBits);
   }
 
-  if (cycle == 12) {
+  if (cycle == 14) {
 #if PLATFORM_ID == PLATFORM_ARGON
     WiFiSignal sig = WiFi.RSSI();
     float SignalStrength = sig.getStrength();
@@ -317,7 +345,7 @@ void StationMonitor() {
 
   // Give the use some time to read line 3 before changing
   if (count++ >= 2) {
-    cycle = ++cycle % 13;
+    cycle = ++cycle % 15;
     count = 0;
   }
 

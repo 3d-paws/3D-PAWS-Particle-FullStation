@@ -71,6 +71,18 @@ int Function_DoAction(String s) {
     return(0);  
   }
 
+  if (strcmp (s,"INFO") == 0) {  // Send System Information
+    Output("DoAction:INFO");
+    SendSystemInformation=true;
+    return(0);  
+  }
+
+  if (strcmp (s,"SEND") == 0) {  // Send OBS Now
+    Output("DoAction:SEND");
+    LastTransmitTime=0;
+    return(0);  
+  }
+
   else if (strcmp (s,"CRT") == 0) { // Clear Rain Totals
     time32_t current_time = Time.now();
     Output("DoAction:CRT");
@@ -251,6 +263,105 @@ int Function_DoAction(String s) {
     }
     return(state);
   }
+
+  else if (strcmp (s,"TXI5M") == 0) { // SetTransmit Interval to 5 Minutes
+    Output("DoAction:TXI5M");
+    if (SD_exists) {
+      if (SD.exists(SD_TX5M_FILE)) {
+        Output ("TXI5M, ALREADY SET"); 
+        obs_tx_interval = 5;     
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_TX5M_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          obs_tx_interval = 5;
+          Output ("TXI5M SET");
+        }
+        else {
+          Output ("TXI5M OPEN ERR");
+          return(-2);
+        }
+      }
+
+      if (SD.exists(SD_TX10M_FILE)) {
+        if (SD.remove (SD_TX10M_FILE)) {
+          Output ("TXI5M: Removed TX10M File");
+        }
+      }
+    }
+    else {
+      Output("TXI5M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (strcmp (s,"TXI10M") == 0) { // SetTransmit Interval to 10 Minutes
+    Output("DoAction:TXI10M");
+    if (SD_exists) {
+      if (SD.exists(SD_TX10M_FILE)) {
+        Output ("TXI10M, ALREADY SET"); 
+        obs_tx_interval = 10;     
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_TX10M_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          obs_tx_interval = 10;
+          Output ("TXI10M SET");
+        }
+        else {
+          Output ("TXI10M OPEN ERR");
+          return(-2);
+        }
+      }
+
+      if (SD.exists(SD_TX5M_FILE)) {
+        if (SD.remove (SD_TX5M_FILE)) {
+          Output ("TXI5M: Removed TX5M File");
+        }
+      }
+    }
+    else {
+      Output("TXI10M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (strcmp (s,"TXI15M") == 0) { // SetTransmit Interval to 15 Minutes
+    Output("DoAction:TXI15M");
+    if (SD_exists) {
+      if (!SD.exists(SD_TX5M_FILE) && !SD.exists(SD_TX10M_FILE)) {
+        Output ("TXI15M, ALREADY SET"); 
+        obs_tx_interval = 15;     
+      }
+      else {
+        // Remove Files
+        if (SD.exists(SD_TX5M_FILE)) {
+          if (SD.remove (SD_TX5M_FILE)) {
+            Output ("TXI15M: Removed TX5M File");
+          }
+        }
+        if (SD.exists(SD_TX10M_FILE)) {
+          if (SD.remove (SD_TX10M_FILE)) {
+            Output ("TXI15M: Removed TX10M File");
+          }
+        }      
+        obs_tx_interval = 15;
+        Output ("TXI15M SET"); 
+      }
+    }
+    else {
+      Output("TXI15M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
   else {
     Output("DoAction:UKN"); 
     return(-1);
@@ -703,3 +814,34 @@ int callback_imsi(int type, const char* buf, int len, char* cimi) {
   return (WAIT);
 }
 #endif
+
+/* 
+ *=======================================================================================================================
+ * TXI_Initialize() - Transmit Interval 5, 10 or 15 minutes
+ *=======================================================================================================================
+ */
+void TXI_Initialize() {
+  Output ("TXI:INIT");
+  if (SD_exists) {
+    if (SD.exists(SD_TX5M_FILE)) {
+      Output ("TXI5M Found");
+      obs_tx_interval = 5;
+      if (SD.exists(SD_TX10M_FILE)) {
+        if (SD.remove (SD_TX10M_FILE)) {
+          Output ("TXI:RM 10M");
+        }
+      }
+    }
+    else if (SD.exists(SD_TX10M_FILE)) {
+      Output ("TXI10M Found");
+      obs_tx_interval = 10;
+      if (SD.exists(SD_TX5M_FILE)) {
+        if (SD.remove (SD_TX5M_FILE)) {
+          Output ("TXI:RM 5M");
+        }
+      }
+    }
+  }
+  sprintf (msgbuf, "TXI=%dM", obs_tx_interval);
+  Output(msgbuf);  
+}

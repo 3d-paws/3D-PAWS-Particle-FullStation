@@ -253,5 +253,7 @@ void JPO_ClearBits() {
     SystemStatusBits &= ~SSB_LUX;     // Turn Off VEML7700 Not Found Bit
     SystemStatusBits &= ~SSB_SI1145;  // Turn Off UV,IR, VIS Not Found Bit
     SystemStatusBits &= ~SSB_PM25AQI; // Turn Off PM25AQI Not Found Bit
+    SystemStatusBits &= ~ SSB_HDC_1;  // Turn Off HDC302x Not Found Bit
+    SystemStatusBits &= ~ SSB_HDC_2;  // Turn Off HDC302x Not Found Bit
   }
 }

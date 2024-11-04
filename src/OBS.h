@@ -371,7 +371,6 @@ void OBS_Do() {
   obs[oidx].inuse = true;
   obs[oidx].ts = Time.now();
   obs[oidx].css = sig.getStrength();
-  obs[oidx].hth = SystemStatusBits;
 
   // 00 Battery Charging State
   strcpy (obs[oidx].sensor[sidx].id, "bcs");
@@ -628,6 +627,60 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
+  if (HDC_1_exists) {
+    double t = -999.9;
+    double h = -999.9;
+
+    if (hdc1.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
+      t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+      h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+      SystemStatusBits &= ~ SSB_HDC_1;  // Turn Off Bit
+    }
+    else {
+      Output ("ERR:HDC1 Read");
+      SystemStatusBits |= SSB_HDC_1;  // Turn On Bit
+    }
+
+    // 24 HDC1 Temperature
+    strcpy (obs[oidx].sensor[sidx].id, "hdt1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 25 HDC1 Humidity
+    strcpy (obs[oidx].sensor[sidx].id, "hdh1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) h;
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
+
+  if (HDC_2_exists) {
+    double t = -999.9;
+    double h = -999.9;
+
+    if (hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
+      t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+      h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+      SystemStatusBits &= ~ SSB_HDC_2;  // Turn Off Bit
+    }
+    else {
+      Output ("ERR:HDC1 Read");
+      SystemStatusBits |= SSB_HDC_2;  // Turn On Bit
+    }
+
+    // 26 HDC2 Temperature
+    strcpy (obs[oidx].sensor[sidx].id, "hdt2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 27 HDC2 Humidity
+    strcpy (obs[oidx].sensor[sidx].id, "hdh2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) h;
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
+
   if (HIH8_exists) {
     float t = 0.0;
     float h = 0.0;
@@ -640,13 +693,13 @@ void OBS_Do() {
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
 
-    // 24 HIH8 Temperature
+    // 28 HIH8 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "ht2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 25 HIH8 Humidity
+    // 29 HIH8 Humidity
     strcpy (obs[oidx].sensor[sidx].id, "hh2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = h;
@@ -688,19 +741,19 @@ void OBS_Do() {
     si_ir  = (isnan(si_ir)  || (si_ir  < QC_MIN_IR)  || (si_ir  > QC_MAX_IR)) ? QC_ERR_IR  : si_ir;
     si_uv  = (isnan(si_uv)  || (si_uv  < QC_MIN_UV)  || (si_uv  > QC_MAX_UV)) ? QC_ERR_UV  : si_uv;
 
-    // 26 SI Visible
+    // 30 SI Visible
     strcpy (obs[oidx].sensor[sidx].id, "sv1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_vis;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 27 SI IR
+    // 31 SI IR
     strcpy (obs[oidx].sensor[sidx].id, "si1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_ir;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 28 SI UV
+    // 32 SI UV
     strcpy (obs[oidx].sensor[sidx].id, "su1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_uv;
@@ -710,7 +763,7 @@ void OBS_Do() {
   if (MCP_1_exists) {
     float t = 0.0;
 
-    // 29 MCP1 Temperature
+    // 33 MCP1 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "mt1");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp1.readTempC();
@@ -724,7 +777,7 @@ void OBS_Do() {
   if (MCP_2_exists) {
     float t = 0.0;
 
-    // 30 MCP2 Temperature
+    // 34 MCP2 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "mt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp2.readTempC();
@@ -736,7 +789,7 @@ void OBS_Do() {
   if (MCP_3_exists) {
     float t = 0.0;
 
-    // 31 MCP3 Globe Temperature
+    // 35 MCP3 Globe Temperature
     strcpy (obs[oidx].sensor[sidx].id, "gt1");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp3.readTempC();
@@ -750,7 +803,7 @@ void OBS_Do() {
   if (MCP_4_exists) {
     float t = 0.0;
 
-    // 32 MCP4 Globe Temperature
+    // 36 MCP4 Globe Temperature
     strcpy (obs[oidx].sensor[sidx].id, "gt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp4.readTempC();
@@ -763,7 +816,7 @@ void OBS_Do() {
     float lux = veml.readLux(VEML_LUX_AUTO);
     lux = (isnan(lux) || (lux < QC_MIN_LX)  || (lux > QC_MAX_LX))  ? QC_ERR_LX  : lux;
 
-    // 33 VEML7700 Auto Lux Value
+    // 37 VEML7700 Auto Lux Value
     strcpy (obs[oidx].sensor[sidx].id, "lx");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = lux;
@@ -771,32 +824,32 @@ void OBS_Do() {
   }
 
   if (A4_State == A4_STATE_DISTANCE) {
-    // 34 Distance Guage
+    // 38 Distance Guage
     strcpy (obs[oidx].sensor[sidx].id, "sg"); // sg = snow or stream
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
   else if (A4_State == A4_STATE_RAIN) {
-    // 35 Rain Guage 2
+    // 39 Rain Guage 2
     strcpy (obs[oidx].sensor[sidx].id, "rg2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = rain2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 35 Rain Gauge Delta Seconds
+    // 40 Rain Gauge Delta Seconds
     // strcpy (obs[oidx].sensor[sidx].id, "rg2s");
     // obs[oidx].sensor[sidx].type = U_OBS;
     // obs[oidx].sensor[sidx].u_obs = rg2ds;
     // obs[oidx].sensor[sidx++].inuse = true;
 
-    // 36 Rain Gauge 2 Total - Not Implemented
+    // 41 Rain Gauge 2 Total - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 37 Rain Gauge 2 Prior Day - Not Implemented
+    // 42 Rain Gauge 2 Prior Day - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgp2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
@@ -804,37 +857,37 @@ void OBS_Do() {
   }
 
   if (PM25AQI_exists) {
-    // 38 Standard Particle PM1.0 concentration unit µg 𝑚3
+    // 43 Standard Particle PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 39 Standard Particle PM2.5 concentration unit µg 𝑚3
+    // 44 Standard Particle PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 40 Standard Particle PM10.0 concentration unit µg 𝑚3
+    // 45 Standard Particle PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 41 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
+    // 46 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 42 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
+    // 47 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 43  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
+    // 48  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
@@ -844,7 +897,7 @@ void OBS_Do() {
     pm25aqi_clear();
   }
 
-  // 44 Heat Index Temperature
+  // 49 Heat Index Temperature
   if (HI_exists) {
     heat_index = hi_calculate(mcp1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "hi");
@@ -853,7 +906,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;    
   } 
 
-  // 45 Wet Bulb Temperature
+  // 50 Wet Bulb Temperature
   if (WBT_exists) {
     wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "wbt");
@@ -862,7 +915,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;    
   }
 
-  // 46 Wet Bulb Globe Temperature
+  // 51 Wet Bulb Globe Temperature
   if (WBGT_exists) {
     float wbgt = 0.0;
     if (MCP_3_exists) {
@@ -884,13 +937,13 @@ void OBS_Do() {
     lora_msg_check(); // do not use msgbuf in LoRa check
     // Check for Observation from LoRa Stream Gauge
     if (lora_sg.need2log) {
-      // 47 Stream Gauge Reading
+      // 52 Stream Gauge Reading
       sprintf (obs[oidx].sensor[sidx].id, "sg%d", lora_sg.unit_id);
       obs[oidx].sensor[sidx].type = F_OBS;
       obs[oidx].sensor[sidx].f_obs = lora_sg.stream_gauge;
       obs[oidx].sensor[sidx++].inuse = true;
 
-      // 48 Stream Gauge Voltage
+      // 53 Stream Gauge Voltage
       sprintf (obs[oidx].sensor[sidx].id, "sg%dv", lora_sg.unit_id);
       obs[oidx].sensor[sidx].type = F_OBS;
       obs[oidx].sensor[sidx].f_obs = lora_sg.voltage;
@@ -899,34 +952,34 @@ void OBS_Do() {
       // Add the BME280 Sensor information
       if (lora_sg.message_type == 3) {  
         if (lora_sg.p[0] != 0.0) {
-          // 489 Stream Gauge Preasure 1
+          // 54 Stream Gauge Preasure 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dp1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.p[0];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 50 Stream Gauge Temperature 1
+          // 55 Stream Gauge Temperature 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dt1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.t[0];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 51 Stream Gauge Humidity 1
+          // 56 Stream Gauge Humidity 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dh1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.h[0];
           obs[oidx].sensor[sidx++].inuse = true;
         }
         if (lora_sg.p[1] != 0.0) {
-          // 52 Stream Gauge Preasure 2
+          // 57 Stream Gauge Preasure 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dp2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.p[1];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 53 Stream Gauge Temperature 2
+          // 58 Stream Gauge Temperature 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dt2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.t[1];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 54 Stream Gauge Humidity 2
+          // 59 Stream Gauge Humidity 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dh2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.h[1];
@@ -936,6 +989,9 @@ void OBS_Do() {
       }
     }
   }
+
+  // Set this after we read all sensors. So we capture if their state changes 
+  obs[oidx].hth = SystemStatusBits;
 
   // Save Observation to SD Card
   OBS_Log(oidx);

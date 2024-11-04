@@ -177,25 +177,27 @@ Note: If something went wrong obtaining WiFi credentials the credentials in non 
 
 On the view device screen on the Particle Console there is a FUNCTIONS area at the lower right. This is used to send commands to the online device.
 
-Reboot device. Toggle pin A0. If no relay/watchdog is connected to A0, then a soft boot on the Particle board is performed.
->REBOOT
+>REBOOT - Reboot device. Toggle pin A0. If no relay/watchdog is connected to A0, then a soft boot on the Particle board is performed.
 
-Clear rain totals that are stored in nvram.
+>SEND - Send queud observations.
 
->CRT
-Configures pin A4 to be a 2nd rain gauge. This function creates file A4RAIN.TXT on the SD card. A reboot is necessary after running this command.
+>INFO - Trigger station to send station information. Event type "INFO".
 
->A4RAIN
+>CRT - Clear rain totals that are stored in nvram.
 
-Configures pin A4 to be a distance gauge. This function creates file A4DIST.TXT on the SD card. A reboot is necessary after running this command. By default the distance sensor is 10m. Value read from pin A4 is multiplied by 2.5mm.
+>A4RAIN - Configures pin A4 to be a 2nd rain gauge. Creates file A4RAIN.TXT. Reboot necessary.
 
->A4DIST
+>A4DIST - Configures pin A4 to be a distance gauge. Create file A4DIST.TXT. Reboot necessary. Default sensor is 10m where pin A4 is multiplied by 2.5mm
 
-Creates file 5MDIST.TXT and value read from pin A4 is multiplied by 1.25mm.
->5MDIST
+>5MDIST - Configure 5m Sensor. Creates file 5MDIST.TXT. Value read from pin A4 is multiplied by 1.25mm.
 
-Unassigns pin A4. Deletes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT if they exist
->A4CLR
+>A4CLR - Unassigns pin A4. Removes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT if they exist
+
+>TXI5M - Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes TXI10M.TXT file.
+
+>TXI10M - Set Transmit Interval to 10 minutes. Creates file TXI10M.TXT. Removes TXI5M.TXT file.
+
+>TXI15M - Set Transmit Interval to 15 minutes (Default). Removes TXI5M.TXT and TXI10M.TXT files.
 
 ### SD card Information
 
@@ -214,11 +216,14 @@ Files and Directories:
                     transmitted. If file is greater than 512 *60* 48 bytes. 
                     File is deleted and we start over. File is deleted when all
                     N2S observations have been sent.  
-  /A4RAIN.TXT  Set pin A4 to be a 2nd rain gauge.  
-  /A4DIST.TXT  Set pin A4 to be a distance gauge of type 10m  
-  /5MDIST.TXT  Set distance gauge of type 5m  
-  /SIM.TXT  Support 3rd party SIM.  
-  /WIFI.TXT  Support for Argon WiFi Boards. Stores WiFi information  
+  /A4RAIN.TXT   Set pin A4 to be a 2nd rain gauge.  
+  /A4DIST.TXT   Set pin A4 to be a distance gauge of type 10m  
+  /5MDIST.TXT   Set distance gauge of type 5m  
+  /SIM.TXT      Support 3rd party SIM.  
+  /WIFI.TXT     Support for Argon WiFi Boards. Stores WiFi information
+  /TXI5M.TXT    Set Transmit Interval to 5 minutes.
+  /TXI10M.TXT   Set Transmit Interval to 10 minutes.
+  No TXIxxM.TXT Set Transmit Interval to 15 minutes.
 </pre>
 </div>
 
@@ -310,6 +315,14 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "bh1": "{{bh1}}",
      "hh1": "{{hh1}}",
      "ht1": "{{ht1}}",
+     "st1": "{{st1}}",
+     "sh1": "{{sh1}}",
+     "st2": "{{st2}}",
+     "sh2": "{{sh2}}",
+     "hdt1": "{{hdt1}}",
+     "hdh1": "{{hdh1}}",
+     "hdt2": "{{hdt2}}",
+     "hdh2": "{{hdh2}}",
      "sv1": "{{sv1}}",
      "si1": "{{si1}}",
      "su1": "{{su1}}",
@@ -407,12 +420,15 @@ HTU21DF      0x200     Set if Humidity & Temp Sensor missing
 SI1145       0x400     Set if UV index & IR & Visible Sensor missing
 MCP_1        0x800     Set if Precision I2C Temperature Sensor missing
 MCP_2        0x1000    Set if Precision I2C Temperature Sensor missing
-LORA         0x2000    Set if LoRa Radio missing at startup
-SHT_1        0x4000    Set if SHTX1 Sensor missing
-SHT_2        0x8000    Set if SHTX2 Sensor missing
-HIH8         0x10000   Set if HIH8000 Sensor missing
-LUX          0x20000   Set if VEML7700 Sensor missing
-PM25AQI      0x40000   Set if PM25AQI Sensor missing
+MCP_3        0x2000    Set if Precision I2C Temperature Sensor missing
+LORA         0x4000    Set if LoRa Radio missing at startup
+SHT_1        0x8000    Set if SHTX1 Sensor missing
+SHT_2        0x10000   Set if SHTX2 Sensor missing
+HIH8         0x20000   Set if HIH8000 Sensor missing
+LUX          0x40000   Set if VEML7700 Sensor missing
+PM25AQI      0x80000   Set if PM25AQI Sensor missing
+HDC_1        0x100000  Set if HDC302x Sensor missing
+HDC_2        0x200000  Set if HDC302x Sensor missing
 </pre>
 </div>
 Interpreting health bits in relation to Need to Send observations.
@@ -541,3 +557,90 @@ Feather has 10bit resolution (0-1023)
 Sensor has a resolution of 0 - 10239mm
 Each unit of the 0-1023 resolution is 10mm
 </pre>
+
+### Station Information (Event type "INFO")
+At boot the station will send a event message of type "INFO" to Particle. This message contains configuration and status information. You can also request an INFO event message to be send from the device via DoAction Function on the Particle Console. Use keyword "INFO".
+
+INFO event message from a Boron
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 500px; border: 1px solid black; padding: 10px;">
+<pre>
+{
+"devid": "e00fce68bde8f63890a3b118"
+"devos":"4.1.0"
+"freemem":57736
+"uptime":80
+"board": "boron"
+"at": "2024-10-30T21:09:37"
+"ver": "FSAC-241029v33
+"hth": 4009985
+"obsi": "60s"
+"obsti": "15m"
+"t2nt": "783s"
+"n2s": "NF"
+"ps": "VIN"
+"bcs": "CHARGED"
+"bpc": 100
+"css": 64.9989
+"csq": 37.499
+"imsi": "234103519249568"
+"actsim": "INTERNAL"
+"a4": "DIST 5M"
+"sensors": "BMX1(BMP390),MCP1,SHT1,HIH8,SI,AS5600,HI,WBT,WBGT WO/GLOBE"
+"oled": "32"
+"scepin": "DISABLED"
+"sce": "TRUE"
+}
+
+ps = power source
+bv = battery voltage
+bcs = battery charging status
+obsi = observation interval (seconds)
+obsti = observation transmit interval (minutes)
+t2nt = time to next transmit (seconds)
+sce = serial console enabled
+scepin = status of the actual serial console pin
+a4 = configuration of this pin (DIST 5M, DIST 10M, RG2, NS[Not Set])
+</pre>
+</div>
+
+INFO event message from a Argon
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 480px; border: 1px solid black; padding: 10px;">
+<pre>
+ {
+"devid": "e00fce68a396d11b8cafc55f"
+"devos":"4.1.0"
+"freemem":57736
+"uptime":80
+"type": "argon"
+"at": "2024-10-30T20:43:42"
+"ver": "FSAC-241029v33"
+"hth": 0
+"obsi": "60s"
+"obsti": "15m"
+"t2nt": "236s"
+"n2s": "NF"
+"ps": "USB"
+"bv": 4.16972
+"bcs": "!CHARGING"
+"wss": 100
+"wsq": 100
+"mac": "e8:9f:6d:be:6d:28"
+"ip": "10.0.0.1"
+"mask": "255.255.255.0"
+"gateway": "10.0.0.254"
+"dns": "10.0.0.253"
+"dhcps": "10.0.0.253"
+"ssid": "SSID String"
+"bssid": "cc:40:d0:87:3a:aa"
+"a4": "DIST 5M"
+"sensors": "BMX1(BMP390),MCP1,SHT1,HIH8,SI,AS5600,HI,WBT,WBGT WO/GLOBE"
+"oled": "32"
+"scepin": "DISABLED"
+"sce": "TRUE"
+}
+
+wss = wireless signal strength (percent)
+wsq = wireless signal  quality (percent)
+bssid = mac address of the wireless gateway
+</pre>
+</div>

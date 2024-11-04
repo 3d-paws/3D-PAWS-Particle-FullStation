@@ -1,6 +1,6 @@
-PRODUCT_VERSION(32);
+PRODUCT_VERSION(33);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241007"
+#define VERSION_INFO "FSAC-241104v33"
 
 /*
  *======================================================================================================================
@@ -144,6 +144,13 @@ PRODUCT_VERSION(32);
  * 
  *          Version 32 Released on 2024-10-07
  *          2024-10-07 RJB Improved hi_calculate() function. 
+ * 
+ *          Version 33 Released on 2024-11-04 (Early Relese to Argentina)
+ *          2024-11-04 RJB Added INFO_Do() at boot and when called via Do_Action with "INFO"
+ *                         Added Do_Action feature "SEND" to send OBS that are cued
+ *                         Added support for HDC302x sensor, Reports as hdt1,hsh1,hdt2,hdh2
+ *                         Added support for 5,10,15(default) minute obs transmit intervals.
+ *                         Moved reporting of SystemStatusBits to after we have read all the sensors in OBS_Do()
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
@@ -209,23 +216,27 @@ PRODUCT_VERSION(32);
  *  wg      wind gust
  *  wgd     wind gust direction
  *  bp1     bmx_pressure
- *  bt1     bmx_temp
- *  bh1     bmx_humid
+ *  bt1     bmx_temperature
+ *  bh1     bmx_humidity
  *  bp2     bmx_pressure
- *  bt2     bmx_temp
- *  bh2     bmx_humid
+ *  bt2     bmx_temperature
+ *  bh2     bmx_humidity
  *  mt1     mcp_temp MCP1
  *  mt2     mcp_temp MCP2
  *  gt1     globe_temp MCP3
  *  gt2     globe_temp MCP4
- *  hh1     htu_humid
- *  ht1     htu_temp
- *  st1     sht_temp
- *  sh1     sht_humid
- *  st2     sht_temp
- *  sh2     sht_humid
- *  ht2     hih_temp
- *  hh2     hih_humid
+ *  hh1     htu_humidity
+ *  ht1     htu_temperature
+ *  st1     sht_temperature
+ *  sh1     sht_humidity
+ *  st2     sht_temperature
+ *  sh2     sht_humidity
+ *  hdt1    hdc_temperature
+ *  hdh1    hdc_humidity
+ *  hdt2    hdc_temperature
+ *  hdh2    hdc_humidity
+ *  ht2     hih_temperature
+ *  hh2     hih_humidity
  *  sv1     si_visible
  *  si1     si_infrared
  *  su1     su_ultraviolet
@@ -349,6 +360,7 @@ PRODUCT_VERSION(32);
 #include <Adafruit_SHT31.h>
 #include <Adafruit_VEML7700.h>
 #include <Adafruit_PM25AQI.h>
+#include <Adafruit_HDC302x.h>
 #include <RTClib.h>
 #include <SdFat.h>
 #include <RH_RF95.h>
@@ -361,7 +373,7 @@ PRODUCT_VERSION(32);
  */
 #define DELAY_NO_RTC               60000    // Loop delay when we have no valided RTC
 #define OBSERVATION_INTERVAL       60000    // 60000 = 1 minute
-#define OBSERVATION_TRANSMIT_INTERVAL 15    // Transmit observations every N minutes Set to 15 for 15min Transmits
+#define DEFAULT_OBS_TRANSMIT_INTERVAL 15    // Transmit observations every N minutes Set to 15 for 15min Transmits
 
 /*
  * ======================================================================================================================
@@ -374,6 +386,7 @@ PRODUCT_VERSION(32);
 /*
  * ======================================================================================================================
  * System Status Bits used for report health of systems - 0 = OK
+ * An unsigned long is 32 bits
  * 
  * OFF =   SSB &= ~SSB_PWRON
  * ON =    SSB |= SSB_PWROFF
@@ -391,15 +404,17 @@ PRODUCT_VERSION(32);
 #define SSB_BMX_2           0x100   // Set if Barometric Pressure & Altitude Sensor missing
 #define SSB_HTU21DF         0x200   // Set if Humidity & Temp Sensor missing
 #define SSB_SI1145          0x400   // Set if UV index & IR & Visible Sensor missing
-#define SSB_MCP_1           0x800   // Set if Precision I2C Temperature Sensor missing
-#define SSB_MCP_2           0x1000  // Set if Precision I2C Temperature Sensor missing
-#define SSB_MCP_3           0x2000  // Set if Precision I2C Temperature Sensor missing
+#define SSB_MCP_1           0x800   // Set if MCP9808 I2C Temperature Sensor missing
+#define SSB_MCP_2           0x1000  // Set if MCP9808 I2C Temperature Sensor missing
+#define SSB_MCP_3           0x2000  // Set if MCP9808 I2C Temperature Sensor missing
 #define SSB_LORA            0x4000  // Set if LoRa Radio missing at startup
 #define SSB_SHT_1           0x8000  // Set if SHTX1 Sensor missing
-#define SSB_SHT_2           0x10000  // Set if SHTX2 Sensor missing
+#define SSB_SHT_2           0x10000 // Set if SHTX2 Sensor missing
 #define SSB_HIH8            0x20000 // Set if HIH8000 Sensor missing
 #define SSB_LUX             0x40000 // Set if VEML7700 Sensor missing
 #define SSB_PM25AQI         0x80000 // Set if PM25AQI Sensor missing
+#define SSB_HDC_1           0x100000 // Set if HDC302x I2C Temperature Sensor missing
+#define SSB_HDC_2           0x200000 // Set if HDC302x I2C Temperature Sensor missing
 
 /*
   0  = All is well, no data needing to be sent, this observation is not from the N2S file
@@ -423,6 +438,7 @@ int  LED_PIN = D7;            // Built in LED
 bool TurnLedOff = false;      // Set true in rain gauge interrupt
 unsigned long SystemStatusBits = SSB_PWRON; // Set bit 1 to 1 for initial value power on. Is set to 0 after first obs
 bool JustPoweredOn = true;    // Used to clear SystemStatusBits set during power on device discovery
+bool SendSystemInformation = true; // Send System Information to Particle Cloud. True means we will send at boot.
 
 uint64_t lastOBS = 0;         // time of next observation
 int countdown = 600;          // Exit station monitor/mode - when countdown reaches 0
@@ -434,6 +450,10 @@ uint64_t LastTransmitTime = 0;
 int  cf_reboot_countdown_timer = 79200; // There is overhead transmitting data so take off 2 hours from 86400s
                                         // Set to 0 to disable feature
 int DailyRebootCountDownTimer;
+
+int obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
+
+char imsi[16] = "";  // International Mobile Subscriber Identity
 
 /*
  * ======================================================================================================================
@@ -452,6 +472,10 @@ char SD_sim_file[] = "SIM.TXT";         // File used to set Ineternal or Externa
 char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim configuration set
 
 char SD_wifi_file[] = "WIFI.TXT";         // File used to set WiFi configuration
+
+char SD_TX5M_FILE[]  = "TXI5M.TXT";       // Transmit every 5 Minutes 
+char SD_TX10M_FILE[] = "TXI10M.TXT";      // Transmit every 10 Minutes
+
 
 #if PLATFORM_ID == PLATFORM_BORON
 /*
@@ -480,6 +504,7 @@ PMIC pmic;
 #include "OBS.h"                  // Do Observation Processing
 #include "SM.h"                   // Station Monitor
 #include "PS.h"                   // Particle Support Functions
+#include "INFO.h"                 // Station Fonformation
 
 /*
  * ======================================================================================================================
@@ -612,6 +637,8 @@ void setup() {
   Output(msgbuf);
 
 #if PLATFORM_ID == PLATFORM_ARGON
+	pinMode(PWR, INPUT);
+	pinMode(CHG, INPUT);
   //==================================================
   // Check if we need to program for WiFi change
   //==================================================
@@ -639,6 +666,9 @@ void setup() {
   raingauge1_interrupt_stime = System.millis();
   raingauge1_interrupt_ltime = 0;  // used to debounce the tip
   attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
+
+  // Check SD Card for files to determine Transmit Interval for OBS 5,10 or 15 minutes
+  TXI_Initialize();
   
   // Check SD Card for files to determin if pin A4 has a DIST or 2nd Rain Gauge
   A4_Initialize();
@@ -653,6 +683,7 @@ void setup() {
   lux_initialize();
   as5600_initialize();
   pm25aqi_initialize();
+  hdc_initialize();
 
   // Derived Observations
   wbt_initialize();
@@ -684,7 +715,6 @@ void setup() {
 
 #if PLATFORM_ID == PLATFORM_BORON
   // Get International Mobile Subscriber Identity
-  char imsi[16] = "";
   if ((RESP_OK == Cellular.command(callback_imsi, imsi, 10000, "AT+CIMI\r\n")) && (strcmp(imsi,"") != 0)) {
     sprintf (msgbuf, "IMSI:%s", imsi);
     Output (msgbuf);
@@ -696,8 +726,8 @@ void setup() {
 
   if (Time.isValid()) {
     // We now a a valid clock so we can initialize the EEPROM and make an observation
-    EEPROM_Initialize();    
-    OBS_Do();
+    EEPROM_Initialize();
+    OBS_Do();   
   }
 }
 
@@ -733,16 +763,12 @@ void loop() {
         OBS_Do(); 
       }
 
-      // Connection Backoff 
-      //   If we fail to connect set OBSERVATION_TRANSMIT_INTERVAL to 15,20,25,30,60
-
-      // If we think we should stay connected
-      //   Support a 1 minute mode and no power down, with a reconnet if not connected, need backoff on connect
-      // Else Send avery 15 Minutes With Power Down
+      if (SendSystemInformation && Particle.connected()) {
+        INFO_Do(); // Function sets SendSystemInformation back to false.
+      }
 
       // Time to Enable Network and Send Observations we have collected
-      if ( (LastTransmitTime == 0) || 
-            (System.millis() - LastTransmitTime > (OBSERVATION_TRANSMIT_INTERVAL * 60 * 1000)) ) {
+      if ( (LastTransmitTime == 0) || (System.millis() - LastTransmitTime > (obs_tx_interval * 60 * 1000)) ) {
         if (Particle.connected()) {
           Output ("Connected");
           LastTransmitTime = System.millis();
@@ -846,6 +872,12 @@ void loop() {
     // itself down out of our control. Also when power returns to be able to charge
     // the battery and transmit with out current drops causing the board to reset or 
     // power down out of our control.
+
+    // Could change the below to...
+    // SEE: https://docs.particle.io/reference/device-os/api/system-calls/system-uptime/
+    // int powerSource = System.powerSource();
+    // if ((powerSource == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 10.0) {
+
     if (!pmic.isPowerGood() && (System.batteryCharge() <= 10.0)) {
 
       Output("Low Power!");

@@ -42,6 +42,7 @@ bool BMX_1_exists = false;
 bool BMX_2_exists = false;
 byte BMX_1_type=BMX_TYPE_UNKNOWN;
 byte BMX_2_type=BMX_TYPE_UNKNOWN;
+char *bmxtype[] = {"UNKN", "BMP280", "BME280", "BMP388", "BMP390", "BATTERY"};
 
 /*
  * ======================================================================================================================
@@ -189,6 +190,23 @@ PM25AQI_OBS_STR pm25aqi_obs;
 #define PM25AQI_ADDRESS   0x12
 Adafruit_PM25AQI pmaq = Adafruit_PM25AQI();
 bool PM25AQI_exists = false;
+
+/*
+ * ======================================================================================================================
+ *  HDC302x - I2C - Precision Temperature & Humidity Sensor
+ *    Note HDC uses the same I2C Address as SHT. To avoid conflict we are using 0x46 as hdc1 and 0x47 and hdc2 
+ *    manufacturerID = 0x3000  -- uint16_t Adafruit_HDC302x::readManufacturerID()
+ * ======================================================================================================================
+ */
+#define HDC_ADDRESS_1     0x46        // A1=1, A0=0  Need to solder jumper
+#define HDC_ADDRESS_2     0x47        // A1=1, A0=1  Need to solder jumper
+#define HDC_ADDRESS_3     0x44        // A1=0, A0=0  Not used, Default setting from vendor
+#define HDC_ADDRESS_4     0x45        // A1=0, A0=1  Not used
+
+Adafruit_HDC302x hdc1;
+Adafruit_HDC302x hdc2;
+bool HDC_1_exists = false;
+bool HDC_2_exists = false;
 
 /* 
  *=======================================================================================================================
@@ -683,7 +701,7 @@ void hi_initialize() {
 
 /* 
  *=======================================================================================================================
- * hi_calculate() - Compute Heat Index Temperature Returns Fahrenheit
+ * hi_calculate() - Compute Heat Index Temperature Returns Celsius
  * 
  * SEE https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
  * 
@@ -774,7 +792,7 @@ void wbgt_initialize() {
   if (MCP_1_exists && SHT_1_exists) {
     WBGT_exists = true;
     if (MCP_3_exists) {
-      Output ("WBGT:OK w/Glob");
+      Output ("WBGT:OK w/Globe");
     }
     else {
       Output ("WBGT:OK wo/Globe");
@@ -963,4 +981,39 @@ void pm25aqi_TakeReading() {
       Output ("PM OFFLINE");
     }
   }
+}
+
+/* 
+ *=======================================================================================================================
+ * hdc_initialize() - HDC3002c sensor initialize
+ *=======================================================================================================================
+ */
+void hdc_initialize() {
+  Output("HDC:INIT");
+  
+  // 1st HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x44)
+  hdc1 = Adafruit_HDC302x();
+  if (!hdc1.begin(HDC_ADDRESS_1, &Wire)) {
+    msgp = (char *) "HDC1 NF";
+    HDC_1_exists = false;
+    SystemStatusBits |= SSB_HDC_1;  // Turn On Bit
+  }
+  else {
+    HDC_1_exists = true;
+    msgp = (char *) "HDC1 OK";
+  }
+  Output (msgp);
+
+  // 2nd HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x45)
+  hdc2 = Adafruit_HDC302x();
+  if (!hdc2.begin(HDC_ADDRESS_2, &Wire)) {
+    msgp = (char *) "HDC2 NF";
+    HDC_2_exists = false;
+    SystemStatusBits |= SSB_HDC_2;  // Turn On Bit
+  }
+  else {
+    HDC_2_exists = true;
+    msgp = (char *) "HDC2 OK";
+  }
+  Output (msgp);
 }
