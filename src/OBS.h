@@ -472,6 +472,7 @@ void OBS_Do() {
     float p = 0.0;
     float t = 0.0;
     float h = 0.0;
+    bool have_humidity=false;
 
     if (BMX_1_chip_id == BMP280_CHIP_ID) {
       p = bmp1.readPressure()/100.0F;       // bp1 hPa
@@ -482,6 +483,7 @@ void OBS_Do() {
         p = bme1.readPressure()/100.0F;     // bp1 hPa
         t = bme1.readTemperature();         // bt1
         h = bme1.readHumidity();            // bh1 
+        have_humidity = true;
       }
       if (BMX_1_type == BMX_TYPE_BMP390) {
         p = bm31.readPressure()/100.0F;     // bp1 hPa
@@ -509,16 +511,19 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 
     // 14 BMX1 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "bh1");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = h;
-    obs[oidx].sensor[sidx++].inuse = true;
+    if (have_humidity) {
+      strcpy (obs[oidx].sensor[sidx].id, "bh1");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = h;
+      obs[oidx].sensor[sidx++].inuse = true;
+    }
   }
 
   if (BMX_2_exists) {
     float p = 0.0;
     float t = 0.0;
     float h = 0.0;
+    bool have_humidity=false;
 
     if (BMX_2_chip_id == BMP280_CHIP_ID) {
       p = bmp2.readPressure()/100.0F;       // bp2 hPa
@@ -529,6 +534,7 @@ void OBS_Do() {
         p = bme2.readPressure()/100.0F;     // bp2 hPa
         t = bme2.readTemperature();         // bt2
         h = bme2.readHumidity();            // bh2 
+        have_humidity = true;
       }
       if (BMX_2_type == BMX_TYPE_BMP390) {
         p = bm32.readPressure()/100.0F;     // bp2 hPa
@@ -556,10 +562,12 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 
     // 17 BMX2 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "bh2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = h;
-    obs[oidx].sensor[sidx++].inuse = true;
+    if (have_humidity) {
+      strcpy (obs[oidx].sensor[sidx].id, "bh2");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = h;
+      obs[oidx].sensor[sidx++].inuse = true;
+    }
   }
 
   if (HTU21DF_exists) {

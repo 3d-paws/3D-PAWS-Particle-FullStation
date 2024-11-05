@@ -1,6 +1,6 @@
-PRODUCT_VERSION(33);
+PRODUCT_VERSION(34);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241104v33"
+#define VERSION_INFO "FSAC-241105v34"
 
 /*
  *======================================================================================================================
@@ -151,6 +151,12 @@ PRODUCT_VERSION(33);
  *                         Added support for HDC302x sensor, Reports as hdt1,hsh1,hdt2,hdh2
  *                         Added support for 5,10,15(default) minute obs transmit intervals.
  *                         Moved reporting of SystemStatusBits to after we have read all the sensors in OBS_Do()
+ * 
+ *          Version 34 Released on 2024-11-05 (Early Relese to Argentina)
+ *          2024-11-05 RJB Discovered BMP390 first pressure reading is bad. Added read pressure to bmx_initialize()
+ *                         SEE: https://forums.adafruit.com/viewtopic.php?t=209906
+ *                         Bug fixes for 2nd BMP sensor in bmx_initialize() using first sensor data structure
+ *                         Now will only send humidity if bmx sensor supports it.
  *                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
