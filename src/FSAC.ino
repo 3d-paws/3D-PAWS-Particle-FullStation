@@ -157,7 +157,7 @@ PRODUCT_VERSION(34);
  *                         SEE: https://forums.adafruit.com/viewtopic.php?t=209906
  *                         Bug fixes for 2nd BMP sensor in bmx_initialize() using first sensor data structure
  *                         Now will only send humidity if bmx sensor supports it.
- *                         
+ *                       
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
