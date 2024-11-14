@@ -250,10 +250,11 @@ void JPO_ClearBits() {
     SystemStatusBits &= ~SSB_SHT_1;   // Turn Off SHT_1 Not Found Bit
     SystemStatusBits &= ~SSB_SHT_2;   // Turn Off SHT_1 Not Found Bit
     SystemStatusBits &= ~SSB_HIH8;    // Turn Off HIH Not Found Bit
-    SystemStatusBits &= ~SSB_LUX;     // Turn Off VEML7700 Not Found Bit
+    SystemStatusBits &= ~SSB_VLX;     // Turn Off VEML7700 Not Found Bit
     SystemStatusBits &= ~SSB_SI1145;  // Turn Off UV,IR, VIS Not Found Bit
     SystemStatusBits &= ~SSB_PM25AQI; // Turn Off PM25AQI Not Found Bit
-    SystemStatusBits &= ~ SSB_HDC_1;  // Turn Off HDC302x Not Found Bit
-    SystemStatusBits &= ~ SSB_HDC_2;  // Turn Off HDC302x Not Found Bit
+    SystemStatusBits &= ~SSB_HDC_1;   // Turn Off HDC302x Not Found Bit
+    SystemStatusBits &= ~SSB_HDC_2;   // Turn Off HDC302x Not Found Bit
+    SystemStatusBits &= ~SSB_BLX;     // Turn Off BLUX30 Not Found Bit
   }
 }

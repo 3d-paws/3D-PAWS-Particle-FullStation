@@ -37,9 +37,14 @@
 #define QC_ERR_UV      -999.9    // UV Light Error
 
 // Sensor VEML7700 - Ambient Light Sensor
-#define QC_MIN_LX      0         // lx
-#define QC_MAX_LX      120000    // lx - based on sensor spec
-#define QC_ERR_LX      -999      // Ambient Light Error
+#define QC_MIN_VLX     0         // lx
+#define QC_MAX_VLX     120000    // lx - based on sensor spec
+#define QC_ERR_VLX     -999      // Ambient Light Error
+
+// Sensor BLUX30 - Ambient Light Sensor
+#define QC_MIN_BLX      0.0       // lx
+#define QC_MAX_BLX      200200.0  // lx - based on oled flash light which is in range with spec
+#define QC_ERR_BLX      -999.9      // Ambient Light Error
 
 // Wind Speed  - world-record surface wind speed measured on Mt. Washington on April 12, 1934 (231 mph or 103 mps)
 #define QC_MIN_WS      0.0       // m/s

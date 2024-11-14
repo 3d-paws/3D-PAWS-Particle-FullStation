@@ -205,6 +205,10 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sVEML", comma);
     comma=",";
   }
+  if (BLX_exists) {
+    sprintf (buf+strlen(buf), "%sBLX", comma);
+    comma=",";
+  }
   if (AS5600_exists) {
     sprintf (buf+strlen(buf), "%sAS5600", comma);
     comma=",";

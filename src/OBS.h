@@ -818,34 +818,39 @@ void OBS_Do() {
 
   if (VEML7700_exists) {
     float lux = veml.readLux(VEML_LUX_AUTO);
-    lux = (isnan(lux) || (lux < QC_MIN_LX)  || (lux > QC_MAX_LX))  ? QC_ERR_LX  : lux;
+    lux = (isnan(lux) || (lux < QC_MIN_VLX)  || (lux > QC_MAX_VLX))  ? QC_ERR_VLX  : lux;
 
     // 37 VEML7700 Auto Lux Value
-    strcpy (obs[oidx].sensor[sidx].id, "lx");
+    strcpy (obs[oidx].sensor[sidx].id, "vlx");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = lux;
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
+
+  if (BLX_exists) {
+    float lux=blx_takereading();
+    lux = (isnan(lux) || (lux < QC_MIN_BLX)  || (lux > QC_MAX_BLX))  ? QC_ERR_BLX  : lux;
+
+    // 38 DFR BLUX30 Auto Lux Value
+    strcpy (obs[oidx].sensor[sidx].id, "blx");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = lux;
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
   if (A4_State == A4_STATE_DISTANCE) {
-    // 38 Distance Guage
+    // 39 Distance Guage
     strcpy (obs[oidx].sensor[sidx].id, "sg"); // sg = snow or stream
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
   else if (A4_State == A4_STATE_RAIN) {
-    // 39 Rain Guage 2
+    // 40 Rain Guage 2
     strcpy (obs[oidx].sensor[sidx].id, "rg2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = rain2;
     obs[oidx].sensor[sidx++].inuse = true;
-
-    // 40 Rain Gauge Delta Seconds
-    // strcpy (obs[oidx].sensor[sidx].id, "rg2s");
-    // obs[oidx].sensor[sidx].type = U_OBS;
-    // obs[oidx].sensor[sidx].u_obs = rg2ds;
-    // obs[oidx].sensor[sidx++].inuse = true;
 
     // 41 Rain Gauge 2 Total - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgt2");

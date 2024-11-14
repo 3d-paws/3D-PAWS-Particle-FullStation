@@ -738,8 +738,8 @@ void I2C_Check_Sensors() {
       // See if we can bring sensor online
       if (veml.begin()) {
         VEML7700_exists = true;
-        Output ("LUX ONLINE");
-        SystemStatusBits &= ~SSB_LUX; // Turn Off Bit
+        Output ("VLX ONLINE");
+        SystemStatusBits &= ~SSB_VLX; // Turn Off Bit
       }
     }
   }
@@ -747,8 +747,8 @@ void I2C_Check_Sensors() {
     // Sensor offline but we our state has it online
     if (VEML7700_exists == true) {
       VEML7700_exists = false;
-      Output ("LUX OFFLINE");
-      SystemStatusBits |= SSB_LUX;  // Turn On Bit
+      Output ("VLX OFFLINE");
+      SystemStatusBits |= SSB_VLX;  // Turn On Bit
     }   
   }
 

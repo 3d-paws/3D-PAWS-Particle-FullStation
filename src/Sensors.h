@@ -148,6 +148,14 @@ bool VEML7700_exists = false;
 
 /*
  * ======================================================================================================================
+ *  B_LUX_V30B - I2C - Lux Sensor
+ * ======================================================================================================================
+ */
+#define BLX_ADDRESS   0x4A
+bool BLX_exists = false;
+
+/*
+ * ======================================================================================================================
  *  PM25AQI - I2C - Air Quality Sensor
  * 
  *  PM25_AQI_Data variables returned are unsigned integers
@@ -886,7 +894,7 @@ void si1145_initialize() {
 
 /* 
  *=======================================================================================================================
- * lux_initialize() - VEML7700 sensor initialize
+ * vlx_initialize() - VEML7700 sensor initialize
  * 
  * SEE https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
  * 
@@ -915,19 +923,105 @@ void si1145_initialize() {
  * 
  *=======================================================================================================================
  */
-void lux_initialize() {
-  Output("LUX:INIT");
+void vlx_initialize() {
+  Output("VLX:INIT");
 
   if (veml.begin()) {
     VEML7700_exists = true;
-    msgp = (char *) "LUX OK";
+    msgp = (char *) "VLX OK";
   }
   else {
-    msgp = (char *) "LUX NF";
+    msgp = (char *) "VLX NF";
     VEML7700_exists = false;
-    SystemStatusBits |= SSB_LUX;  // Turn On Bit
+    SystemStatusBits |= SSB_VLX;  // Turn On Bit
   }
   Output (msgp);
+}
+
+/* 
+ *=======================================================================================================================
+ * blx_getconfig() - DFRobot_B_LUX_V30B sensor config - 
+ *     Value returned keeps changing same with DF Robot Arduino library, WHY?
+ *=======================================================================================================================
+ */
+/*
+bool blx_getconfig() {
+  uint8_t data; // Array to hold the 4 bytes of data
+
+  Wire.beginTransmission(BLUX30_ADDRESS);
+  Wire.write(0x04); // Point to the config register address
+  Wire.endTransmission();  // false tells the I2C master to not release the bus between the write and read operations
+
+  // Request 4 bytes from the device
+  // The Wire library automatically handles the toggling of the least significant bit (LSB) of the address for reads.
+  Wire.requestFrom(BLUX30_ADDRESS, 1);
+  if (Wire.available() == 1) { // Check if 4 bytes were received
+    data = Wire.read(); // Read each byte into the array
+
+    sprintf (msgbuf, "BLUX30 CFGREG %0X", data);
+    Output (msgbuf);
+    return(true);
+
+  } else {
+    return (false);
+  }
+}
+*/
+
+/* 
+ *=======================================================================================================================
+ * blx_initialize() - DFRobot_B_LUX_V30B sensor
+ *=======================================================================================================================
+ */
+void blx_initialize() {
+  Output("BLX:INIT");
+
+  if (I2C_Device_Exist(BLX_ADDRESS)) {
+    BLX_exists = true;
+    msgp = (char *) "BLX:OK";
+  }
+  else {
+    BLX_exists = false;
+    msgp = (char *) "BLX:NF";
+    SystemStatusBits |= SSB_BLX;  // Turn On Bit
+  }
+  Output (msgp);
+}
+
+/* 
+ *=======================================================================================================================
+ * blx_takereading() - DFRobot_B_LUX_V30B sensor reading
+ *=======================================================================================================================
+ */
+float blx_takereading() {
+  float lux;
+  uint32_t raw;
+  uint8_t data[4]; // Array to hold the 4 bytes of data
+
+  Wire.beginTransmission(BLX_ADDRESS);
+  Wire.write(0x00); // Point to the data register address
+  Wire.endTransmission(false); // false tells the I2C master to not release the bus between the write and read operations
+
+  // Request 4 bytes from the device
+  Wire.requestFrom(BLX_ADDRESS, 4);
+  if (Wire.available() == 4) { // Check if 4 bytes were received
+    for (int i = 0; i < 4; i++) {
+      data[i] = Wire.read(); // Read each byte into the array
+    }
+    raw = data[3];
+    raw = (raw<<8)|data[2];
+    raw = (raw<<8)|data[1];
+    raw = (raw<<8)|data[0];
+    lux = ((float)raw*1.4) / 1000;  // Is 1.4 scaling multiplier based on the sensor's internal calibration ?
+                                    // Is divide by 1000 converting from millilux ?
+
+    // sprintf (msgbuf, "BLUX30 LUX %f RAW %lu\n", lux, raw);
+    // Output (msgbuf);
+    return(lux);
+
+  } else {
+    return (-1);
+  }
 }
 
 /* 
@@ -1013,6 +1107,8 @@ void hdc_initialize() {
     SystemStatusBits |= SSB_HDC_1;  // Turn On Bit
   }
   else {
+    double t,h;
+    hdc1.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0);
     HDC_1_exists = true;
     msgp = (char *) "HDC1 OK";
   }
@@ -1026,6 +1122,8 @@ void hdc_initialize() {
     SystemStatusBits |= SSB_HDC_2;  // Turn On Bit
   }
   else {
+    double t,h;
+    hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0);
     HDC_2_exists = true;
     msgp = (char *) "HDC2 OK";
   }

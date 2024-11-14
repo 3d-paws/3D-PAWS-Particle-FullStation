@@ -20,42 +20,49 @@ Upon Particle board boot with the jumper wire connected, software will wait 60 s
 <pre>
 $ particle serial monitor
 Opening serial monitor for com port: "/dev/tty.usbmodem14101"
-Serial monitor opened successfully:
+Serial monitor opened successfully
 
 OLED:Enabled
 SC:Enabled
 SER:OK
-FSAC-231025
+Copyright [2024] [University Corporation for Atmospheric Research]
+FSAC-241105v34
 SD:Online
 SD:OBS DIR Exists
 N2S:None
+CF:aes_pkey=[...........]
+CF:aes_myiv=[.........]
+CF:lora_unitid=[1]
+CF:lora_txpower=[23]
+CF:lora_freq=[915]
 EEPROM DUMP
  LEN:4096
- RT:0.20
- RP:0.00
- R2T:0.00
- R2P:0.00
- RGTS:1698340415
+ RT1:0.00
+ RP1:0.40
+ RT2:0.00
+ RP2:0.00
+ RGTS:1731606669
  N2SFP:0
- CS:1698340415
- CSC:1698340415
-2000-01-01T00:00:15+
-2023-10-26T18:07:24*
+ CS:1731606669
+ CSC:1731606669
+2000-01-01T00:00:10+
+2024-11-14T17:53:15*
 RTC:VALID
 STC: Valid
-2023-10-26T18:07:24=
+2024-11-14T17:53:15=
 SIM:Internal
 SIM:NO UPDATE FILE
+TXI:INIT
+TXI5M Found
+TXI=5M
 A4:INIT
 A4=DIST
-DIST=10M
+DIST=5M
 BMX:INIT
 get_Bosch_ChipID()
   I2C:77 Reg:00
-  ERR_ET:3
-  I2C:77 Reg:D0
-  ERR_ET:3
-BMX_1 NF
+  CHIPID:60 BME/390
+BMP390_1 OK
 get_Bosch_ChipID()
   I2C:76 Reg:00
   ERR_ET:3
@@ -63,37 +70,57 @@ get_Bosch_ChipID()
   ERR_ET:3
 BMX_2 NF
 HTU21D:INIT
-HTU OK
+HTU NF
 MCP9808:INIT
 MCP1 OK
 MCP2 NF
+MCP3 NF
+MCP4 NF
 SHT:INIT
-SHT1 NF
+SHT1 OK
 SHT2 NF
 HIH8:INIT
-HIH8 NF
+HIH8 OK
 SI1145:INIT
-SI:OK
-SI:VI[264.00]
-SI:IR[268.00]
-SI:UV[0.03]
-LUX:INIT
-LUX NF
+SI:NF
+VLX:INIT
+VLX OK
+BLX:INIT
+BLX:OK
 AS5600:INIT
-WD:NF
+WD:OK
 PM25AQI:INIT
-PM:OK
+PM:NF
+HDC:INIT
+HDC1 OK
+HDC2 OK
+WBT:INIT
+WBT:OK
+HI:INIT
+HI:OK
+WBGT:INIT
+WBGT:OK wo/Globe
+AES_KEY[.........]
+AES_MYIV[.......]
+LORA CFV OK
 LORA NF
 DoAction:OK
 WindDist Init()
 ............................................................
-OBS[0]->SD
-{"at":"2023-10-26T18:08:31","css":64.9989,"hth":258113,"bcs":3,"bpc":94.6,"cfr":0,"rg":0.0,"rgs":66,"rgt":0.2,"rgp":0.0,"ws":0.0,"wd":-999,"wg":0.0,"wgd":-999,"hh1":24.4,"ht1":22.1,"sv1":261.0,"si1":267.0,"su1":0.0,"mt1":22.1,"sg":974.0,"pm1s10":19,"pm1s25":27,"pm1s100":34,"pm1e10":19,"pm1e25":27,"pm1e100":34}
-R:00,S:00,D:NF  3F041
-BMX:NF
+RTC: 1ST SYNC
+2024-11-14T17:55:34*
+EEPROM RT UPDATED
+OBS[1]->SD
+{"at":"2024-11-14T17:55:34","css":60.0000,"hth":620033,"bcs":3,"bpc":95.8,"cfr":0,"rg":0.0,"rgt":0.0,"rgp":0.4,"ws":0.0,"wd":181,"wg":0.0,"wgd":-999,"bp1":844.1,"bt1":21.3,"st1":21.9,"sh1":32.9,"hdt1":21.1,"hdh1":34.0,"hdt2":21.0,"hdh2":34.2,"ht2":21.9,"hh2":33.6,"mt1":21.4,"vlx":114.2,"blx":46.1,"sg":450.0,"hi":20.9,"wbt":12.3,"wbgt":16.4}
+INFO_DO()
+{"devid":"e00fce68bde8f63590a3b118","devos":"4.2.0","freemem":57856,"uptime":151,"board":"boron","at":"2024-11-14T17:55:35","ver":"FSAC-241105v34","hth":620033,"obsi":"60s","obsti":"5m","t2nt":"149s","n2s":"NF","ps":"VIN","bcs":"CHARGED","bpc":95.8,"css":60.0000,"csq":41.6663,"imsi":"234103519249568","actsim":"INTERNAL","a4":"DIST 5M","sensors":"BMX1(BMP390),MCP1,SHT1,HDC1,HDC2,HIH8,VEML,BLX,AS5600,HI,WBT,WBGT WO/GLOBE","oled":"32","scepin":"DISABLED","sce":"TRUE"}
+INFO->PUB OK[470]
+Connected
+{"at":"2024-11-14T17:55:34","css":60.0000,"hth":620033,"bcs":3,"bpc":95.8,"cfr":0,"rg":0.0,"rgt":0.0,"rgp":0.4,"ws":0.0,"wd":181,"wg":0.0,"wgd":-999,"bp1":844.1,"bt1":21.3,"st1":21.9,"sh1":32.9,"hdt1":21.1,"hdh1":34.0,"hdt2":21.0,"hdh2":34.2,"ht2":21.9,"hh2":33.6,"mt1":21.4,"vlx":114.2,"blx":46.1,"sg":450.0,"hi":20.9,"wbt":12.3,"wbgt":16.4}
+FS[1]->PUB OK[343]
+2024-11-14T17:55:39
+CS:62.49 B:3,95.76
 
-H:24.40T22.12 C64.99
-V262,267,0 B3,94.61
 </pre>
 </div>
 
@@ -326,6 +353,8 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "sv1": "{{sv1}}",
      "si1": "{{si1}}",
      "su1": "{{su1}}",
+     "vlx": "{{vlx}}",
+     "blx": "{{blx}}",
      "mt1": "{{mt1}}",
      "rg": "{{rg}}",
      "rgt": "{{rg}}",
@@ -425,10 +454,11 @@ LORA         0x4000    Set if LoRa Radio missing at startup
 SHT_1        0x8000    Set if SHTX1 Sensor missing
 SHT_2        0x10000   Set if SHTX2 Sensor missing
 HIH8         0x20000   Set if HIH8000 Sensor missing
-LUX          0x40000   Set if VEML7700 Sensor missing
+VLX          0x40000   Set if VEML7700 Sensor missing
 PM25AQI      0x80000   Set if PM25AQI Sensor missing
 HDC_1        0x100000  Set if HDC302x Sensor missing
 HDC_2        0x200000  Set if HDC302x Sensor missing
+BLX          0x400000  Set if BLUX30 I2C Sensor missing
 </pre>
 </div>
 Interpreting health bits in relation to Need to Send observations.

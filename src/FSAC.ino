@@ -1,6 +1,6 @@
 PRODUCT_VERSION(34);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241105v34"
+#define VERSION_INFO "FSAC-241113v34"
 
 /*
  *======================================================================================================================
@@ -157,6 +157,11 @@ PRODUCT_VERSION(34);
  *                         SEE: https://forums.adafruit.com/viewtopic.php?t=209906
  *                         Bug fixes for 2nd BMP sensor in bmx_initialize() using first sensor data structure
  *                         Now will only send humidity if bmx sensor supports it.
+ * 
+ *          Version 35 Released on 2024-11-13
+ *          2024-11-09 RJB HDC302x added sensor read in the sensor init
+ *          2024-11-13 RJB DFRobot_B_LUX_V30B support added  0 lumens to 200,000 lumens. Reports a blx
+ *                         Changed vmel lx tag vlx when sending to Particle
  *                       
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
@@ -181,6 +186,8 @@ PRODUCT_VERSION(34);
  *  Adafruit_SSD1306        https://github.com/adafruit/Adafruit_SSD1306 - 2.4.6 - I2C ADDRESS 0x3C  
  *  Adafruit_PM25AQI        https://github.com/adafruit/Adafruit_PM25AQI - 1.0.6 I2C ADDRESS 0x12 - Modified to Compile, Adafruit_PM25AQI.cpp" line 104
  *  Adafruit_HDC302x        https://github.com/adafruit/Adafruit_HDC302x - 1.0.2 I2C ADDRESS 0x46 and 0x47 ( SHT uses 0x44 and x045)
+ *  DFRobot_B_LUX_V30B      https://github.com/DFRobot/DFRobot_B_LUX_V30B - 1.0.1 I2C ADDRESS 0x4A (Not Used Reference Only) SEN0390
+ *                          https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390
  *  RTCLibrary              https://github.com/adafruit/RTClib - 1.13.0
  *  SdFat                   https://github.com/greiman/SdFat.git - 1.0.16 by Bill Greiman
  *  RF9X-RK-SPI1            https://github.com/rickkas7/AdafruitDataLoggerRK - 0.2.0 - Modified RadioHead LoRa for SPI1
@@ -247,7 +254,8 @@ PRODUCT_VERSION(34);
  *  sv1     si_visible
  *  si1     si_infrared
  *  su1     su_ultraviolet
- *  lx      lux
+ *  vlx     veml_lux
+ *  blx     blux30_lux
  *  sg      snow / stream gauge
  *  pm1s10  Standard Particle PM1.0
  *  pm1s25  Standard Particle PM2.5
@@ -281,6 +289,9 @@ PRODUCT_VERSION(34);
  * In Adafruit_Sensor/src
  *   cp /dev/null Adafruit_Sensor.cpp
  * 
+ * DFRobot_B_LUX_V30B Library Not used it. It's bit banging with possible infinate loops - RJB
+ * 
+ * PIN Assignments
  * D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
  * D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
  * D6   = Unused - Not on Grove Shield
@@ -418,10 +429,11 @@ PRODUCT_VERSION(34);
 #define SSB_SHT_1           0x8000  // Set if SHTX1 Sensor missing
 #define SSB_SHT_2           0x10000 // Set if SHTX2 Sensor missing
 #define SSB_HIH8            0x20000 // Set if HIH8000 Sensor missing
-#define SSB_LUX             0x40000 // Set if VEML7700 Sensor missing
+#define SSB_VLX             0x40000 // Set if VEML7700 Sensor missing
 #define SSB_PM25AQI         0x80000 // Set if PM25AQI Sensor missing
 #define SSB_HDC_1           0x100000 // Set if HDC302x I2C Temperature Sensor missing
 #define SSB_HDC_2           0x200000 // Set if HDC302x I2C Temperature Sensor missing
+#define SSB_BLX             0x400000 // Set if BLUX30 I2C Sensor missing
 
 /*
   0  = All is well, no data needing to be sent, this observation is not from the N2S file
@@ -687,11 +699,12 @@ void setup() {
   sht_initialize();
   hih8_initialize();
   si1145_initialize();
-  lux_initialize();
+  vlx_initialize();
+  blx_initialize();
   as5600_initialize();
   pm25aqi_initialize();
   hdc_initialize();
-
+  
   // Derived Observations
   wbt_initialize();
   hi_initialize();
@@ -798,6 +811,7 @@ void loop() {
           // If we waited too long for acks while publishing and this threw off our wind observations.
           // In that code ws_refresh was set to true for us to reinit wind data.
           if (ws_refresh) {
+            Output ("WS Refresh Required");
             Wind_Distance_Air_Initialize();
           }
 

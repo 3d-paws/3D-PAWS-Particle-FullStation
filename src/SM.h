@@ -299,6 +299,17 @@ void StationMonitor() {
   }
 
   if (cycle == 12) {
+    if (BLX_exists) {
+      float lux = blx_takereading ();
+      sprintf (msgbuf, "BLX %d.%02d", 
+        (int)lux, (int)(lux*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "BLX NF");
+    }
+  }
+
+  if (cycle == 13) {
     if (PM25AQI_exists) {
       sprintf (msgbuf, "PM 10:%d 25:%d 100:%d", 
         pm25aqi_obs.max_s10,
@@ -310,11 +321,11 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 13) {   
+  if (cycle == 14) {   
     sprintf (msgbuf, "HTH:%d", (int)SystemStatusBits);
   }
 
-  if (cycle == 14) {
+  if (cycle == 15) {
 #if PLATFORM_ID == PLATFORM_ARGON
     WiFiSignal sig = WiFi.RSSI();
     float SignalStrength = sig.getStrength();
@@ -345,7 +356,7 @@ void StationMonitor() {
 
   // Give the use some time to read line 3 before changing
   if (count++ >= 2) {
-    cycle = ++cycle % 15;
+    cycle = ++cycle % 16;
     count = 0;
   }
 
