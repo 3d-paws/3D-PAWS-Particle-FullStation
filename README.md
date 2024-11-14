@@ -206,7 +206,7 @@ On the view device screen on the Particle Console there is a FUNCTIONS area at t
 
 >REBOOT - Reboot device. Toggle pin A0. If no relay/watchdog is connected to A0, then a soft boot on the Particle board is performed.
 
->SEND - Send queud observations.
+>SEND - Send queued observations.
 
 >INFO - Trigger station to send station information. Event type "INFO".
 
