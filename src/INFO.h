@@ -22,7 +22,7 @@ bool INFO_Do() {
 
   SendSystemInformation = false;
 
-  memset(buf, 0, sizeof(buf));
+  memset(buf, 0, sizeof(buf));        // holds string of found sensors 
   memset(msgbuf, 0, sizeof(msgbuf));  // hold the json formatted message we are building for sending.
 
   JSONBufferWriter writer(msgbuf, sizeof(msgbuf)-1);
@@ -254,6 +254,23 @@ bool INFO_Do() {
   writer.name("sce").value((SerialConsoleEnabled) ? "TRUE" : "FALSE");
 
   writer.endObject();
+
+  // Done profiling system
+
+  // Update INFO.TXT file
+  if (SD_exists) {
+    File fp = SD.open(SD_INFO_FILE, FILE_WRITE | O_TRUNC); 
+    if (fp) {
+      fp.println(msgbuf);
+      fp.close();
+      SystemStatusBits &= ~SSB_SD;  // Turn Off Bit
+      // Output ("INFO Logged to SD");
+    }
+    else {
+      SystemStatusBits |= SSB_SD;  // Turn On Bit - Note this will be reported on next observation
+      Output ("SD:Open(Info)ERR");
+    }
+  }
 
   if (Particle_Publish((char *) "INFO")) {
     Serial_write (msgbuf);

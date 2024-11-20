@@ -162,7 +162,10 @@ PRODUCT_VERSION(35);
  *          2024-11-09 RJB HDC302x added sensor read in the sensor init
  *          2024-11-13 RJB DFRobot_B_LUX_V30B support added  0 lumens to 200,000 lumens. Reports a blx
  *                         Changed vmel lx tag vlx when sending to Particle
- *                       
+ *   
+ *          Version 36 Released on
+ *          2024-11-19 RJB Store INFO information in INFO.TXT. Every INFO call will overwrite file content.
+ *                     
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -490,10 +493,12 @@ uint32_t SD_n2s_max_filesz = 512 * 60 * 48;  // Keep a little over 2 days. When 
 char SD_sim_file[] = "SIM.TXT";         // File used to set Ineternal or External sim configuration
 char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim configuration set
 
-char SD_wifi_file[] = "WIFI.TXT";         // File used to set WiFi configuration
+char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
 
-char SD_TX5M_FILE[]  = "TXI5M.TXT";       // Transmit every 5 Minutes 
-char SD_TX10M_FILE[] = "TXI10M.TXT";      // Transmit every 10 Minutes
+char SD_TX5M_FILE[]  = "TXI5M.TXT";     // Transmit every 5 Minutes 
+char SD_TX10M_FILE[] = "TXI10M.TXT";    // Transmit every 10 Minutes
+
+char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
 
 
 #if PLATFORM_ID == PLATFORM_BORON
