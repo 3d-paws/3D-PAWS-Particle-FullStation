@@ -248,6 +248,7 @@ Files and Directories:
   /5MDIST.TXT   Set distance gauge of type 5m  
   /SIM.TXT      Support 3rd party SIM.  
   /WIFI.TXT     Support for Argon WiFi Boards. Stores WiFi information
+  /INFO.TXT     INFO feature information. Every INFO call will overwrite files content.
   /TXI5M.TXT    Set Transmit Interval to 5 minutes.
   /TXI10M.TXT   Set Transmit Interval to 10 minutes.
   No TXIxxM.TXT Set Transmit Interval to 15 minutes.
@@ -589,7 +590,7 @@ Each unit of the 0-1023 resolution is 10mm
 </pre>
 
 ### Station Information (Event type "INFO")
-At boot the station will send a event message of type "INFO" to Particle. This message contains configuration and status information. You can also request an INFO event message to be send from the device via DoAction Function on the Particle Console. Use keyword "INFO".
+At boot the station will send a event message of type "INFO" to Particle. This message contains configuration and status information. You can also request an INFO event message to be sent from the device via DoAction Function on the Particle Console. Use keyword "INFO". Every INFO execution will create/rewrite file INFO.TXT with INFO information.
 
 INFO event message from a Boron
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 500px; border: 1px solid black; padding: 10px;">
