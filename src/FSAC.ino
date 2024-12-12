@@ -1,6 +1,6 @@
-PRODUCT_VERSION(35);
+PRODUCT_VERSION(37);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241113v35"
+#define VERSION_INFO "FSAC-241211v37"
 
 /*
  *======================================================================================================================
@@ -163,8 +163,16 @@ PRODUCT_VERSION(35);
  *          2024-11-13 RJB DFRobot_B_LUX_V30B support added  0 lumens to 200,000 lumens. Reports a blx
  *                         Changed vmel lx tag vlx when sending to Particle
  *   
- *          Version 36 Released on
- *          2024-11-19 RJB Store INFO information in INFO.TXT. Every INFO call will overwrite file content.
+ *          Version 37 Released on 2024-12-11
+ *          2024-11-19 RJB Store INFO information in INFO.TXT. Every INFO call will overwrite the files content.
+ *          2024-11-26 RJB Some minor changes made in the code
+ *                         INFO will now report DailyRebootCountDownTimer as drct
+ *                         Improved blx_takereading() by adding a 1s timer to wait for the 4 bytes. Avoids infinite loop.
+ *                         Modified Adafruit_HDC302x/src/Adafruit_HDC302x.cpp library. So sendCommandReadTRH() avoids infinite loop.
+ *          2024-12-04 RJB Updated Adafruit_VEML7700 library to 2.1.6
+ *          2024-12-06 RJB Added support for lps35hw pressure and temperature lpp1,lpt1,lpp2,lpt2
+ *                         Upgrading to use deviceOS 6.1.1
+ *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
  *                     
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
@@ -189,6 +197,7 @@ PRODUCT_VERSION(35);
  *  Adafruit_SSD1306        https://github.com/adafruit/Adafruit_SSD1306 - 2.4.6 - I2C ADDRESS 0x3C  
  *  Adafruit_PM25AQI        https://github.com/adafruit/Adafruit_PM25AQI - 1.0.6 I2C ADDRESS 0x12 - Modified to Compile, Adafruit_PM25AQI.cpp" line 104
  *  Adafruit_HDC302x        https://github.com/adafruit/Adafruit_HDC302x - 1.0.2 I2C ADDRESS 0x46 and 0x47 ( SHT uses 0x44 and x045)
+ *  Adafruit_LPS35HW        https://github.com/adafruit/Adafruit_LPS35HW - 1.0.6 I2C ADDRESS 0x5D and 0x5C
  *  DFRobot_B_LUX_V30B      https://github.com/DFRobot/DFRobot_B_LUX_V30B - 1.0.1 I2C ADDRESS 0x4A (Not Used Reference Only) SEN0390
  *                          https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390
  *  RTCLibrary              https://github.com/adafruit/RTClib - 1.13.0
@@ -254,6 +263,10 @@ PRODUCT_VERSION(35);
  *  hdh2    hdc_humidity
  *  ht2     hih_temperature
  *  hh2     hih_humidity
+ *  lpp1    lps35hw_humidity
+ *  lpt1    lps35hw_temperature
+ *  lpp2    lps35hw_humidity
+ *  lpt2    lps35hw_temperature
  *  sv1     si_visible
  *  si1     si_infrared
  *  su1     su_ultraviolet
@@ -291,6 +304,16 @@ PRODUCT_VERSION(35);
  *   Uncommented code for takeForcedMeasurement()
  * In Adafruit_Sensor/src
  *   cp /dev/null Adafruit_Sensor.cpp
+ * 
+ * In Adafruit_HDC302x/src/Adafruit_HDC302x.cpp
+ *   Read modified so while does not block
+ *   int retries = 0;
+ *   const int MAX_RETRIES = 10;
+ *   while (!i2c_dev->read(buffer, 6)) {
+ *     if (++retries >= MAX_RETRIES) {
+ *       return false; // CRC check failed
+ *     }
+ *   }
  * 
  * DFRobot_B_LUX_V30B Library Not used it. It's bit banging with possible infinate loops - RJB
  * 
@@ -382,6 +405,7 @@ PRODUCT_VERSION(35);
 #include <Adafruit_VEML7700.h>
 #include <Adafruit_PM25AQI.h>
 #include <Adafruit_HDC302x.h>
+#include <Adafruit_LPS35HW.h>
 #include <RTClib.h>
 #include <SdFat.h>
 #include <RH_RF95.h>
@@ -414,29 +438,32 @@ PRODUCT_VERSION(35);
  * 
  * ======================================================================================================================
  */
-#define SSB_PWRON           0x1     // Set at power on, but cleared after first observation
-#define SSB_SD              0x2     // Set if SD missing at boot or other SD related issues
-#define SSB_RTC             0x4     // Set if RTC missing at boot
-#define SSB_OLED            0x8     // Set if OLED missing at boot, but cleared after first observation
-#define SSB_N2S             0x10    // Set when Need to Send observations exist
-#define SSB_FROM_N2S        0x20    // Set in transmitted N2S observation when finally transmitted
-#define SSB_AS5600          0x40    // Set if wind direction sensor AS5600 has issues                                                        
-#define SSB_BMX_1           0x80    // Set if Barometric Pressure & Altitude Sensor missing
-#define SSB_BMX_2           0x100   // Set if Barometric Pressure & Altitude Sensor missing
-#define SSB_HTU21DF         0x200   // Set if Humidity & Temp Sensor missing
-#define SSB_SI1145          0x400   // Set if UV index & IR & Visible Sensor missing
-#define SSB_MCP_1           0x800   // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_MCP_2           0x1000  // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_MCP_3           0x2000  // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_LORA            0x4000  // Set if LoRa Radio missing at startup
-#define SSB_SHT_1           0x8000  // Set if SHTX1 Sensor missing
-#define SSB_SHT_2           0x10000 // Set if SHTX2 Sensor missing
-#define SSB_HIH8            0x20000 // Set if HIH8000 Sensor missing
-#define SSB_VLX             0x40000 // Set if VEML7700 Sensor missing
-#define SSB_PM25AQI         0x80000 // Set if PM25AQI Sensor missing
-#define SSB_HDC_1           0x100000 // Set if HDC302x I2C Temperature Sensor missing
-#define SSB_HDC_2           0x200000 // Set if HDC302x I2C Temperature Sensor missing
-#define SSB_BLX             0x400000 // Set if BLUX30 I2C Sensor missing
+#define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
+#define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues
+#define SSB_RTC             0x4       // Set if RTC missing at boot
+#define SSB_OLED            0x8       // Set if OLED missing at boot, but cleared after first observation
+#define SSB_N2S             0x10      // Set when Need to Send observations exist
+#define SSB_FROM_N2S        0x20      // Set in transmitted N2S observation when finally transmitted
+#define SSB_AS5600          0x40      // Set if wind direction sensor AS5600 has issues                                                        
+#define SSB_BMX_1           0x80      // Set if Barometric Pressure & Altitude Sensor missing
+#define SSB_BMX_2           0x100     // Set if Barometric Pressure & Altitude Sensor missing
+#define SSB_HTU21DF         0x200     // Set if Humidity & Temp Sensor missing
+#define SSB_SI1145          0x400     // Set if UV index & IR & Visible Sensor missing
+#define SSB_MCP_1           0x800     // Set if MCP9808 I2C Temperature Sensor missing
+#define SSB_MCP_2           0x1000    // Set if MCP9808 I2C Temperature Sensor missing
+#define SSB_MCP_3           0x2000    // Set if MCP9808 I2C Temperature Sensor missing
+#define SSB_LORA            0x4000    // Set if LoRa Radio missing at startup
+#define SSB_SHT_1           0x8000    // Set if SHTX1 Sensor missing
+#define SSB_SHT_2           0x10000   // Set if SHTX2 Sensor missing
+#define SSB_HIH8            0x20000   // Set if HIH8000 Sensor missing
+#define SSB_VLX             0x40000   // Set if VEML7700 Sensor missing
+#define SSB_PM25AQI         0x80000   // Set if PM25AQI Sensor missing
+#define SSB_HDC_1           0x100000  // Set if HDC302x I2C Temperature Sensor missing
+#define SSB_HDC_2           0x200000  // Set if HDC302x I2C Temperature Sensor missing
+#define SSB_BLX             0x400000  // Set if BLUX30 I2C Sensor missing
+#define SSB_LPS_1           0x800000  // Set if LPS35HW I2C Sensor missing
+#define SSB_LPS_2           0x1000000 // Set if LPS35HW I2C Sensor missing
+
 
 /*
   0  = All is well, no data needing to be sent, this observation is not from the N2S file
@@ -473,7 +500,7 @@ int  cf_reboot_countdown_timer = 79200; // There is overhead transmitting data s
                                         // Set to 0 to disable feature
 int DailyRebootCountDownTimer;
 
-int obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
+uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
 
 char imsi[16] = "";  // International Mobile Subscriber Identity
 
@@ -709,6 +736,7 @@ void setup() {
   as5600_initialize();
   pm25aqi_initialize();
   hdc_initialize();
+  lps_initialize();
   
   // Derived Observations
   wbt_initialize();
@@ -793,7 +821,7 @@ void loop() {
       }
 
       // Time to Enable Network and Send Observations we have collected
-      if ( (LastTransmitTime == 0) || (System.millis() - LastTransmitTime > (obs_tx_interval * 60 * 1000)) ) {
+      if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > (obs_tx_interval * 60 * 1000)) ) {
         if (Particle.connected()) {
           Output ("Connected");
           LastTransmitTime = System.millis();
@@ -905,6 +933,10 @@ void loop() {
     // if ((powerSource == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 10.0) {
 
     if (!pmic.isPowerGood() && (System.batteryCharge() <= 10.0)) {
+
+      if (Particle.connected()) {
+        INFO_Do(); // Function sets SendSystemInformation back to false.
+      }
 
       Output("Low Power!");
 

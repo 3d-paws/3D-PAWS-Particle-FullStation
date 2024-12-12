@@ -103,13 +103,7 @@ bool Adafruit_HDC302x::sendCommandReadTRH(uint16_t command, double &temp,
   }
 
   uint8_t buffer[6];
-  int retries = 0;
-  const int MAX_RETRIES = 10;
-
   while (!i2c_dev->read(buffer, 6)) {
-    if (++retries >= MAX_RETRIES) {
-      return false; // CRC check failed
-    }
     delay(1); // Wait and retry if NAK received
   }
 

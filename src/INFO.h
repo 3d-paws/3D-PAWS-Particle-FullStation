@@ -4,9 +4,6 @@
  * ======================================================================================================================
  */
 
-/*
-  System.uptime()
-*/
 
 /*
  * ======================================================================================================================
@@ -50,11 +47,15 @@ bool INFO_Do() {
 
   sprintf (Buffer32Bytes,"%ds", OBSERVATION_INTERVAL/1000);
   writer.name("obsi").value(Buffer32Bytes);
-  sprintf (Buffer32Bytes,"%dm", obs_tx_interval);
+  sprintf (Buffer32Bytes,"%dm", (int) obs_tx_interval);
   writer.name("obsti").value(Buffer32Bytes);
-  // Tine 2 Next Transmit in Seconds
-  sprintf (Buffer32Bytes, "%ds", (obs_tx_interval * 60) - (int)((System.millis() - LastTransmitTime)/1000));
+
+  // Time 2 Next Transmit in Seconds
+  sprintf (Buffer32Bytes, "%ds", (int) ((obs_tx_interval * 60) - ((System.millis() - LastTransmitTime)/1000)));
   writer.name("t2nt").value(Buffer32Bytes);
+
+  // Daily Reboot Countdown Timer
+  writer.name("drct").value(DailyRebootCountDownTimer);
 
   // Need 2 Send File
   if (SD.exists(SD_n2s_file)) {
@@ -79,7 +80,7 @@ bool INFO_Do() {
 
 #if PLATFORM_ID == PLATFORM_BORON
   // Power Source
-  char *ps[] = {"UNKN", "VIN", "USB_HOST", "USB_ADAPTER", "USB_OTG", "BATTERY"};
+  const char *ps[] = {"UNKN", "VIN", "USB_HOST", "USB_ADAPTER", "USB_OTG", "BATTERY"};
   int sps = System.powerSource();
   if ((sps>=0) && (sps<=5)) {
     writer.name("ps").value(ps[sps]);
@@ -89,7 +90,7 @@ bool INFO_Do() {
   }
 
   // Battery Charge State
-  char *bs[] = {"UNKN", "!CHARGING", "CHARGING", "CHARGED", "DISCHARGING", "FAULT", "MISSING"};
+  const char *bs[] = {"UNKN", "!CHARGING", "CHARGING", "CHARGED", "DISCHARGING", "FAULT", "MISSING"};
   int sbs = System.batteryState();
   if ((sbs>=0) && (sbs<=6)) {
     writer.name("bcs").value(bs[sbs]);     
@@ -191,6 +192,14 @@ bool INFO_Do() {
   }
   if (HDC_2_exists) {
     sprintf (buf+strlen(buf), "%sHDC2", comma);
+    comma=",";
+  }
+  if (LPS_1_exists) {
+    sprintf (buf+strlen(buf), "%sLPS1", comma);
+    comma=",";
+  }
+  if (LPS_2_exists) {
+    sprintf (buf+strlen(buf), "%sLPS2", comma);
     comma=",";
   }
   if (HIH8_exists) {

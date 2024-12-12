@@ -256,5 +256,7 @@ void JPO_ClearBits() {
     SystemStatusBits &= ~SSB_HDC_1;   // Turn Off HDC302x Not Found Bit
     SystemStatusBits &= ~SSB_HDC_2;   // Turn Off HDC302x Not Found Bit
     SystemStatusBits &= ~SSB_BLX;     // Turn Off BLUX30 Not Found Bit
+    SystemStatusBits &= ~SSB_LPS_1;   // Turn Off LPS35HW Not Found Bit
+    SystemStatusBits &= ~SSB_LPS_2;   // Turn Off LPS35HW Not Found Bit
   }
 }

@@ -47,7 +47,7 @@ bool BMX_1_exists = false;
 bool BMX_2_exists = false;
 byte BMX_1_type=BMX_TYPE_UNKNOWN;
 byte BMX_2_type=BMX_TYPE_UNKNOWN;
-char *bmxtype[] = {"UNKN", "BMP280", "BME280", "BMP388", "BMP390", "BATTERY"};
+const char *bmxtype[] = {"UNKN", "BMP280", "BME280", "BMP388", "BMP390"};
 
 /*
  * ======================================================================================================================
@@ -221,13 +221,28 @@ Adafruit_HDC302x hdc2;
 bool HDC_1_exists = false;
 bool HDC_2_exists = false;
 
+/*
+ * ======================================================================================================================
+ *  LPS35HW - I2C - Pressure and Temperature
+ *    Chip ID = 0xB1,  Library init checks this.
+ * ======================================================================================================================
+ */
+#define LPS_ADDRESS_1     0x5D        // Default
+#define LPS_ADDRESS_2     0x5C        // With jumper
+
+Adafruit_LPS35HW lps1;
+Adafruit_LPS35HW lps2;
+
+bool LPS_1_exists = false;
+bool LPS_2_exists = false;
+
 /* 
  *=======================================================================================================================
  * get_Bosch_ChipID ()  -  Return what Bosch chip is at specified address
- *   Chip ID BMP280 = 0x58 temp, preasure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)  
- *   Chip ID BME280 = 0x60 temp, preasure, humidity - I2C ADDRESS 0x77  (SD0 to GND = 0x76)  Register 0xE0 = Reset
- *   Chip ID BMP388 = 0x50 temp, preasure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)
- *   Chip ID BMP390 = 0x60 temp, preasure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)
+ *   Chip ID BMP280 = 0x58 temp, pressure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)  
+ *   Chip ID BME280 = 0x60 temp, pressure, humidity - I2C ADDRESS 0x77  (SD0 to GND = 0x76)  Register 0xE0 = Reset
+ *   Chip ID BMP388 = 0x50 temp, pressure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)
+ *   Chip ID BMP390 = 0x60 temp, pressure           - I2C ADDRESS 0x77  (SD0 to GND = 0x76)
  *=======================================================================================================================
  */
 byte get_Bosch_ChipID (byte address) {
@@ -997,6 +1012,8 @@ float blx_takereading() {
   float lux;
   uint32_t raw;
   uint8_t data[4]; // Array to hold the 4 bytes of data
+  const unsigned long timeout = 1000; // Timeout in milliseconds
+  unsigned long startTime;
 
   Wire.beginTransmission(BLX_ADDRESS);
   Wire.write(0x00); // Point to the data register address
@@ -1004,24 +1021,30 @@ float blx_takereading() {
 
   // Request 4 bytes from the device
   Wire.requestFrom(BLX_ADDRESS, 4);
-  if (Wire.available() == 4) { // Check if 4 bytes were received
-    for (int i = 0; i < 4; i++) {
-      data[i] = Wire.read(); // Read each byte into the array
+
+  startTime = millis(); // Record the start time
+  while (Wire.available() < 4) { // Wait for all bytes to be received
+    if (millis() - startTime > timeout) { // Check if timeout has been reached
+      return -1; // Return error code if timeout occurs
     }
-    raw = data[3];
-    raw = (raw<<8)|data[2];
-    raw = (raw<<8)|data[1];
-    raw = (raw<<8)|data[0];
-    lux = ((float)raw*1.4) / 1000;  // Is 1.4 scaling multiplier based on the sensor's internal calibration ?
+    delay(1); // Short delay to prevent busy-waiting
+  }
+
+  for (int i = 0; i < 4; i++) {
+    data[i] = Wire.read(); // Read each byte into the array
+  }
+
+  raw = data[3];
+  raw = (raw<<8)|data[2];
+  raw = (raw<<8)|data[1];
+  raw = (raw<<8)|data[0];
+
+  lux = ((float)raw*1.4) / 1000;  // Is 1.4 scaling multiplier based on the sensor's internal calibration ?
                                     // Is divide by 1000 converting from millilux ?
 
-    // sprintf (msgbuf, "BLUX30 LUX %f RAW %lu\n", lux, raw);
-    // Output (msgbuf);
-    return(lux);
-
-  } else {
-    return (-1);
-  }
+  // sprintf (msgbuf, "BLUX30 LUX %f RAW %lu\n", lux, raw);
+  // Output (msgbuf);
+  return(lux);
 }
 
 /* 
@@ -1126,6 +1149,47 @@ void hdc_initialize() {
     hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0);
     HDC_2_exists = true;
     msgp = (char *) "HDC2 OK";
+  }
+  Output (msgp);
+}
+
+/* 
+ *=======================================================================================================================
+ * lps_initialize() - LPS35HW Pressure and Temperature initialize
+ *=======================================================================================================================
+ */
+void lps_initialize() {
+  Output("LPS:INIT");
+  
+  // 1st LPS I2C Pressure/Temperature Sensor (I2C ADDRESS = 0x5D)
+  lps1 = Adafruit_LPS35HW();
+  if (!lps1.begin_I2C(LPS_ADDRESS_1, &Wire)) {
+    msgp = (char *) "LPS1 NF";
+    LPS_1_exists = false;
+    SystemStatusBits |= SSB_LPS_1;  // Turn On Bit
+  }
+  else {
+    float t,p;
+    t = lps1.readTemperature();
+    p = lps1.readPressure();
+    LPS_1_exists = true;
+    msgp = (char *) "LPS1 OK";
+  }
+  Output (msgp);
+
+  // 2nd LPS I2C Pressure/Temperature Sensor (I2C ADDRESS = 0x5C)
+  lps2 = Adafruit_LPS35HW();
+  if (!lps2.begin_I2C(LPS_ADDRESS_2, &Wire)) {
+    msgp = (char *) "LPS2 NF";
+    LPS_2_exists = false;
+    SystemStatusBits |= SSB_LPS_2;  // Turn On Bit
+  }
+  else {
+    float t,p;
+    t = lps2.readTemperature();
+    p = lps2.readPressure();
+    LPS_2_exists = true;
+    msgp = (char *) "LPS2 OK";
   }
   Output (msgp);
 }

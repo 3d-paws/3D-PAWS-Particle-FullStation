@@ -71,13 +71,13 @@ int Function_DoAction(String s) {
     return(0);  
   }
 
-  if (strcmp (s,"INFO") == 0) {  // Send System Information
+  else if (strcmp (s,"INFO") == 0) {  // Send System Information
     Output("DoAction:INFO");
     SendSystemInformation=true;
     return(0);  
   }
 
-  if (strcmp (s,"SEND") == 0) {  // Send OBS Now
+  else if (strcmp (s,"SEND") == 0) {  // Send OBS Now
     Output("DoAction:SEND");
     LastTransmitTime=0;
     return(0);  
@@ -842,6 +842,6 @@ void TXI_Initialize() {
       }
     }
   }
-  sprintf (msgbuf, "TXI=%dM", obs_tx_interval);
+  sprintf (msgbuf, "TXI=%dM", (int) obs_tx_interval);
   Output(msgbuf);  
 }

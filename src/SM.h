@@ -84,7 +84,7 @@ void StationMonitor() {
     if (BMX_1_exists) {
       float bmx_pressure = 0.0;
       float bmx_temp = 0.0;
-      float bmx_humid;
+      float bmx_humid=0.0;
       
       switch (BMX_1_chip_id) {
         case BMP280_CHIP_ID :
@@ -126,7 +126,7 @@ void StationMonitor() {
     if (BMX_2_exists) {
       float bmx_pressure = 0.0;
       float bmx_temp = 0.0;
-      float bmx_humid;
+      float bmx_humid=0.0;
       
       switch (BMX_2_chip_id) {
         case BMP280_CHIP_ID :
@@ -265,7 +265,35 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 10) {   
+  if (cycle == 10) {
+    if (LPS_1_exists) {
+      float t,p;
+      t = lps1.readTemperature();
+      p = lps1.readPressure();
+      sprintf (msgbuf, "LPS1 P:%d.%02d T:%d.%02d", 
+         (int)p, (int)(p*100)%100,
+         (int)t, (int)(t*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "LPS1 NF");
+    }
+  }
+
+  if (cycle == 11) {
+    if (LPS_2_exists) {
+      float t,p;
+      t = lps2.readTemperature();
+      p = lps2.readPressure();
+      sprintf (msgbuf, "LPS2 P:%d.%02d T:%d.%02d", 
+         (int)p, (int)(p*100)%100,
+         (int)t, (int)(t*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "LPS2 NF");
+    }
+  }
+
+  if (cycle == 12) {   
     if (HIH8_exists) {
       float t = 0.0;
       float h = 0.0;
@@ -283,7 +311,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 11) {
+  if (cycle == 13) {
     if (SI1145_exists) {
       float si_vis = uv.readVisible();
       float si_ir = uv.readIR();
@@ -298,7 +326,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 12) {
+  if (cycle == 14) {
     if (BLX_exists) {
       float lux = blx_takereading ();
       sprintf (msgbuf, "BLX %d.%02d", 
@@ -309,7 +337,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 13) {
+  if (cycle == 15) {
     if (PM25AQI_exists) {
       sprintf (msgbuf, "PM 10:%d 25:%d 100:%d", 
         pm25aqi_obs.max_s10,
@@ -321,11 +349,11 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 14) {   
+  if (cycle == 16) {   
     sprintf (msgbuf, "HTH:%d", (int)SystemStatusBits);
   }
 
-  if (cycle == 15) {
+  if (cycle == 17) {
 #if PLATFORM_ID == PLATFORM_ARGON
     WiFiSignal sig = WiFi.RSSI();
     float SignalStrength = sig.getStrength();
@@ -356,7 +384,7 @@ void StationMonitor() {
 
   // Give the use some time to read line 3 before changing
   if (count++ >= 2) {
-    cycle = ++cycle % 16;
+    cycle = ++cycle % 18;
     count = 0;
   }
 

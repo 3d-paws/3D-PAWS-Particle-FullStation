@@ -9,7 +9,7 @@
  *  Observation storage
  * ======================================================================================================================
  */
-#define MAX_SENSORS         64
+#define MAX_SENSORS         70
 #define MAX_ONE_MINUTE_OBS  17 // Want more OBS space than our OBSERVATION_TRANSMIT_INTERVAL (For 15m interval use 17)
                               // This prevents OBS from filling and being written to N2S file while we are Connecting
 
@@ -344,6 +344,8 @@ void OBS_Do() {
   float sht1_humid = 0.0;
   float heat_index = 0.0;
 
+// Output("DB:OBS_Start");
+
 
   // Safty Check for Vaild Time
   if (!Time.isValid()) {
@@ -407,7 +409,9 @@ void OBS_Do() {
     raingauge2_interrupt_ltime = 0; // used to debounce the tip
   }
 
+// Output("DB:OBS_URT");
   EEPROM_UpdateRainTotals(rain, rain2);
+// Output("DB:OBS_URTx");
 
   // 04 Rain Gauge
   strcpy (obs[oidx].sensor[sidx].id, "rg");
@@ -465,10 +469,14 @@ void OBS_Do() {
   obs[oidx].sensor[sidx].i_obs = wd;
   obs[oidx].sensor[sidx++].inuse = true;
 
+// Output("DB:OBS_I2C");
+
   //
   // Add I2C Sensors
   //
   if (BMX_1_exists) {
+// Output("DB:OBS_BMX1");
+
     float p = 0.0;
     float t = 0.0;
     float h = 0.0;
@@ -515,9 +523,12 @@ void OBS_Do() {
       obs[oidx].sensor[sidx].f_obs = h;
       obs[oidx].sensor[sidx++].inuse = true;
     }
+// Output("DB:OBS_BMX1x");
   }
 
   if (BMX_2_exists) {
+// Output("DB:OBS_BMX2");
+
     float p = 0.0;
     float t = 0.0;
     float h = 0.0;
@@ -564,9 +575,12 @@ void OBS_Do() {
       obs[oidx].sensor[sidx].f_obs = h;
       obs[oidx].sensor[sidx++].inuse = true;
     }
+// Output("DB:OBS_BMX2x");
   }
 
   if (HTU21DF_exists) {
+// Output("DB:OBS_HTU");
+
     float t = 0.0;
     float h = 0.0;
 
@@ -585,9 +599,12 @@ void OBS_Do() {
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_HTUx");
   }
 
   if (SHT_1_exists) {
+// Output("DB:OBS_SHT1");
+
     float t = 0.0;
     float h = 0.0;
 
@@ -608,9 +625,12 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 
     sht1_humid = h; // save for derived observations
+// Output("DB:OBS_SHT1x");
   }
 
   if (SHT_2_exists) {
+// Output("DB:OBS_SHT2");
+
     float t = 0.0;
     float h = 0.0;
 
@@ -629,9 +649,12 @@ void OBS_Do() {
     h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
     obs[oidx].sensor[sidx].f_obs = h;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_SSHt2x");
   }
 
   if (HDC_1_exists) {
+// Output("DB:OBS_HDC1");
+
     double t = -999.9;
     double h = -999.9;
 
@@ -656,9 +679,13 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) h;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_HDC1x");
+
   }
 
   if (HDC_2_exists) {
+// Output("DB:OBS_HDC2");
+
     double t = -999.9;
     double h = -999.9;
 
@@ -683,9 +710,54 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) h;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_HDC2x");
+
+  }
+
+  if (LPS_1_exists) {
+// Output("DB:OBS_LPS1");
+    float t = lps1.readTemperature();
+    float p = lps1.readPressure();
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
+
+    // 28 LPS1 Temperature
+    strcpy (obs[oidx].sensor[sidx].id, "lpt1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 29 LPS1 Pressure
+    strcpy (obs[oidx].sensor[sidx].id, "lpp1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) p;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_LPS1x");
+  }
+
+  if (LPS_2_exists) {
+// Output("DB:OBS_LPS2");
+    float t = lps2.readTemperature();
+    float p = lps2.readPressure();
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
+
+    // 30 LPS1 Temperature
+    strcpy (obs[oidx].sensor[sidx].id, "lpt2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 31 LPS1 Pressure
+    strcpy (obs[oidx].sensor[sidx].id, "lpp2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) p;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_LPS2x");
   }
 
   if (HIH8_exists) {
+// Output("DB:OBS_HIH");
     float t = 0.0;
     float h = 0.0;
 
@@ -697,20 +769,22 @@ void OBS_Do() {
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
 
-    // 28 HIH8 Temperature
+    // 32 HIH8 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "ht2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 29 HIH8 Humidity
+    // 33 HIH8 Humidity
     strcpy (obs[oidx].sensor[sidx].id, "hh2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = h;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_HIHx");
   }
 
   if (SI1145_exists) {
+// Output("DB:OBS_SII");
     float si_vis = uv.readVisible();
     float si_ir = uv.readIR();
     float si_uv = uv.readUV()/100.0;
@@ -745,29 +819,31 @@ void OBS_Do() {
     si_ir  = (isnan(si_ir)  || (si_ir  < QC_MIN_IR)  || (si_ir  > QC_MAX_IR)) ? QC_ERR_IR  : si_ir;
     si_uv  = (isnan(si_uv)  || (si_uv  < QC_MIN_UV)  || (si_uv  > QC_MAX_UV)) ? QC_ERR_UV  : si_uv;
 
-    // 30 SI Visible
+    // 34 SI Visible
     strcpy (obs[oidx].sensor[sidx].id, "sv1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_vis;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 31 SI IR
+    // 35 SI IR
     strcpy (obs[oidx].sensor[sidx].id, "si1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_ir;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 32 SI UV
+    // 36 SI UV
     strcpy (obs[oidx].sensor[sidx].id, "su1");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = si_uv;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_SIIx");
   }
 
   if (MCP_1_exists) {
+// Output("DB:OBS_MCP1");
     float t = 0.0;
 
-    // 33 MCP1 Temperature
+    // 37 MCP1 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "mt1");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp1.readTempC();
@@ -776,24 +852,28 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 
     mcp1_temp = t; // save for derived observations
+// Output("DB:OBS_MCP1x");
   }
 
   if (MCP_2_exists) {
+// Output("DB:OBS_MCP2");
     float t = 0.0;
 
-    // 34 MCP2 Temperature
+    // 38 MCP2 Temperature
     strcpy (obs[oidx].sensor[sidx].id, "mt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp2.readTempC();
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_MCP2x");
   }
 
   if (MCP_3_exists) {
+// Output("DB:OBS_MCP3");
     float t = 0.0;
 
-    // 35 MCP3 Globe Temperature
+    // 39 MCP3 Globe Temperature
     strcpy (obs[oidx].sensor[sidx].id, "gt1");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp3.readTempC();
@@ -802,63 +882,72 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 
     mcp3_temp = t; // globe temperature
+// Output("DB:OBS_MCP3x");
   }
 
   if (MCP_4_exists) {
+// Output("DB:OBS_MCP4");
     float t = 0.0;
 
-    // 36 MCP4 Globe Temperature
+    // 40 MCP4 Globe Temperature
     strcpy (obs[oidx].sensor[sidx].id, "gt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     t = mcp4.readTempC();
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_MCP4x");
   }
 
   if (VEML7700_exists) {
+// Output("DB:OBS_VEML");
     float lux = veml.readLux(VEML_LUX_AUTO);
     lux = (isnan(lux) || (lux < QC_MIN_VLX)  || (lux > QC_MAX_VLX))  ? QC_ERR_VLX  : lux;
 
-    // 37 VEML7700 Auto Lux Value
+    // 41 VEML7700 Auto Lux Value
     strcpy (obs[oidx].sensor[sidx].id, "vlx");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = lux;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_VEMLx");
   }
 
   if (BLX_exists) {
+// Output("DB:OBS_BLX");
     float lux=blx_takereading();
     lux = (isnan(lux) || (lux < QC_MIN_BLX)  || (lux > QC_MAX_BLX))  ? QC_ERR_BLX  : lux;
 
-    // 38 DFR BLUX30 Auto Lux Value
+    // 42 DFR BLUX30 Auto Lux Value
     strcpy (obs[oidx].sensor[sidx].id, "blx");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = lux;
     obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_BLXx");
   }
 
   if (A4_State == A4_STATE_DISTANCE) {
-    // 39 Distance Guage
+// Output("DB:OBS_A4D");
+    // 43 Distance Guage
     strcpy (obs[oidx].sensor[sidx].id, "sg"); // sg = snow or stream
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
   else if (A4_State == A4_STATE_RAIN) {
-    // 40 Rain Guage 2
+// Output("DB:OBS_A4R");
+    // 44 Rain Guage 2
     strcpy (obs[oidx].sensor[sidx].id, "rg2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = rain2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 41 Rain Gauge 2 Total - Not Implemented
+    // 45 Rain Gauge 2 Total - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 42 Rain Gauge 2 Prior Day - Not Implemented
+    // 46 Rain Gauge 2 Prior Day - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgp2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
@@ -866,37 +955,38 @@ void OBS_Do() {
   }
 
   if (PM25AQI_exists) {
-    // 43 Standard Particle PM1.0 concentration unit µg 𝑚3
+// Output("DB:OBS_PM");
+    // 47 Standard Particle PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 44 Standard Particle PM2.5 concentration unit µg 𝑚3
+    // 48 Standard Particle PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 45 Standard Particle PM10.0 concentration unit µg 𝑚3
+    // 49 Standard Particle PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 46 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
+    // 50 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 47 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
+    // 51 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 48  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
+    // 52  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
@@ -904,10 +994,12 @@ void OBS_Do() {
 
     // Clear readings
     pm25aqi_clear();
+// Output("DB:OBS_PMx");
   }
 
-  // 49 Heat Index Temperature
+  // 53 Heat Index Temperature
   if (HI_exists) {
+// Output("DB:OBS_HI");
     heat_index = hi_calculate(mcp1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "hi");
     obs[oidx].sensor[sidx].type = F_OBS;
@@ -915,17 +1007,20 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;    
   } 
 
-  // 50 Wet Bulb Temperature
+  // 54 Wet Bulb Temperature
   if (WBT_exists) {
+// Output("DB:OBS_WBT");
     wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "wbt");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) wetbulb_temp;
-    obs[oidx].sensor[sidx++].inuse = true;    
+    obs[oidx].sensor[sidx++].inuse = true;  
+// Output("DB:OBS_WBTx");  
   }
 
-  // 51 Wet Bulb Globe Temperature
+  // 55 Wet Bulb Globe Temperature
   if (WBGT_exists) {
+// Output("DB:OBS_WBGT");
     float wbgt = 0.0;
     if (MCP_3_exists) {
       wbgt = wbgt_using_wbt(mcp1_temp, mcp3_temp, wetbulb_temp); // TempAir, TempGlobe, TempWetBulb
@@ -937,22 +1032,24 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) wbgt;
     obs[oidx].sensor[sidx++].inuse = true;    
+// Output("DB:OBS_WBGTx");
   }
 
   //
   // Add LoRa Observations 
   //
   if (LORA_exists) {
+// Output("DB:OBS_LORA");
     lora_msg_check(); // do not use msgbuf in LoRa check
     // Check for Observation from LoRa Stream Gauge
     if (lora_sg.need2log) {
-      // 52 Stream Gauge Reading
+      // 56 Stream Gauge Reading
       sprintf (obs[oidx].sensor[sidx].id, "sg%d", lora_sg.unit_id);
       obs[oidx].sensor[sidx].type = F_OBS;
       obs[oidx].sensor[sidx].f_obs = lora_sg.stream_gauge;
       obs[oidx].sensor[sidx++].inuse = true;
 
-      // 53 Stream Gauge Voltage
+      // 57 Stream Gauge Voltage
       sprintf (obs[oidx].sensor[sidx].id, "sg%dv", lora_sg.unit_id);
       obs[oidx].sensor[sidx].type = F_OBS;
       obs[oidx].sensor[sidx].f_obs = lora_sg.voltage;
@@ -961,34 +1058,34 @@ void OBS_Do() {
       // Add the BME280 Sensor information
       if (lora_sg.message_type == 3) {  
         if (lora_sg.p[0] != 0.0) {
-          // 54 Stream Gauge Preasure 1
+          // 58 Stream Gauge Preasure 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dp1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.p[0];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 55 Stream Gauge Temperature 1
+          // 59 Stream Gauge Temperature 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dt1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.t[0];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 56 Stream Gauge Humidity 1
+          // 60 Stream Gauge Humidity 1
           sprintf (obs[oidx].sensor[sidx].id, "sg%dh1", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.h[0];
           obs[oidx].sensor[sidx++].inuse = true;
         }
         if (lora_sg.p[1] != 0.0) {
-          // 57 Stream Gauge Preasure 2
+          // 61 Stream Gauge Preasure 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dp2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.p[1];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 58 Stream Gauge Temperature 2
+          // 62 Stream Gauge Temperature 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dt2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.t[1];
           obs[oidx].sensor[sidx++].inuse = true;
-          // 59 Stream Gauge Humidity 2
+          // 63 Stream Gauge Humidity 2
           sprintf (obs[oidx].sensor[sidx].id, "sg%dh2", lora_sg.unit_id);
           obs[oidx].sensor[sidx].type = F_OBS;
           obs[oidx].sensor[sidx].f_obs = lora_sg.h[1];
@@ -997,6 +1094,8 @@ void OBS_Do() {
         lora_sg_msg_clear();  // initialize data structure for next message 
       }
     }
+// Output("DB:OBS_LORAx");
+
   }
 
   // Set this after we read all sensors. So we capture if their state changes 
@@ -1006,6 +1105,7 @@ void OBS_Do() {
   OBS_Log(oidx);
 
   lastOBS = System.millis();
+// Output("DB:OBS_Exit");
 }
 
 /*

@@ -435,7 +435,6 @@ String HELPER_ascii2String(char *ascii, int length) {
 
 char* HELPER_ascii2CharStr(char *ascii, int length) {
   char *str;
-  int i = 0;
   str = (char *) malloc (length+1);
   str[0] = 0;
   for (int i = 0; i < length; i++) {
