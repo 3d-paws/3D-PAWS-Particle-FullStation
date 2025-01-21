@@ -1147,7 +1147,7 @@ void OBS_PublishAll() {
 
   // Publish LoRa Relay Observations   
   if (LORA_exists) {
-    // We want to transmit all RS msgs or save them to N2S file if we can not transmit them.
+    // We want to transmit all the LoRa                                                                                                                  msgs or save them to N2S file if we can not transmit them.
     while (lora_relay_need2log()) {
       relay_type = OBS_Relay_Build_JSON(); // This removed msg from relay structure and places it in msgbuf
       if (relay_type<=0) {

@@ -306,22 +306,15 @@ Caveat: At the time of appending the observation to the N2S file, if the file is
 After successful completion of current 1 minute observations have finished transmitting. If N2S observations exist, these are then read from the file and transmitted.  Position in the N2S file of what has been transmitted is maintained in nvram. So rebooting does not cause the retransmission of N2S observations. On a N2S observation transmit failure, N2S processing stops until the next 15 minute window.  While sending N2S observations, 1 second tasks and 1 minute observations still occur. When storage space for 1 minute observations becomes full. N2S processing stops and the main work loop takes over.  At which point current 1 minute observations will be transmitted. Freeing up the observation storage.
 
 ### LoRa Observations
-When LoRa is enabled, the full station will receive LoRa messages from remote stations, store the observations and transmit them at the 15 minute window.
-
-### LoRa Stream Gauge
-When a LoRa stream gauge message is received, the message is saved and later added as to the next 1 minute observation. Additional messages received prior to the 1 minute observation overwrite the prior.
-
- Stream Gauge (sg1)
- BMX Sensor Readings (sg1p1, sg1t1, sg1h1, sg1p2, sg1t2, sg1h2)
- Battery Voltage (sg1v)
+When LoRa is enabled, the full station will receive LoRa messages from remote LoRa stations, store the observations in memory and transmit them at the 15 minute window. For remote LoRa stations see 3D-PAWS-Feather-LoRaRemoteM0 code base.
 
 ### Rain and Soil Moisture
 
-After the Full Station 1 minute observations are sent at the 15 minute window. LoRa rain and soil moisture observations (RS) which were received and stored since the last 15 minute transmit will be sent.
+After the Full Station 1 minute observations are sent at the 15 minute window. LoRa observations types of (INFO, RS, SG) which were received and stored since the last 15 minute transmit will be sent.
 
 RS observations are sent to Particle Cloud with Particle Event Name "RS".
 
-The Full Station can support receiving from 10 different LoRa RS devices. The RS devices are configured to transmit a unique ID which maps to a Chords ID.  The Full Station will transmit a separate message to Particle's Cloud service for each RS device. If the Full Station receives multiple messages from a RS device in the 15 minute window, rain gauge data is  summed. Rest of the observation data is overwritten with the newer observation received.
+The Full Station can support receiving and storing 32 LoRa messages in memory. They will be added to the N2S file when necessary.
 
 ### Example of Particle Webhook for Full Station Observations (FS)
 
@@ -492,7 +485,7 @@ Interpreting health bits in relation to Need to Send observations.
 </pre>
 </div>
 
-### Time Management
+784### Time Management
 A valid time source is required for normal operation and for observations to be made. There are 3 time clocks involved.
 Network Time
 When a network connection is made, time is obtained from the network and the System Clock is updated. A request can be made in software to perform this action. This is done every 4 hours.

@@ -3,6 +3,9 @@
  *  LoRa.h - LoRa Functions
  * ======================================================================================================================
  */
+
+// Prototyping functions to aviod compile function unknown issue.
+void SD_NeedToSend_Add(char *observation);
  
  /*
  * ======================================================================================================================
@@ -126,6 +129,28 @@ int lora_relay_need2log_idx() {
     }
   }
   return(-1);
+}
+
+/* 
+ *=======================================================================================================================
+ * lora_msgs_to_n2s()
+ *=======================================================================================================================
+ */
+void lora_msgs_to_n2s() {
+  if (LORA_exists) {
+    LORA_MSG_RELAY_STR *m;
+
+    for (int i=0; i< LORA_RELAY_MSGCNT; i++) {
+      m = &lora_msg_relay[i];
+      if (m->need2log) {
+        sprintf (msgbuf, "%s,%s", m->message, relay_msgtypes[m->message_type]);
+        SD_NeedToSend_Add(msgbuf); // Save to N2F File
+        lora_relay_msg_free(m);
+        sprintf (Buffer32Bytes, "LoRaMsg[%d]->N2S", i);
+        Output (Buffer32Bytes);
+      }
+    }
+  }
 }
 
 
@@ -291,9 +316,16 @@ void lora_relay_msg(char *obs) {
   int idx = lora_relay_notinuse();
 
   if (idx == -1) {
-    // No Space -  Observation lost
     Output ("LORA Relay NoSpace");
-    return;
+
+    // Dump all LoRA messages to N2S
+    lora_msgs_to_n2s();  // No Space - Dump all LoRA messages to N2S, then save new message
+
+    idx = lora_relay_notinuse(); // This better not be -1 after freeing
+    if (idx == -1) {
+      Output ("LORA Relay MsgLost");
+      return;
+    }
   }
 
   m = &lora_msg_relay[idx]; // Lets work with a pointer and not the index

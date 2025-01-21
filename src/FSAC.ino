@@ -983,8 +983,8 @@ void loop() {
       Output("Low Power!");
 
       if (Particle.connected()) {
-        OBS_PublishAll();
-        INFO_Do(); // Function sets SendSystemInformation back to false.
+        OBS_PublishAll(); 
+        INFO_Do();
       }
 
       // While this function will disconnect from the Cloud, it will keep the connection to the network.
