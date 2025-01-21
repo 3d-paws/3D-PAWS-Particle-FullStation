@@ -219,11 +219,17 @@ On the view device screen on the Particle Console there is a FUNCTIONS area at t
 
 >A4RAIN - Configures pin A4 to be a 2nd rain gauge. Creates file A4RAIN.TXT. Reboot necessary.
 
+>A4RAW - Configures pin A4 for raw readings (Average of 5 samples 10ms apart). Creates A4RAW.TXT. Reports as a4r to Particle.
+
 >A4DIST - Configures pin A4 to be a distance gauge. Create file A4DIST.TXT. Reboot necessary. Default sensor is 10m where pin A4 is multiplied by 2.5mm
 
 >5MDIST - Configure 5m Sensor. Creates file 5MDIST.TXT. Value read from pin A4 is multiplied by 1.25mm.
 
->A4CLR - Unassigns pin A4. Removes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT if they exist
+>A4CLR - Unassigns pin A4. Removes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT, A4RAW.TXT if they exist
+
+>A5RAW - Configures pin A4 to be a distance gauge. Create file A5DIST.TXT. Reboot necessary. Default sensor is 10m where pin A4 is multiplied by 2.5mm
+
+>A5CLR - Unassigns pin A5. Removes files A5RAW.TXT if it exist
 
 >TXI5M - Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes TXI10M.TXT file.
 
@@ -245,14 +251,16 @@ Files and Directories:
   /OBS              Directory containing observation files.  
   /OBS/20231024.LOG Dated observation file. One file per day. Data in JSON format  
   /N2SOBS.TXT       Need to Send file. Stores observations that have not been
-                    transmitted. If file is greater than 512 *60* 48 bytes. 
+                    transmitted. If file is greater than 512 *60* 48 bytes.
                     File is deleted and we start over. File is deleted when all
                     N2S observations have been sent.  
-  /A4RAIN.TXT   Set pin A4 to be a 2nd rain gauge.  
-  /A4DIST.TXT   Set pin A4 to be a distance gauge of type 10m  
-  /5MDIST.TXT   Set distance gauge of type 5m  
-  /SIM.TXT      Support 3rd party SIM.  
-  /WIFI.TXT     Support for Argon WiFi Boards. Stores WiFi information
+  /A4RAIN.TXT   Set pin A4 to be a 2nd rain gauge.
+  /A4RAW.TXT    set pin A4 for raw readings (Average of 5 samples 10ms apart).
+  /A4DIST.TXT   Set pin A4 to be a distance gauge of type 10m.
+  /5MDIST.TXT   Set distance gauge of type 5m.
+  /SIM.TXT      Support 3rd party SIM.
+  /A5RAW.TXT    set pin A5 for raw readings (Average of 5 samples 10ms apart).  
+  /WIFI.TXT     Support for Argon WiFi Boards. Stores WiFi information.
   /INFO.TXT     INFO feature information. Every INFO call will overwrite files content.
   /TXI5M.TXT    Set Transmit Interval to 5 minutes.
   /TXI10M.TXT   Set Transmit Interval to 10 minutes.
@@ -368,6 +376,7 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "rg2": "{{rg2}}",
      "rgt2": "{{rgt2}}",
      "rgp2": "{{rgp2}}",
+     "a4r": "{{a4r}}",
      "ws": "{{ws}}",
      "wd": "{{wd}}",
      "wg": "{{wg}}",
@@ -519,7 +528,7 @@ See the releases code and Fritzing Wiring Drawings current information
 
  D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
  D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
- D6   = Not in use - Not on Grove Shield
+ D6   = Reserved for Lora IRQ - Not on Grove Shield
  D5   = SD Card Chip Select
  D4   = SPI1 MSIO - Reserved for LoRa
  D3   = SPI1 MOSI - Reserved for LoRa
@@ -531,8 +540,8 @@ See the releases code and Fritzing Wiring Drawings current information
  A1   = WatchDog Monitor Heartbeat
  A2   = Wind Speed IRQ
  A3   = Rain Gauge IRQ
- A4   = 2nd Rain Gauge or Distance Gauge based on SD card file existing
- A5   = Reserved for Lora IRQ
+ A4   = 2nd Rain Gauge, Distance Gauge based on SD card file existing, or Raw pin value
+ A5   = Future
  D13  = SPIO CLK   SD Card
  D12  = SPI0 MOSI  SD Card
  D11  = SPI0 MISO  SD Card

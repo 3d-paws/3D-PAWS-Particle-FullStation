@@ -1,6 +1,6 @@
-PRODUCT_VERSION(37);
+PRODUCT_VERSION(39);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-241211v37"
+#define VERSION_INFO "FSAC-250121v39"
 
 /*
  *======================================================================================================================
@@ -173,7 +173,20 @@ PRODUCT_VERSION(37);
  *          2024-12-06 RJB Added support for lps35hw pressure and temperature lpp1,lpt1,lpp2,lpt2
  *                         Upgrading to use deviceOS 6.1.1
  *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
- *                     
+ * 
+ *          Version 39 Released on 2025-01-21
+ *          2025-01-07 RJB Moved LORA_IRQ_PIN from A5 to D6.
+ *          2025-01-14 RJB Rebuilt the LoRa message handling. 
+ *                         Now we store then forward to Particle LoRa message types: INFO, RS, SG.
+ *                         On LoRa messages received, the JSON portion is forwarded 
+ *                         Added RG and associated pin to INFO  
+ *                         We now call OBS_PublishAll() before daily rebooting and powering down on low battery
+ *                         We moved low battery powerdown from 10% to 15%.
+ *          2025-01-21 RJB Added support for A4 to be configured for raw readings (Simple average of 5 samples) 10ms apart
+ *                           DoAction A4RAW. Reports to Particle as a4r 
+ *                         Added support for A5 to be configured for raw readings (Simple average of 5 samples) 10ms apart
+ *                           DoAction A5RAW and A5CLR. Reports to Particle as a5r         
+ *                                       
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -320,7 +333,7 @@ PRODUCT_VERSION(37);
  * PIN Assignments
  * D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
  * D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
- * D6   = Unused - Not on Grove Shield
+ * D6   = Reserved for Lora IRQ - Not on Grove Shield
  * D5   = SD Card Chip Select
  * D4   = SPI1 MSIO - Reserved for LoRa
  * D3   = SPI1 MOSI - Reserved for LoRa
@@ -333,7 +346,7 @@ PRODUCT_VERSION(37);
  * A2   = Wind Speed IRQ
  * A3   = Rain Gauge IRQ
  * A4   = 2nd Rain Gauge or Distance Gauge based on SD card file existing
- * A5   = Reserved for Lora IRQ - Not on Grove Shield
+ * A5   = Future
  * D13  = SPIO CLK   SD Card
  * D12  = SPI0 MOSI  SD Card
  * D11  = SPI0 MISO  SD Card
@@ -504,6 +517,26 @@ uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transm
 
 char imsi[16] = "";  // International Mobile Subscriber Identity
 
+#if PLATFORM_ID == PLATFORM_BORON
+const char* pinNames[] = {
+    "A0", "A1", "A2", "A3", "A4", "A5",
+    "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
+    "D9", "D10", "D11", "D12", "D13", "D14", "D15",
+    "SDA", "SCL", "TX", "RX", "MISO", "MOSI", "SCK", "SS",
+    "WKP", "VUSB", "Li+"
+};
+#endif
+
+#if PLATFORM_ID == PLATFORM_ARGON
+const char* pinNames[] = {
+    "A0", "A1", "A2", "A3", "A4", "A5",
+    "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
+    "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19",
+    "SDA", "SCL", "TX", "RX", "MISO", "MOSI", "SCK", "SS",
+    "WKP", "VUSB", "Li+", "EN", "3V3", "GND"
+};
+#endif
+
 /*
  * ======================================================================================================================
  *  SD Card Stuff
@@ -555,7 +588,7 @@ PMIC pmic;
 #include "OBS.h"                  // Do Observation Processing
 #include "SM.h"                   // Station Monitor
 #include "PS.h"                   // Particle Support Functions
-#include "INFO.h"                 // Station Fonformation
+#include "INFO.h"                 // Station Information
 
 /*
  * ======================================================================================================================
@@ -721,8 +754,11 @@ void setup() {
   // Check SD Card for files to determine Transmit Interval for OBS 5,10 or 15 minutes
   TXI_Initialize();
   
-  // Check SD Card for files to determin if pin A4 has a DIST or 2nd Rain Gauge
+  // Check SD Card for files to determine if pin A4 has a DIST, 2nd Rain Gauge or Raw file
   A4_Initialize();
+
+  // Check SD Card for files to determine if pin A5 Raw file
+  A5_Initialize();
 
   // Adafruit i2c Sensors
   bmx_initialize();
@@ -791,7 +827,7 @@ void setup() {
  */
 void loop() {
   // If Serial Console Pin LOW then Display Station Information
-  if (countdown && digitalRead(SCE_PIN) == LOW) {
+  if (0 && countdown && digitalRead(SCE_PIN) == LOW) {
     StationMonitor();
     BackGroundWork();
     countdown--;
@@ -879,9 +915,15 @@ void loop() {
       delay (DELAY_NO_RTC);
     }
 
+    // ========================================================================================
     // Reboot Boot Every 22+ hours - Not using time but a loop counter.
+    // ========================================================================================
     if ((cf_reboot_countdown_timer>0) && (--DailyRebootCountDownTimer<=0)) {
       Output ("Daily Reboot");
+
+      if (Particle.connected()) {
+        OBS_PublishAll();
+      }
 
       EEPROM_SaveUnreportedRain();
       delay(1000);
@@ -919,6 +961,10 @@ void loop() {
     }   
 
 #if PLATFORM_ID == PLATFORM_BORON
+    // ========================================================================================
+    // Low Power Check and Power Off
+    // ========================================================================================
+
     // Before we go do an observation and transmit, check our power status.
     // If we are not connected to a charging source and our battery is at a low level
     // then power down the display and board. Wait for power to return.
@@ -932,13 +978,14 @@ void loop() {
     // int powerSource = System.powerSource();
     // if ((powerSource == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 10.0) {
 
-    if (!pmic.isPowerGood() && (System.batteryCharge() <= 10.0)) {
-
-      if (Particle.connected()) {
-        INFO_Do(); // Function sets SendSystemInformation back to false.
-      }
+    if (!pmic.isPowerGood() && (System.batteryCharge() <= 15.0)) {
 
       Output("Low Power!");
+
+      if (Particle.connected()) {
+        OBS_PublishAll();
+        INFO_Do(); // Function sets SendSystemInformation back to false.
+      }
 
       // While this function will disconnect from the Cloud, it will keep the connection to the network.
       Particle.disconnect();

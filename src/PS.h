@@ -218,12 +218,76 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+  else if (strcmp (s,"A4RAW") == 0) { // Set A4 State File to Raw
+    Output("DoAction:A4RAW");
+    if (SD_exists) {
+
+      // Remove Rain Configuration
+      if (SD.exists(SD_A4_RAIN_FILE)) {
+        EEPROM_ClearRain2Totals();
+        if (SD.remove (SD_A4_RAIN_FILE)) {
+          Output ("A4=DIST, DEL RAIN:OK");
+        }
+        else {
+          Output ("A4=DIST, DEL RAIN:ERR");
+          return(-2);
+        }
+      }
+
+      // Remove Distance Configuration
+      if (SD.exists(SD_A4_DIST_FILE)) {
+        if (SD.remove (SD_A4_DIST_FILE)) {
+          Output ("A4=DIST, DEL DIST:OK");
+        }
+        else {
+          Output ("A4=DIST, DEL DIST:ERR");
+          return(-3);
+        }
+      }
+
+      // Remove Distanve sensor type and reset distance adjustment to default 10m
+      dg_adjustment = 2.5;
+      if (SD.exists(SD_5M_DIST_FILE)) {
+        if (SD.remove (SD_5M_DIST_FILE)) {
+          Output ("A4=DIST, DEL 5M:OK");
+        }
+        else {
+          Output ("A4=DIST, DEL 5M:ERR");
+          return(-4);
+        }
+      }
+
+      // Add A4 Raw configuration
+      if (SD.exists(SD_A4_RAW_FILE)) {
+        Output ("A4=RAW, ALREADY EXISTS");    
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_A4_RAW_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("A4=RAW, SET");
+        }
+        else {
+          Output ("A4=RAW, OPEN ERR");
+          return(-5);
+        }
+      }
+    }
+    else {
+      Output("A4=RAW, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
   else if (strcmp (s,"A4CLR") == 0) { // Clear A4 State Files
     int state=0;
     Output("DoAction:A4CLR");
     if (SD_exists) {
       if (SD.exists(SD_A4_DIST_FILE)) {
         if (SD.remove (SD_A4_DIST_FILE)) {
+          A4_State = A4_STATE_NULL;
           Output ("A4=CLR, DEL DIST:OK");
         }
         else {
@@ -234,18 +298,35 @@ int Function_DoAction(String s) {
       else {
         Output ("A4=CLR, DEL RAIN:NF");
       }
+
       if (SD.exists(SD_A4_RAIN_FILE)) {
         if (SD.remove (SD_A4_RAIN_FILE)) {
+          A4_State = A4_STATE_NULL;      // We still need a reboot to get rid of ISR
           Output ("A4=CLR, DEL RAIN:OK");
         }
         else {
           Output ("A4=CLR, DEL RAIN:ERR");
-          state+=-3; // returns a -3 or -5 if also failed removing DIST file
+          state+=-3; // returns a -3 if also failed removing DIST file
         }
       }
       else {
         Output ("A4=CLR, DEL RAIN:NF");
       }
+
+      if (SD.exists(SD_A4_RAW_FILE)) {
+        if (SD.remove (SD_A4_RAW_FILE)) {
+          A4_State = A4_STATE_NULL;
+          Output ("A4=CLR, DEL RAW:OK");
+        }
+        else {
+          Output ("A4=CLR, DEL RAW:ERR");
+          state+=-4; // returns a -4 if also failed removing RAW file
+        }
+      }
+      else {
+        Output ("A4=CLR, DEL RAIN:NF");
+      }
+
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
           Output ("A4=CLR, DEL 5M:OK");
@@ -253,7 +334,7 @@ int Function_DoAction(String s) {
         }
         else {
           Output ("A4=CLR, DEL 5M:ERR");
-          return(-6);
+          state+=-5;
         }
       }
     }
@@ -263,6 +344,59 @@ int Function_DoAction(String s) {
     }
     return(state);
   }
+
+  else if (strcmp (s,"A5RAW") == 0) { // Set A4 State File to Raw
+    Output("DoAction:A5RAW");
+    // Add A5 Raw configuration
+    if (SD_exists) {
+      if (SD.exists(SD_A5_RAW_FILE)) {
+        Output ("A5=RAW, ALREADY EXISTS");    
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_A5_RAW_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("A5=RAW, SET");
+        }
+        else {
+          Output ("A5=RAW, OPEN ERR");
+          return(-2);
+        }
+      }
+    }
+    else {
+      Output("A5=RAW, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+    
+  else if (strcmp (s,"A5CLR") == 0) { // Clear A5 State Files
+    int state=0;
+    Output("DoAction:A5CLR");
+    if (SD_exists) {
+      if (SD.exists(SD_A5_RAW_FILE)) {
+        if (SD.remove (SD_A4_RAW_FILE)) {
+          A5_State = A5_STATE_NULL;
+          Output ("A5=CLR, DEL RAW:OK");
+        }
+        else {
+          Output ("A5=CLR, DEL RAW:ERR");
+          state=-2;
+        }
+      }
+      else {
+        Output ("A5=CLR, DEL A5RAW:NF");
+      }
+    }
+    else {
+      Output("A5=CLR, SD NF"); 
+      state=-1;     
+    }
+    return(state);
+}
 
   else if (strcmp (s,"TXI5M") == 0) { // SetTransmit Interval to 5 Minutes
     Output("DoAction:TXI5M");

@@ -75,9 +75,21 @@ bool ws_refresh = false;           // Set to true when we have delayed too long 
 #define A4_STATE_NULL       0
 #define A4_STATE_DISTANCE   1
 #define A4_STATE_RAIN       2
+#define A4_STATE_RAW        3
 char SD_A4_DIST_FILE[] = "A4DIST.TXT";         // File used to set pin A4 as a Distance Gauge
 char SD_A4_RAIN_FILE[] = "A4RAIN.TXT";         // File used to set pin A4 as a 2nd Rain Gauge
+char SD_A4_RAW_FILE[]  = "A4RAW.TXT";          // File used to set pin A4 as generic analog device connected
 int A4_State = A4_STATE_NULL;                  // Default is not used
+
+/*
+ * ======================================================================================================================
+ *  Pin A5 State Setup
+ * ======================================================================================================================
+ */
+#define A5_STATE_NULL       0
+#define A5_STATE_RAW        1
+char SD_A5_RAW_FILE[]  = "A5RAW.TXT";          // File used to set pin A5 as generic analog device connected
+int A5_State = A5_STATE_NULL;                  // Default is not used
 
 /*
  * =======================================================================================================================
@@ -214,6 +226,10 @@ void A4_Initialize() {
       raingauge2_interrupt_ltime = 0;  // used to debounce the tip
       attachInterrupt(RAINGAUGE2_IRQ_PIN, raingauge2_interrupt_handler, FALLING);
     }
+    else if (SD.exists(SD_A4_RAW_FILE)) {
+      Output ("A4=RAW");
+      A4_State = A4_STATE_RAW;
+    }
     else {
       Output ("A4=NULL");
     }
@@ -221,6 +237,42 @@ void A4_Initialize() {
   else {
     Output ("A4=NULL,SD NF");
   }
+}
+
+/* 
+ *=======================================================================================================================
+ * A5_Initialize()
+ *=======================================================================================================================
+ */
+void A5_Initialize() {
+  Output ("A5:INIT");
+  if (SD_exists) {
+    if (SD.exists(SD_A5_RAW_FILE)) {
+      Output ("A5=RAW");
+      A5_State = A5_STATE_RAW;
+    }
+    else {
+      Output ("A5=NULL");
+    }
+  }
+  else {
+    Output ("A5=NULL,SD NF");
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * Pin_ReadAvg()
+ *=======================================================================================================================
+ */
+float Pin_ReadAvg(int pin) {
+  int numReadings = 5;
+  int totalValue = 0;
+  for (int i = 0; i < numReadings; i++) {
+    totalValue += analogRead(pin);
+    delay(10);  // Short delay between readings
+  }
+  return(totalValue / numReadings);
 }
 
 /*

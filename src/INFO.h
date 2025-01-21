@@ -149,8 +149,18 @@ bool INFO_Do() {
   else if (A4_State == A4_STATE_RAIN){
     writer.name("a4").value("RG2");
   }
+  else if (A4_State == A4_STATE_RAW){
+    writer.name("a4").value("RAW");
+  }
   else {
     writer.name("a4").value("NS"); // Not Set
+  }
+
+  if (A5_State == A5_STATE_RAW){
+    writer.name("a5").value("RAW");
+  }
+  else {
+    writer.name("a5").value("NS"); // Not Set
   }
 
   // Sensors
@@ -237,13 +247,15 @@ bool INFO_Do() {
     else {
       sprintf (buf+strlen(buf), "%sWBGT WO/GLOBE", comma);
     }
-    
     comma=",";
   }
   if (PM25AQI_exists) {
     sprintf (buf+strlen(buf), "%sPM25AQ", comma);
     comma=",";
   }
+
+  sprintf (buf+strlen(buf), "%sRG(%s)", comma, pinNames[RAINGAUGE1_IRQ_PIN]);
+
   writer.name("sensors").value(buf);
 
   // LoRa

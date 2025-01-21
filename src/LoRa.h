@@ -27,7 +27,7 @@
  *  Note: We are dedicating SPI1 to the RH_RF95 driver. No need to mask interrupts.
  * ======================================================================================================================
  */
-#define LORA_IRQ_PIN  A5
+#define LORA_IRQ_PIN  D6    // G0 on LoRa board
 #define LORA_SS       D10   // Slave Select Pin
 #define LORA_RESET    D9    // Used by lora_initialize()
 #define LORA_RESET_NOACTIVITY 30 // 30 minutes
@@ -61,169 +61,39 @@ AES aes;
 /*
  * ======================================================================================================================
  *  LoRa Connected Rain Gauges and Soil Moisture
- *  - If LoRa device is rain gauge and we have not logged last observation sum together the reading and update ts
- *    Also sum the rgds time 
- *  - Each LoRa RS device will get an index in LORA_RS_OBS_STR. Will need to search is structure for matching unit_id
- *  - These observations will be save to N2S but not the local /OBS file. The LoRa device has it's own SD card.
  * ======================================================================================================================
  */
-#define NUMBER_RS_LORA_DEVICES    10  // Set to the number of LoRa RS devices this station will be supporting
-#define LORA_SG_INFO_MSG_LENGTH   64
-#define SM_PROBES                 3
-#define SM_BMX_SENSORS            2
-typedef struct {              // LoRa Type 2 Messages
-  DateTime      ts;
-  unsigned int  message_counter;
-  char          message[LORA_SG_INFO_MSG_LENGTH];
-  // voltage and health bits get logged in main structure
-} LORA_RS_INFO_STR;
-
+#define LORA_RELAY_MSGCNT     64  // Set to the number of LoRa RS devices this station will be supporting
+#define LORA_RELAY_MSG_LENGTH 256
+const char *relay_msgtypes[] = {"UNKN", "INFO", "RS", "SG"}; // Particle Message Types being received for relay
 typedef struct {
-  DateTime      ts;
-  int           message_type;
-  int           unit_id;
-  unsigned int  message_counter;
-  float         rg;
-  unsigned int  rgds;
-  int           sm[SM_PROBES];
-  float         st[SM_PROBES];
-  float         p[SM_BMX_SENSORS];
-  float         t[SM_BMX_SENSORS];
-  float         h[SM_BMX_SENSORS];
-  float         voltage;
-  unsigned int  hth;
   bool          need2log;
-  LORA_RS_INFO_STR info;
-} LORA_RS_OBS_STR;
-LORA_RS_OBS_STR lora_rs[NUMBER_RS_LORA_DEVICES];
-
-/*
- * ======================================================================================================================
- *  LoRa Connected Stream Gauge - Only 1 gauge will ever be connected - (Last dying words!) 
- *  - If we have not logged last observation, then this gets overwritten
- * ======================================================================================================================
- */
-#define SG_BMX_SENSORS 2
-typedef struct {                // LoRa Type 1 and 3 messages
-  DateTime      ts;
   int           message_type;
-  int           unit_id;
-  unsigned int  message_counter;
-  int           stream_gauge;
-  float         p[SG_BMX_SENSORS];
-  float         t[SG_BMX_SENSORS];
-  float         h[SG_BMX_SENSORS];
-  float         voltage;
-  unsigned int  hth;
-  bool          need2log;
-} LORA_SG_OBS_STR;
-LORA_SG_OBS_STR lora_sg;
+  char          message[LORA_RELAY_MSG_LENGTH];
+} LORA_MSG_RELAY_STR;
+LORA_MSG_RELAY_STR lora_msg_relay[LORA_RELAY_MSGCNT];
 
-#define LORA_SG_INFO_MSG_LENGTH 64
-typedef struct {              // LoRa Type 2 Messages
-  DateTime      ts;
-  int           unit_id;
-  unsigned int  message_counter;
-  char          message[LORA_SG_INFO_MSG_LENGTH];
-  float         voltage;
-  unsigned int  hth;
-} LORA_SG_INFO_STR;
-LORA_SG_INFO_STR lora_sg_info;
 
 /* 
  *=======================================================================================================================
- * lora_sg_msg_clear()
+ * lora_relay_msg_free()
  *=======================================================================================================================
  */
-void lora_sg_msg_clear() {
-  if (LORA_exists) {
-    lora_sg.unit_id = 0;
-    lora_sg.message_type = 0;
-    lora_sg.message_counter = 0;
-    lora_sg.stream_gauge = 0;
-    for (int i=0; i<2; i++) {
-      lora_sg.t[i] = 0.0;
-      lora_sg.p[i] = 0.0;
-      lora_sg.h[i] = 0.0;
-    }
-    lora_sg.voltage = 0.0;
-    lora_sg.hth= 0;
-    lora_sg.need2log = false;
-  }
+void lora_relay_msg_free(LORA_MSG_RELAY_STR *m) {
+  m->need2log = false;
+  m->message_type = 0;
+  memset (m->message, 0, LORA_RELAY_MSG_LENGTH);
 }
 
-/* 
- *=======================================================================================================================
- * lora_sg_info_msg_clear()
- *=======================================================================================================================
- */
-void lora_sg_info_msg_clear() {
-  if (LORA_exists) {
-    lora_sg_info.unit_id = 0;
-    lora_sg_info.message_counter = 0;
-    memset (lora_sg_info.message, 0, LORA_SG_INFO_MSG_LENGTH);
-    lora_sg_info.voltage = 0.0;
-    lora_sg_info.hth = 0; 
-  }
-}
 
 /* 
  *=======================================================================================================================
- * lora_rs_msg_init()
+ * lora_relay_need2log() - Return true if we have a relay that needs to be logged
  *=======================================================================================================================
  */
-void lora_rs_msg_init(LORA_RS_OBS_STR *m) {
-  if (LORA_exists) {
-    m->unit_id = 0;  // Not in use
-    m->message_type = 0;
-    m->message_counter = 0;
-    m->rg = 0.0;
-    m->rgds = 0;
-    for (int i=0; i<3; i++) {
-      m->sm[i] = 0;
-      m->st[i] = 85.0;
-    }
-    for (int i=0; i<2; i++) {
-      m->t[i] = 0.0;
-      m->p[i] = 0.0;
-      m->h[i] = 0.0;
-    }
-    m->voltage = 0.0;
-    m->hth= 0;
-    m->need2log = false;
-    m->info.message_counter = 0;
-    memset (m->info.message, 0, LORA_SG_INFO_MSG_LENGTH);
-  }
-}
-
-/* 
- *=======================================================================================================================
- * lora_rs_find() - use unit id to fnd structure index, if no match, assign first free. Return -1 full
- *                - sets unit_id in structure
- *=======================================================================================================================
- */
-int lora_rs_find(int unit_id) {
-  for (int i=0; i< NUMBER_RS_LORA_DEVICES; i++) {
-    // If we find an empty location before we find a match then we know it's not registered
-    if (lora_rs[i].unit_id == 0) {
-      lora_rs[i].unit_id = unit_id;
-      return (i);
-    }
-    else if (lora_rs[i].unit_id == unit_id) {
-      return (i);
-    }
-  }
-  return (-1); // More lora devices than structures. no empty spots
-}
-
-/* 
- *=======================================================================================================================
- * lora_rs_need2log() - Return true if we have a RS observation that needs to be logged
- *=======================================================================================================================
- */
-bool lora_rs_need2log() {
-  for (int i=0; i< NUMBER_RS_LORA_DEVICES; i++) {
-    if (lora_rs[i].need2log) {
+bool lora_relay_need2log() {
+  for (int i=0; i< LORA_RELAY_MSGCNT; i++) {
+    if (lora_msg_relay[i].need2log) {
       return (true);
     }
   }
@@ -232,17 +102,43 @@ bool lora_rs_need2log() {
 
 /* 
  *=======================================================================================================================
+ * lora_relay_notinuse() - return first open spot or -1 if full
+ *=======================================================================================================================
+ */
+int lora_relay_notinuse() {
+  for (int i=0; i< LORA_RELAY_MSGCNT; i++) {
+    if (!lora_msg_relay[i].need2log) {
+      return (i);
+    }
+  }
+  return(-1);
+}
+
+/* 
+ *=======================================================================================================================
+ * lora_relay_need2log_idx() - return first need2log spot or -1 if none
+ *=======================================================================================================================
+ */
+int lora_relay_need2log_idx() {
+  for (int i=0; i< LORA_RELAY_MSGCNT; i++) {
+    if (lora_msg_relay[i].need2log) {
+      return (i);
+    }
+  }
+  return(-1);
+}
+
+
+/* 
+ *=======================================================================================================================
  * lora_device_initialize()
  *=======================================================================================================================
  */
 void lora_device_initialize() {
   if (LORA_exists) {
-    lora_sg_msg_clear();
-    lora_sg_info_msg_clear();
-
-    // Rain and Soil devices
-    for (int i=0; i< NUMBER_RS_LORA_DEVICES; i++) {
-      lora_rs_msg_init(&lora_rs[i]);
+    // Init LoRa Relay Message structure
+    for (int i=0; i< LORA_RELAY_MSGCNT; i++) {
+      lora_relay_msg_free(&lora_msg_relay[i]);
     }
   }
 }
@@ -348,184 +244,64 @@ void lora_initialize() {
 
 /* 
  *=======================================================================================================================
- * lora_sg_obs()
- *=======================================================================================================================
- *   Message Header    -  SGt,ID,TC,  
- *   RS                   2 ASCII characters
- *   Message type,        Integer    
- *   UNIT_ID,             Integer
- *   Transmit Counter,    Integer
- *   Message Type 1,2 or 3
- *   Battery Voltage      Float
- *   Status Bits          Unsigned
- * 
- *   Message Type 1    -  SG1,ID,TC,POWERON,F,U
- *     Message(String)     [POWERON]
- * 
- *   Message Type 2    -  SG2,ID,TC,I,F,U
- *     Stream Gauge(Integer)
- * 
- *   Message Type 3    -  SG3,ID,TC,I,F,F,F,F,F,F,F,I Stream Gauge and BMX
- *     Stream Gauge(Integer)
- *     BM1 Preasure(Float),Temperature(Float),Humidity(Float)
- *     BM2 Preasure(Float),Temperature(Float),Humidity(Float)
+ * lora_relay_msg() -LoRa Rain and Soil Remote Sensors we relay their messages to Particle
+ *    
+ * Relay Message Format
+ *   NCS    Length (N) and Checksum (CS)
+ *   XX,    Lora Message Type IF(INFO) RS, SG
+ *   INT,   Station ID
+ *   INT,   Message Counter
+ *   OBS    JSON Observation
  *=======================================================================================================================
  */
-void lora_sg_obs(char *obs) {
+void lora_relay_msg(char *obs) {
+  LORA_MSG_RELAY_STR *m;
+
   int message_type = 0;
   int unit_id = 0;
   unsigned int message_counter = 0;
   char *message;
   char *p;
-  
-  // Serial_write ("LoRa SG OBS");
-  
-  p = &obs[2];
-  message_type = atoi (strtok_r(p, ",", &p));
-  unit_id = atoi (strtok_r(p, ",", &p));
-  message_counter = atoi (strtok_r(p, ",", &p));
 
-  sprintf (Buffer32Bytes, "LSG[%d] %d,%d", unit_id, message_type, message_counter);
-  Output (Buffer32Bytes);
-
-  if (message_type == 1) {
-    // Stream Gauge Info Message
-    lora_sg_info.ts = rtc.now();
-    lora_sg_info.unit_id = unit_id;
-    lora_sg_info.message_counter = message_counter;
-
-    message = strtok_r(p, ",", &p);
-    strncpy (lora_sg_info.message, message, LORA_SG_INFO_MSG_LENGTH-1); // minus 1 so last byte in array will always be null
- 
-    lora_sg_info.voltage = atof (strtok_r(p, ",", &p));
-    lora_sg_info.hth = atoi (strtok_r(p, ",", &p));
+  if ((obs[0] == 'I') && (obs[1] == 'F')) {
+    message_type = 1;
+  }
+  else if ((obs[0] == 'R') && (obs[1] == 'S')) {
+    message_type = 2; 
+  }
+  else if ((obs[0] == 'S') && (obs[1] == 'G')) {
+    message_type = 3;
   }
   else {
-    // Stream Gauge Observation Message
-    lora_sg.ts = rtc.now();
-    lora_sg.unit_id = unit_id;
-    lora_sg.message_type = message_type;
-    lora_sg.message_counter = message_counter;
-
-    // In both message type 2 and 3 messages
-    lora_sg.stream_gauge = atoi (strtok_r(p, ",", &p));
-
-    if (message_type == 3) {
-      // Message has BMX sensor information
-      for (int i=0; i<SM_BMX_SENSORS; i++) {
-        lora_sg.p[i] = atof (strtok_r(p, ",", &p));
-        lora_sg.t[i] = atof (strtok_r(p, ",", &p));
-        lora_sg.h[i] = atof (strtok_r(p, ",", &p));
-      }
-    }
-
-    lora_sg.voltage = atof (strtok_r(p, ",", &p));
-    lora_sg.hth = atoi (strtok_r(p, ",", &p));
-    lora_sg.need2log = true;
-  }
-}
-
-/* 
- *=======================================================================================================================
- * lora_rs_obs() - Rain and Soil Sensors
- *=======================================================================================================================
- *   Message Header    -  RSt,ID,TC,  
- *   RS                   2 ASCII characters
- *   Message type,        Integer    
- *   UNIT_ID,             Integer
- *   Transmit Counter,    Integer
- *   Message Type 1,2,3,4 or 5
- *   Battery Voltage      Float
- *   Status Bits          Unsigned
- *   
- *   Message Type 1    -  RS1,ID,TC,POWERON,F,U
- *     Message(String)     [POWERON]
- *    
- *   Message Type 2    -  RS2,ID,TC - Rain only
- *     Rain Gauge(Int)        Rain get summed until transmitted
- *     Rain Gauge Delta(Int)  Delta Time get summed until transmitted
- *    
- *   Message Type 3    -  RS3,ID,TC - Rain,Soil,No BMX - Soil Temp of 85C means no probe
- *     Include Type 2
- *     Soil 1 Temp(Float), Moisture(Int)
- *     Soil 2 Temp(Float), Moisture(Int)
- *     Soil 3 Temp(Float), Moisture(Int)
- *   
- *   Message Type 4    -  RS4,ID,TC - Rain,No Soil,BMX 
- *     Include Type 2
- *     BM1 Preasure(Float),Temperature(Float),Humidity(Float)
- *     BM2 Preasure(Float),Temperature(Float),Humidity(Float)
- *   
- *   Message Type 5    -  RS5,ID,TC - Rain,Soil,BMX
- *     Include Type 2
- *     Include Type 3
- *     Include Type 4
- *=======================================================================================================================
- */
-void lora_rs_obs(char *obs) {
-  LORA_RS_OBS_STR *m;
-
-  int message_type = 0;
-  int unit_id = 0;
-  unsigned int message_counter = 0;
-  char *message;
-  char *p;
- 
-  // Serial_write ("LoRa RS OBS");
-  
-  p = &obs[2]; // Start after "RS"
-  message_type = atoi (strtok_r(p, ",", &p));
-  unit_id = atoi (strtok_r(p, ",", &p));
-  message_counter = atoi (strtok_r(p, ",", &p));
-
-  sprintf (Buffer32Bytes, "LRS[%d] %d,%d", unit_id, message_type, message_counter);
-  Output (Buffer32Bytes);
-
-  // Locate storage index
-  int idx = lora_rs_find(unit_id);
-
-  if (idx == -1) {
-    // No Space - More Lora devices than we have defined space for
-    // Observation lost
-    Output ("LORA RS NoSpace");
+    sprintf (Buffer32Bytes, "LORA Relay %c%c Unkn", obs[0], obs[1]);
+    Output (Buffer32Bytes);
     return;
   }
 
-  m = &lora_rs[idx]; // Lets work with a pointer and not the index
+  p = &obs[2]; // Start after message type 
+  unit_id = atoi (strtok_r(p, ",", &p));
+  message_counter = atoi (strtok_r(p, ",", &p));
+  message = p;
 
-  if (message_type == 1) {
-    m->info.ts = rtc.now();
-    m->info.message_counter = message_counter;
-    message = strtok_r(p, ",", &p);
-    strncpy (m->info.message, message, LORA_SG_INFO_MSG_LENGTH-1); // minus 1 so last byte in array will always be null
+  sprintf (Buffer32Bytes, "Relay %s ID:%d CNT:%d", relay_msgtypes[message_type], unit_id, message_counter);
+  Output (Buffer32Bytes);
+  // Output (message);
+
+  // Locate storage index
+  int idx = lora_relay_notinuse();
+
+  if (idx == -1) {
+    // No Space -  Observation lost
+    Output ("LORA Relay NoSpace");
+    return;
   }
-  else {
-    m->ts = rtc.now();
-    m->message_type = message_type;
-    // m->unit_id = unit_id;  // Already set with lora_rs_find()
-    m->message_counter = message_counter;
 
-    // We sum the rain gauge information
-    m->rg += atof (strtok_r(p, ",", &p));
-    m->rgds += atoi (strtok_r(p, ",", &p));
-
-    if (message_type == 3 || message_type == 5){
-      for (int i=0; i<SM_PROBES; i++) {
-        m->sm[i] = atoi (strtok_r(p, ",", &p));
-        m->st[i] = atof (strtok_r(p, ",", &p));
-      }
-    }
-    if (message_type == 4 || message_type == 5){
-      for (int i=0; i<SM_BMX_SENSORS; i++) {
-        m->p[i] = atof (strtok_r(p, ",", &p));
-        m->t[i] = atof (strtok_r(p, ",", &p));
-        m->h[i] = atof (strtok_r(p, ",", &p));
-      }
-    }
-  }
-  m->voltage = atof (strtok_r(p, ",", &p));
-  m->hth = atof (strtok_r(p, ",", &p));
+  m = &lora_msg_relay[idx]; // Lets work with a pointer and not the index
   m->need2log = true;
+  m->message_type = message_type;
+  strncpy (m->message, message, LORA_RELAY_MSG_LENGTH-1); // minus 1 so last byte in array will always be null
+  sprintf (Buffer32Bytes, "LORA Relay %s -> Queued:%d", relay_msgtypes[message_type], idx);
+  Output (Buffer32Bytes);
 }
 
 /* 
@@ -568,9 +344,9 @@ void lora_msg_check() {
         aes.get_IV(iv);
         aes.do_aes_decrypt(buf, len, (byte *) msg, AES_KEY, 128, iv);
       
-        if ( ( msg[3] == 'R' && msg[4] == 'S' && (msg[5] == '1' || msg[5] == '2' || msg[5] == '3' || msg[5] == '4' || msg[5] == '5') ) || 
-             ( msg[3] == 'S' && msg[4] == 'G' && (msg[5] == '1' || msg[5] == '2' || msg[5] == '3') )
-          ) {
+        if ( ( msg[3] == 'I' && msg[4] == 'F') ||
+             ( msg[3] == 'R' && msg[4] == 'S') || 
+             ( msg[3] == 'S' && msg[4] == 'G') ) {
 
           // Get length of what follows
           msglen = msg[0];
@@ -588,23 +364,12 @@ void lora_msg_check() {
             // Make what follows a string
             msg[msglen]=0;
 
-            char *payload = (char*)(msg+3); 
+            char *payload = (char*)(msg+3); // After length and 2 checksum bytes
 
             // Display LoRa Message on Serial Console           
             Serial_write (payload);
 
-            switch (payload[0]) {
-              case 'R' :  // Rain - Soil Gauge
-                lora_rs_obs (payload);
-                break;
-              case 'S' :  // Stream Gauge
-
-                lora_sg_obs (payload);
-                break;
-              default  :  // Unknown 
-                Output ("LORA Dev Unkn");
-                break;
-            }
+            lora_relay_msg (payload);
           }
           else {
             Output ("LORA CS-ERR");

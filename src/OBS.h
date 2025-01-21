@@ -167,63 +167,26 @@ bool OBS_FS_Build_JSON(int i) {
 
 /*
  * ======================================================================================================================
- * OBS_RS_Build_JSON() - Create JSON observation in msgbuf for rain and soil sensors (RS)
- *                       Requires we have at least one observation needing to be logged be fore we call this function.
- *                       The Lora NodeID is also the Chords instrumnet id
+ * OBS_Relay_Build_JSON() - Create JSON observation in msgbuf, remove from relay structure
+ *                          Return the message relay type we are preparing
  * ======================================================================================================================
  */
-void OBS_RS_Build_JSON() {
-  LORA_RS_OBS_STR *m;
-  char tag[8];
+int OBS_Relay_Build_JSON() {
+  LORA_MSG_RELAY_STR *m;
+  int relay_type = 0;
 
-  // Locate message we need to log
-  for (int i=0; i< NUMBER_RS_LORA_DEVICES; i++) {
-    if (lora_rs[i].need2log) {
-      m = &lora_rs[i];
-      break;
-    }
-  }
-
-  stc_timestamp(); // Use Full Station System Clock to log Rain and Soil observations (this updates the timestamp string)
-  
   memset(msgbuf, 0, sizeof(msgbuf));
   JSONBufferWriter writer(msgbuf, sizeof(msgbuf)-1);
 
-  writer.beginObject();
-  writer.name("at").value(timestamp); 
-  writer.name("id").value(m->unit_id);
-  writer.name("bv").value(m->voltage,4);
-  writer.name("hth").value(m->hth);
-  writer.name("rg").value(m->rg);
-
-  if (m->message_type == 3 || m->message_type == 5){
-    for (int i=0; i<SM_PROBES; i++) {
-      // Soil Temp
-      sprintf(tag, "st%d", i+1);
-      writer.name(tag).value(m->st[i],1);
-
-      // Soil Moisture
-      sprintf(tag, "sm%d", i+1);
-      writer.name(tag).value(m->sm[i]);
-    }
+  // Locate message we need to log
+  int i = lora_relay_need2log_idx();
+  if (i >= 0) {
+    m = &lora_msg_relay[i];
+    strncpy (msgbuf, m->message, LORA_RELAY_MSG_LENGTH-1); // minus 1 so last byte in array will always be null
+    relay_type = m->message_type;
+    lora_relay_msg_free(m);
   }
-
-  if (m->message_type == 4 || m->message_type == 5){
-    for (int i=0; i<SM_BMX_SENSORS; i++) {
-      sprintf(tag, "p%d", i+1);
-      writer.name(tag).value(m->p[i],4);
-      sprintf(tag, "t%d", i+1);
-      writer.name(tag).value(m->t[i],4);
-      sprintf(tag, "h%d", i+1);
-      writer.name(tag).value(m->h[i],4);
-    }
-  }
-
-  writer.endObject();
-
-  m->need2log = false;
-  m->rg = 0;
-  m->rgds = 0; 
+  return (relay_type);
 }
 
 /*
@@ -247,6 +210,7 @@ void OBS_Log(int i) {
  * ======================================================================================================================
  */
 void OBS_N2S_SaveAll() {
+  int relay_type;
 
   // Save All Station Observations to N2S file
   for (int i=0; i<MAX_ONE_MINUTE_OBS; i++) {
@@ -255,9 +219,9 @@ void OBS_N2S_SaveAll() {
   }
 
   // Save All Rain and Soil LoRa Observations to N2S file
-  while (lora_rs_need2log()) {
-    OBS_RS_Build_JSON();
-    sprintf (msgbuf+strlen(msgbuf), ",RS");  // Add Particle Event Type after JSON structure
+  while (lora_relay_need2log()) {
+   relay_type = OBS_Relay_Build_JSON(); // This removed msg from relay structure and places it in msgbuf
+    sprintf (msgbuf+strlen(msgbuf), ", %s", relay_msgtypes[relay_type]);  // Add Particle Event Type after JSON structure
     SD_NeedToSend_Add(msgbuf); // Save to N2F File
     Output("RS->N2S");
     Serial_write (msgbuf); 
@@ -933,60 +897,77 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
+  if (A4_State == A4_STATE_RAW) {
+// Output("DB:OBS_A4R");
+    // 44 A4 Raw
+    strcpy (obs[oidx].sensor[sidx].id, "a4r");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(A4);
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
   else if (A4_State == A4_STATE_RAIN) {
 // Output("DB:OBS_A4R");
-    // 44 Rain Guage 2
+    // 45 Rain Guage 2
     strcpy (obs[oidx].sensor[sidx].id, "rg2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = rain2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 45 Rain Gauge 2 Total - Not Implemented
+    // 46 Rain Gauge 2 Total - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 46 Rain Gauge 2 Prior Day - Not Implemented
+    // 47 Rain Gauge 2 Prior Day - Not Implemented
     strcpy (obs[oidx].sensor[sidx].id, "rgp2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
+  if (A5_State == A5_STATE_RAW) {
+// Output("DB:OBS_A5R");
+    // 44 A4 Raw
+    strcpy (obs[oidx].sensor[sidx].id, "a5r");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(A5);
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
+
   if (PM25AQI_exists) {
 // Output("DB:OBS_PM");
-    // 47 Standard Particle PM1.0 concentration unit µg 𝑚3
+    // 49 Standard Particle PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 48 Standard Particle PM2.5 concentration unit µg 𝑚3
+    // 50 Standard Particle PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 49 Standard Particle PM10.0 concentration unit µg 𝑚3
+    // 51 Standard Particle PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 50 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
+    // 52 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 51 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
+    // 53 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // 52  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
+    // 54  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
     obs[oidx].sensor[sidx].type = I_OBS;
     obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
@@ -997,7 +978,7 @@ void OBS_Do() {
 // Output("DB:OBS_PMx");
   }
 
-  // 53 Heat Index Temperature
+  // 55 Heat Index Temperature
   if (HI_exists) {
 // Output("DB:OBS_HI");
     heat_index = hi_calculate(mcp1_temp, sht1_humid);
@@ -1007,7 +988,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;    
   } 
 
-  // 54 Wet Bulb Temperature
+  // 56 Wet Bulb Temperature
   if (WBT_exists) {
 // Output("DB:OBS_WBT");
     wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
@@ -1018,7 +999,7 @@ void OBS_Do() {
 // Output("DB:OBS_WBTx");  
   }
 
-  // 55 Wet Bulb Globe Temperature
+  // 57 Wet Bulb Globe Temperature
   if (WBGT_exists) {
 // Output("DB:OBS_WBGT");
     float wbgt = 0.0;
@@ -1033,69 +1014,6 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = (float) wbgt;
     obs[oidx].sensor[sidx++].inuse = true;    
 // Output("DB:OBS_WBGTx");
-  }
-
-  //
-  // Add LoRa Observations 
-  //
-  if (LORA_exists) {
-// Output("DB:OBS_LORA");
-    lora_msg_check(); // do not use msgbuf in LoRa check
-    // Check for Observation from LoRa Stream Gauge
-    if (lora_sg.need2log) {
-      // 56 Stream Gauge Reading
-      sprintf (obs[oidx].sensor[sidx].id, "sg%d", lora_sg.unit_id);
-      obs[oidx].sensor[sidx].type = F_OBS;
-      obs[oidx].sensor[sidx].f_obs = lora_sg.stream_gauge;
-      obs[oidx].sensor[sidx++].inuse = true;
-
-      // 57 Stream Gauge Voltage
-      sprintf (obs[oidx].sensor[sidx].id, "sg%dv", lora_sg.unit_id);
-      obs[oidx].sensor[sidx].type = F_OBS;
-      obs[oidx].sensor[sidx].f_obs = lora_sg.voltage;
-      obs[oidx].sensor[sidx++].inuse = true;
-
-      // Add the BME280 Sensor information
-      if (lora_sg.message_type == 3) {  
-        if (lora_sg.p[0] != 0.0) {
-          // 58 Stream Gauge Preasure 1
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dp1", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.p[0];
-          obs[oidx].sensor[sidx++].inuse = true;
-          // 59 Stream Gauge Temperature 1
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dt1", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.t[0];
-          obs[oidx].sensor[sidx++].inuse = true;
-          // 60 Stream Gauge Humidity 1
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dh1", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.h[0];
-          obs[oidx].sensor[sidx++].inuse = true;
-        }
-        if (lora_sg.p[1] != 0.0) {
-          // 61 Stream Gauge Preasure 2
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dp2", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.p[1];
-          obs[oidx].sensor[sidx++].inuse = true;
-          // 62 Stream Gauge Temperature 2
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dt2", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.t[1];
-          obs[oidx].sensor[sidx++].inuse = true;
-          // 63 Stream Gauge Humidity 2
-          sprintf (obs[oidx].sensor[sidx].id, "sg%dh2", lora_sg.unit_id);
-          obs[oidx].sensor[sidx].type = F_OBS;
-          obs[oidx].sensor[sidx].f_obs = lora_sg.h[1];
-          obs[oidx].sensor[sidx++].inuse = true;
-        }
-        lora_sg_msg_clear();  // initialize data structure for next message 
-      }
-    }
-// Output("DB:OBS_LORAx");
-
   }
 
   // Set this after we read all sensors. So we capture if their state changes 
@@ -1163,19 +1081,26 @@ bool OBS_FS_Publish(int i) {
 
 /*
  * ======================================================================================================================
- * OBS_RS_Publish()
+ * OBS_Relay_Publish()
  * ======================================================================================================================
  */
-bool OBS_RS_Publish() {
-  if (Particle_Publish((char *) "RS")) {
+bool OBS_Relay_Publish(int relay_type) {
+  if (relay_type>0) {  // little safty check. Should not be 0
     Serial_write (msgbuf);
-    sprintf (Buffer32Bytes, "RS->PUB OK");
-    Output(Buffer32Bytes);
-    return(true);
+    if (Particle_Publish((char *) relay_msgtypes[relay_type])) {
+      sprintf (Buffer32Bytes, "RELAY[%s]->PUB OK", relay_msgtypes[relay_type]);
+      Output(Buffer32Bytes);
+      return(true);
+    }
+    else {
+      sprintf (Buffer32Bytes, "RELAY[%s]->PUB ERR", relay_msgtypes[relay_type]);
+      Output(Buffer32Bytes);       
+      return(false);
+    }
   }
   else {
-    sprintf (Buffer32Bytes, "RS->PUB ERR");
-    Output(Buffer32Bytes);       
+    sprintf (Buffer32Bytes, "RELAY TYPE[%d] INVALID", relay_type);
+    Output(Buffer32Bytes);
     return(false);
   }
 }
@@ -1183,10 +1108,19 @@ bool OBS_RS_Publish() {
 /*
  * ======================================================================================================================
  * OBS_PublishAll() - Send to logging site
+ * 
+ * If we take to long sending observations code restarts the 60 samples for wind and direction.
+ * So we might miss a one minute observation
+ * 
+ * Function Particle_Publish() calls BackGroundWork() after each transmission
+ * 
+ * If sending an observation takes 2 or more seconds ws_refresh is set and 
+ *   the main program loop calls Wind_Distance_Air_Initialize() 
  * ======================================================================================================================
  */
 void OBS_PublishAll() {
   bool OK2Send=true;
+  int relay_type;
 
   // Update Cell Signal Strength On Last (Most Current) OBS Since Cell is turned to get reading
   int last = OBS_Last();
@@ -1211,19 +1145,25 @@ void OBS_PublishAll() {
     }
   }
 
-  // Publish LoRa Rain and Soil Observations 
+  // Publish LoRa Relay Observations   
   if (LORA_exists) {
     // We want to transmit all RS msgs or save them to N2S file if we can not transmit them.
-    while (lora_rs_need2log()) {
-      OBS_RS_Build_JSON();
-      if (OK2Send) {
-        OK2Send = OBS_RS_Publish();  // Note a new LoRa RS msgs could be received as we are sending    
+    while (lora_relay_need2log()) {
+      relay_type = OBS_Relay_Build_JSON(); // This removed msg from relay structure and places it in msgbuf
+      if (relay_type<=0) {
+        sprintf (Buffer32Bytes, "RELAY TYPE[%d] INVALID", relay_type);
+        Output(Buffer32Bytes);
       }
-      if (!OK2Send) {
-        sprintf (msgbuf+strlen(msgbuf), ",RS");  // Add Particle Event Type after JSON structure
-        SD_NeedToSend_Add(msgbuf); // Save to N2F File
-        Output("RS->N2S");
-        Serial_write (msgbuf); 
+      else {
+        if (OK2Send && (relay_type>0)) {
+         OK2Send = OBS_Relay_Publish(relay_type);  // Note a new LoRa RS msgs could be received as we are sending    
+        }
+        if (!OK2Send) {
+          sprintf (msgbuf+strlen(msgbuf), ",%s", relay_msgtypes[relay_type]);  // Add Particle Event Type after JSON structure
+          SD_NeedToSend_Add(msgbuf); // Save to N2F File
+          Output("RELAY->N2S");
+          Serial_write (msgbuf); 
+        }
       }
     }
   }

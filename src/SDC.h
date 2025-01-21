@@ -200,7 +200,7 @@ void SD_N2S_Publish() {
               i = 0;
 
               // file position is at the start of the next observation or at eof
-              eeprom.n2sfp = fp.position();           
+              eeprom.n2sfp = fp.position();        
             }
             else { // Delay then retry
               sprintf (Buffer32Bytes, "N2S[%d]%s->PUB:RETRY", sent, EventType);
