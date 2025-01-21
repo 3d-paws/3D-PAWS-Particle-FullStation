@@ -277,7 +277,7 @@ Every minute software takes an observation and stores it to the SD card in a dat
 
 Every second, Wind Speed & Direction occurs. If sensors for Air Particle and Distance are attached, these are also sampled.
 
-Within the 1 second window Particle pin A1 is toggled on for 250ms. Providing the board's heartbeat.  If LoRa is activated, inbound messages are for, checked multiple times.
+Within the 1 second window Particle pin A1 is toggled on for 250ms. Providing the board's heartbeat.  If LoRa is activated, inbound LoRa messages are checked for multiple times.
 
 Every 15 minutes observations are transmitted to the Particle Cloud.  The 15 minute time of transmit is based on the first occurrence of having a network connection after boot. Not having a predetermined 15 minute window, time spreads out when we transmit over the 15 minute period. This helps not overload the receiving site when large numbers of stations are reporting.  
 
