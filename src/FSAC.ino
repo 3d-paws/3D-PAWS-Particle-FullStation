@@ -1,6 +1,6 @@
-PRODUCT_VERSION(29);
+PRODUCT_VERSION(39);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-250121v29"
+#define VERSION_INFO "FSAC-250121v39"
 
 /*
  *======================================================================================================================
@@ -174,7 +174,7 @@ PRODUCT_VERSION(29);
  *                         Upgrading to use deviceOS 6.1.1
  *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
  * 
- *          Version 39 Released on 2025-01-21
+ *          Version 39 Released on 2025-01-23
  *          2025-01-07 RJB Moved LORA_IRQ_PIN from A5 to D6.
  *          2025-01-14 RJB Rebuilt the LoRa message handling. 
  *                         Now we store then forward to Particle LoRa message types: INFO, RS, SG.
