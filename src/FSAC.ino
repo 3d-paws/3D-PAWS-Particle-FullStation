@@ -1,6 +1,6 @@
-PRODUCT_VERSION(39);
+PRODUCT_VERSION(29);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-250121v39"
+#define VERSION_INFO "FSAC-250121v29"
 
 /*
  *======================================================================================================================
@@ -185,7 +185,8 @@ PRODUCT_VERSION(39);
  *          2025-01-21 RJB Added support for A4 to be configured for raw readings (Simple average of 5 samples) 10ms apart
  *                           DoAction A4RAW. Reports to Particle as a4r 
  *                         Added support for A5 to be configured for raw readings (Simple average of 5 samples) 10ms apart
- *                           DoAction A5RAW and A5CLR. Reports to Particle as a5r         
+ *                           DoAction A5RAW and A5CLR. Reports to Particle as a5r 
+ *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil)        
  *                                       
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
@@ -225,11 +226,33 @@ PRODUCT_VERSION(39);
  *                          the EEPROM emulation is stored as a file on the flash file system. 
  *                          Since the data is spread across a large number of flash sectors, 
  *                          flash erase-write cycle limits should not be an issue in general.
+ * 
  *  Dallas OneWire          https://github.com/particle-iot/OneWireLibrary - Not supported on Boron/Argon
+ *                          WARNING:This library has not been updated for the Argon, Boron, Tracker One, Photon 2/P2.
+ *                          https://docs.particle.io/reference/device-os/libraries/o/OneWire/
  * 
  * Distance Sensors
  * The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
  * Particle 12bit resolution (0-4095),  Sensor has a resolution of 0 - 5119mm,  Each unit of the 0-4095 resolution is 1.25mm
+ * 
+ * Tinovi Moisture Sensors
+ * Non-Contact Capacitive leaf wetness, Temperature sensor
+ * https://tinovi.com/shop/i2c-non-contact-capacitive-leaf-wetness-temperature/
+ *   https://github.com/tinovi/i2cArduino
+ *   https://tinovi.com/wp-content/uploads/2022/08/PM-WCS-3-I2C.pdf
+ *   i2c:0x61
+ * 
+ * PM-WCS-3-I2C I2C Non-Contact Capacitive Soil Moisture, Temperature sensor
+ * https://tinovi.com/shop/i2c-capacitive-soil-moisture-temperature-and-ec-sensor-variation-cable/
+ *   https://github.com/tinovi/LeafArduinoI2c
+ *   https://tinovi.com/wp-content/uploads/2021/10/Leaf-Wetness-i2c-2021-10-11.pdf
+ *   i2c:0x63
+ * 
+ * SOIL-MULTI-5-I2C I2C Capacitive multi level soil moisture, temperature sensor
+ * https://tinovi.com/shop/soil-multi-5-i2c-i2c-capacitive-soil-moisture-temperature-sensor/
+ *   https://github.com/tinovi/i2cMultiSoilArduino/tree/master/lib
+ *   https://tinovi.com/wp-content/uploads/2024/07/SOIL-MULTI-5-I2C.pdf
+ *   i2c: 0x65
  *
  * Battery Charger Status from System.batteryState()
  *  0 = BATTERY_STATE_UNKNOWN
@@ -295,6 +318,17 @@ PRODUCT_VERSION(39);
  *  hi      heat index
  *  wbt     wet bulb temperature
  *  wbgt    wet bub globe temperature
+ *  tlwt    Tinovi Leaf Wetness temperature    
+ *  tlww    Tinovi Leaf Wetness
+ *  tsmt    Tinovi Soil Moisture temperature
+ *  tsme25  Tinovi Soil Moisture e25
+ *  tsmec   Tinovi Soil Moisture ec
+ *  tsmvwc  Tinovi Soil Moisture vwc
+ *  tmsmt   Tinovi Multi Level Soil Moisture
+ *  tmsms1  Tinovi Multi Level Soil Moisture Soil Sensor 1 vwc
+ *  tmsms2  Tinovi Multi Level Soil Moisture Soil Sensor 2 vwc
+ *  tmsms3  Tinovi Multi Level Soil Moisture Soil Sensor 3 vwc
+ *  tmsms4  Tinovi Multi Level Soil Moisture Soil Sensor 4 vwc
  * 
  * State of Health - Variables included with transmitted sensor readings
  *  bcs  = Battery Charger Status
@@ -423,6 +457,9 @@ PRODUCT_VERSION(39);
 #include <SdFat.h>
 #include <RH_RF95.h>
 #include <AES.h>
+#include <i2cArduino.h>
+#include <LeafSens.h>
+#include <i2cMultiSm.h>
 
 /*
  * ======================================================================================================================
@@ -476,6 +513,9 @@ PRODUCT_VERSION(39);
 #define SSB_BLX             0x400000  // Set if BLUX30 I2C Sensor missing
 #define SSB_LPS_1           0x800000  // Set if LPS35HW I2C Sensor missing
 #define SSB_LPS_2           0x1000000 // Set if LPS35HW I2C Sensor missing
+#define SSB_TLW             0x2000000 // Set if Tinovi Leaf Wetness I2C Sensor missing
+#define SSB_TSM             0x4000000 // Set if Tinovi Soil Moisture I2C Sensor missing
+#define SSB_TMSM            0x8000000 // Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
 
 
 /*
@@ -773,6 +813,11 @@ void setup() {
   pm25aqi_initialize();
   hdc_initialize();
   lps_initialize();
+
+  // Tinovi Mositure Sensors
+  tlw_initialize();
+  tsm_initialize();
+  tmsm_initialize();
   
   // Derived Observations
   wbt_initialize();

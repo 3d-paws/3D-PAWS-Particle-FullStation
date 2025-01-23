@@ -99,6 +99,12 @@ HDC2 OK
 LPS:INIT
 LPS1 OK
 LPS2 NF
+TLW:INIT
+TLW NF
+TSM:INIT
+TSM NF
+TMSM:INIT
+TMSM NF
 WBT:INIT
 WBT:OK
 HI:INIT
@@ -296,7 +302,7 @@ Wind_Gust() - Returns wind.gust
 Wind_GustDirection() - Returns wind.gust_direction
 
 ### Transmitting Observations and Failure Handling
-One minute observations are sent to Particle Cloud with Particle Event Name "FN". This is used by the Particle Cloud service to identify and associate webhooks for triggering.
+One minute observations are sent to Particle Cloud with Particle Event Name "FS". This is used by the Particle Cloud service to identify and associate webhooks for triggering.
 
 After transmitting an observation, software will wait for a confirmation result code from Particle Cloud. If the result code reports failure or we didn't have network connectivity at the time of transmission. The observation is appended to the Need to Send file located on the SD card at the top level and called N2SOBS.TXT. If the file does not exist, it is created then appended to. Observations in this file will later be transmitted.
 
@@ -383,18 +389,30 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "sg1h1": "{{sg1h1}}",
      "sg1p2": "{{sg1p2}}",
      "sg1t2": "{{sg1t2}}",
-     "sg1h2": "{{sg1h2}}"
+     "sg1h2": "{{sg1h2}}",
+     "tlww": "{{tlww}}",
+     "tlwt": "{{tlwt}}",
+     "tsme25": "{{tsme25}}",
+     "tsmeec": "{{tsmeec}}"
+     "tsmvwc": "{{tsmvwc}}",
+     "tsmt": "{{tsmt}}",
+     "tmsms1": "{{tmsms1}}",
+     "tmsms2": "{{tmsms2}}",
+     "tmsms3": "{{tmsms3}}",
+     "tmsms4": "{{tmsms4}}",
+     "tmsmt1": "{{tmsmt1}}",
+     "tmsmt2": "{{tmsmt2}}"
   }
 }
 </pre>
 </div>
-Example of Particle Webhook for LoRa Rain and Soil (RS)
-With no "deviceID" defined in the below webhook. It can be used by multiple devices.  
+Example of Particle Webhook for Feather LoRaRemoteMO deployments.
+If you define the below with no "deviceID". The webhook can be used by multiple devices.
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
 <pre>
 {
- "name": "RS for chordsrt.com",
- "event": "RS",
+ "name": "LR for chordsrt.com",
+ "event": "LR",
  "deviceID": "Place Device ID Here",
  "url": "<http://3d.chordsrt.com/measurements/url_create>",
  "requestType": "GET",
@@ -405,16 +423,28 @@ With no "deviceID" defined in the below webhook. It can be used by multiple devi
      "instrument_id": "{{id}}",
      "at": "{{at}}",
      "rg": "{{rg}}",
+     "sg": "{{sg}}",
+
      "st1": "{{st1}}",
      "sm1": "{{sm1}}",
      "st2": "{{st2}}",
      "sm2": "{{sm2}}",
-     "p1": "{{p1}}",
-     "t1": "{{t1}}",
-     "h1": "{{h1}}",
-     "p2": "{{p2}}",
-     "t2": "{{t2}}",
-     "h2": "{{h2}}",
+
+     "bp1": "{{bp1}}",
+     "bt1": "{{bt1}}",
+     "bh1": "{{bh1}}",
+     "bp2": "{{bp2}}",
+     "bt2": "{{bt2}}",
+     "bh2": "{{bh2}}",
+
+     "st1": "{{st1}}",
+     "sh1": "{{sh1}}",
+     "st2": "{{st2}}",
+     "sh2": "{{sh2}}",
+
+     "mt1": "{{mt1}}",
+     "mt2": "{{mt2}}",
+
      "bv": "{{bv}}",
      "hth": "{{hth}}"
   }
@@ -471,6 +501,9 @@ HDC_2        0x200000  Set if HDC302x Sensor missing
 BLX          0x400000  Set if BLUX30 I2C Sensor missing
 LPS_1        0x800000  Set if LPS35HW I2C Sensor missing
 LPS_2        0x1000000 Set if LPS35HW I2C Sensor missing
+SSB_TLW      0x2000000 Set if Tinovi Leaf Wetness I2C Sensor missing
+SSB_TSM      0x4000000 Set if Tinovi Soil Moisture I2C Sensor missing
+SSB_TMSM     0x8000000 Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
 </pre>
 </div>
 Interpreting health bits in relation to Need to Send observations.

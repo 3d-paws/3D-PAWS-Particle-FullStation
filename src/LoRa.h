@@ -68,7 +68,7 @@ AES aes;
  */
 #define LORA_RELAY_MSGCNT     64  // Set to the number of LoRa RS devices this station will be supporting
 #define LORA_RELAY_MSG_LENGTH 256
-const char *relay_msgtypes[] = {"UNKN", "INFO", "RS", "SG"}; // Particle Message Types being received for relay
+const char *relay_msgtypes[] = {"UNKN", "INFO", "LR"}; // Particle Message Types being received for relay
 typedef struct {
   bool          need2log;
   int           message_type;
@@ -273,7 +273,7 @@ void lora_initialize() {
  *    
  * Relay Message Format
  *   NCS    Length (N) and Checksum (CS)
- *   XX,    Lora Message Type IF(INFO) RS, SG
+ *   XX,    Lora Message Type IF(INFO), LR (LoRa Relay)
  *   INT,   Station ID
  *   INT,   Message Counter
  *   OBS    JSON Observation
@@ -291,11 +291,8 @@ void lora_relay_msg(char *obs) {
   if ((obs[0] == 'I') && (obs[1] == 'F')) {
     message_type = 1;
   }
-  else if ((obs[0] == 'R') && (obs[1] == 'S')) {
+  else if ((obs[0] == 'L') && (obs[1] == 'R')) {
     message_type = 2; 
-  }
-  else if ((obs[0] == 'S') && (obs[1] == 'G')) {
-    message_type = 3;
   }
   else {
     sprintf (Buffer32Bytes, "LORA Relay %c%c Unkn", obs[0], obs[1]);
@@ -377,8 +374,7 @@ void lora_msg_check() {
         aes.do_aes_decrypt(buf, len, (byte *) msg, AES_KEY, 128, iv);
       
         if ( ( msg[3] == 'I' && msg[4] == 'F') ||
-             ( msg[3] == 'R' && msg[4] == 'S') || 
-             ( msg[3] == 'S' && msg[4] == 'G') ) {
+             ( msg[3] == 'L' && msg[4] == 'R')) {
 
           // Get length of what follows
           msglen = msg[0];

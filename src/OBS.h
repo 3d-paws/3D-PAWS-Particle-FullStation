@@ -9,7 +9,7 @@
  *  Observation storage
  * ======================================================================================================================
  */
-#define MAX_SENSORS         70
+#define MAX_SENSORS         96
 #define MAX_ONE_MINUTE_OBS  17 // Want more OBS space than our OBSERVATION_TRANSMIT_INTERVAL (For 15m interval use 17)
                               // This prevents OBS from filling and being written to N2S file while we are Connecting
 
@@ -223,7 +223,7 @@ void OBS_N2S_SaveAll() {
    relay_type = OBS_Relay_Build_JSON(); // This removed msg from relay structure and places it in msgbuf
     sprintf (msgbuf+strlen(msgbuf), ", %s", relay_msgtypes[relay_type]);  // Add Particle Event Type after JSON structure
     SD_NeedToSend_Add(msgbuf); // Save to N2F File
-    Output("RS->N2S");
+    Output("LR->N2S");
     Serial_write (msgbuf); 
   }
 }
@@ -1015,6 +1015,106 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;    
 // Output("DB:OBS_WBGTx");
   }
+
+  // 58,59 Tinovi Leaf Wetness
+  if (TLW_exists) {
+// Output("DB:OBS_TLW");
+    tlw.newReading();
+    delay(100);
+    float w = tlw.getWet();
+    float t = tlw.getTemp();
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tlww");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) w;
+    obs[oidx].sensor[sidx++].inuse = true; 
+
+    strcpy (obs[oidx].sensor[sidx].id, "tlwt");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_TLWx");
+  }
+
+  // 60-63 Tinovi Soil Moisture
+  if (TSM_exists) {
+// Output("DB:OBS_TSM");
+    tsm.newReading();
+    delay(100);
+    float e25 = tsm.getE25();
+    float ec = tsm.getEC();
+    float vwc = tsm.getVWC();
+    float t = tsm.getTemp();
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tsme25");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) e25;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tsmec");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) ec;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tsmvwc");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) vwc;
+    obs[oidx].sensor[sidx++].inuse = true; 
+
+    strcpy (obs[oidx].sensor[sidx].id, "tsmt");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_TSMx");
+  }
+
+   // 64-69 Tinovi Multi Level Soil Moisture
+  if (TMSM_exists) {
+// Output("DB:OBS_TMSM");
+    soil_ret_t multi;
+    float t;
+
+    tmsm.newReading();
+    delay(100);
+    tmsm.getData(&multi);
+
+    strcpy (obs[oidx].sensor[sidx].id, "tmsms1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[0];
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tmsms2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[1];
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tmsms3");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[2];
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tmsms4");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[3];
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    t = multi.temp[0];
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    strcpy (obs[oidx].sensor[sidx].id, "tmsmt1");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    t = multi.temp[1];
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    strcpy (obs[oidx].sensor[sidx].id, "tmsmt2");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_TMSMx");
+  } 
 
   // Set this after we read all sensors. So we capture if their state changes 
   obs[oidx].hth = SystemStatusBits;

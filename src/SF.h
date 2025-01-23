@@ -258,5 +258,8 @@ void JPO_ClearBits() {
     SystemStatusBits &= ~SSB_BLX;     // Turn Off BLUX30 Not Found Bit
     SystemStatusBits &= ~SSB_LPS_1;   // Turn Off LPS35HW Not Found Bit
     SystemStatusBits &= ~SSB_LPS_2;   // Turn Off LPS35HW Not Found Bit
+    SystemStatusBits &= ~SSB_TLW;     // Turn Off Tinovi Leaf Wetness Not Found Bit
+    SystemStatusBits &= ~SSB_TSM;     // Turn Off Tinovi Soil Moisture Not Found Bit
+    SystemStatusBits &= ~SSB_TMSM;    // Turn Off Tinovi MultiLevel Soil Moisture Not Found Bit
   }
 }
