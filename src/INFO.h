@@ -232,6 +232,18 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sAS5600", comma);
     comma=",";
   }
+  if (TLW_exists) {
+    sprintf (buf+strlen(buf), "%sTLW", comma);
+    comma=",";
+  }
+  if (TSM_exists) {
+    sprintf (buf+strlen(buf), "%sTSM", comma);
+    comma=",";
+  }
+  if (TMSM_exists) {
+    sprintf (buf+strlen(buf), "%sTMSM", comma);
+    comma=",";
+  }
   if (HI_exists) {
     sprintf (buf+strlen(buf), "%sHI", comma);
     comma=",";
