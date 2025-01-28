@@ -235,7 +235,7 @@ On the view device screen on the Particle Console there is a FUNCTIONS area at t
 
 >A4CLR - Unassigns pin A4. Removes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT, A4RAW.TXT if they exist
 
->A5RAW - Configures pin A4 to be a distance gauge. Create file A5DIST.TXT. Reboot necessary. Default sensor is 10m where pin A4 is multiplied by 2.5mm
+>A5RAW - Configures pin A5 for raw readings (Average of 5 samples 10ms apart). Creates A5RAW.TXT. Reports as a5r to Particle.
 
 >A5CLR - Unassigns pin A5. Removes files A5RAW.TXT if it exist
 
@@ -378,6 +378,7 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
      "rgt2": "{{rgt2}}",
      "rgp2": "{{rgp2}}",
      "a4r": "{{a4r}}",
+     "a5r": "{{a5r}}",
      "ws": "{{ws}}",
      "wd": "{{wd}}",
      "wg": "{{wg}}",
