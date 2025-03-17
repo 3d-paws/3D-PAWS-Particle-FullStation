@@ -1,4 +1,4 @@
-PRODUCT_VERSION(39);
+PRODUCT_VERSION(38);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
 #define VERSION_INFO "FSAC-250121v39"
 
@@ -174,7 +174,7 @@ PRODUCT_VERSION(39);
  *                         Upgrading to use deviceOS 6.1.1
  *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
  * 
- *          Version 39 Released on 2025-03-17
+ *          Version 38 Released on 2025-03-17
  *          2025-01-07 RJB Moved LORA_IRQ_PIN from A5 to D6.
  *          2025-01-14 RJB Rebuilt the LoRa message handling. 
  *                         We now receive LoRa messages in JSON format
