@@ -306,6 +306,7 @@ void OBS_Do() {
   float mcp3_temp = 0.0;  // globe temperature
   float wetbulb_temp = 0.0;
   float sht1_humid = 0.0;
+  float sht1_temp = 0.0;
   float heat_index = 0.0;
 
 // Output("DB:OBS_Start");
@@ -579,6 +580,7 @@ void OBS_Do() {
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
+    sht1_temp = t; // save for derived observations
 
     // 21 SHT1 Humidity
     strcpy (obs[oidx].sensor[sidx].id, "sh1");
@@ -981,7 +983,7 @@ void OBS_Do() {
   // 55 Heat Index Temperature
   if (HI_exists) {
 // Output("DB:OBS_HI");
-    heat_index = hi_calculate(mcp1_temp, sht1_humid);
+    heat_index = hi_calculate(sht1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "hi");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) heat_index;
@@ -991,7 +993,7 @@ void OBS_Do() {
   // 56 Wet Bulb Temperature
   if (WBT_exists) {
 // Output("DB:OBS_WBT");
-    wetbulb_temp = wbt_calculate(mcp1_temp, sht1_humid);
+    wetbulb_temp = wbt_calculate(sht1_temp, sht1_humid);
     strcpy (obs[oidx].sensor[sidx].id, "wbt");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) wetbulb_temp;
@@ -1004,7 +1006,7 @@ void OBS_Do() {
 // Output("DB:OBS_WBGT");
     float wbgt = 0.0;
     if (MCP_3_exists) {
-      wbgt = wbgt_using_wbt(mcp1_temp, mcp3_temp, wetbulb_temp); // TempAir, TempGlobe, TempWetBulb
+      wbgt = wbgt_using_wbt(sht1_temp, mcp3_temp, wetbulb_temp); // TempAir, TempGlobe, TempWetBulb
     }
     else {
       wbgt = wbgt_using_hi(heat_index);
@@ -1185,7 +1187,7 @@ bool OBS_FS_Publish(int i) {
  * ======================================================================================================================
  */
 bool OBS_Relay_Publish(int relay_type) {
-  if (relay_type>0) {  // little safty check. Should not be 0
+  if (relay_type > 0) {  // little safty check. Should not be 0
     Serial_write (msgbuf);
     if (Particle_Publish((char *) relay_msgtypes[relay_type])) {
       sprintf (Buffer32Bytes, "RELAY[%s]->PUB OK", relay_msgtypes[relay_type]);

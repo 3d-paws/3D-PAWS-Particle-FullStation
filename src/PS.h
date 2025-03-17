@@ -345,7 +345,7 @@ int Function_DoAction(String s) {
     return(state);
   }
 
-  else if (strcmp (s,"A5RAW") == 0) { // Set A4 State File to Raw
+  else if (strcmp (s,"A5RAW") == 0) { // Set A5 State File to Raw
     Output("DoAction:A5RAW");
     // Add A5 Raw configuration
     if (SD_exists) {
@@ -357,6 +357,7 @@ int Function_DoAction(String s) {
         File fp = SD.open(SD_A5_RAW_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
+          A5_State = A5_STATE_RAW;
           Output ("A5=RAW, SET");
         }
         else {

@@ -131,7 +131,7 @@ bool WBGT_exists = false;
  */
 Adafruit_SI1145 uv = Adafruit_SI1145();
 bool SI1145_exists = false;
-// When we do a read of all three and we get zeros. If these llast readings are not zero, we will reinitialize the
+// When we do a read of all three and we get zeros. If these last readings are not zero, we will reinitialize the
 // chip. When does a reset on it and then read again.
 float si_last_vis = 0.0;
 float si_last_ir = 0.0;
@@ -758,7 +758,7 @@ double wbt_calculate(double T, double RH) {
  */
 void hi_initialize() {
   Output("HI:INIT");
-  if (MCP_1_exists && SHT_1_exists) {
+  if (SHT_1_exists) {
     HI_exists = true;
     Output ("HI:OK");
   }

@@ -174,19 +174,21 @@ PRODUCT_VERSION(39);
  *                         Upgrading to use deviceOS 6.1.1
  *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
  * 
- *          Version 39 Released on 2025-01-23
+ *          Version 39 Released on 2025-03-17
  *          2025-01-07 RJB Moved LORA_IRQ_PIN from A5 to D6.
  *          2025-01-14 RJB Rebuilt the LoRa message handling. 
- *                         Now we store then forward to Particle LoRa message types: INFO, RS, SG.
+ *                         We now receive LoRa messages in JSON format
+ *                         We now store then forward to Particle LoRa message types: INFO, LR.
  *                         On LoRa messages received, the JSON portion is forwarded 
- *                         Added RG and associated pin to INFO  
+ *                         Added RG and associated pin to INFO messages  
  *                         We now call OBS_PublishAll() before daily rebooting and powering down on low battery
  *                         We moved low battery powerdown from 10% to 15%.
  *          2025-01-21 RJB Added support for A4 to be configured for raw readings (Simple average of 5 samples) 10ms apart
  *                           DoAction A4RAW. Reports to Particle as a4r 
  *                         Added support for A5 to be configured for raw readings (Simple average of 5 samples) 10ms apart
  *                           DoAction A5RAW and A5CLR. Reports to Particle as a5r 
- *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil)        
+ *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil) 
+ *          2025-03-17 RJB Switched Heat Index Temp, Wet Bulb Temp, Wet Bulb calcs to use sht1 temp from mcp1 temp    
  *                                       
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
@@ -230,6 +232,10 @@ PRODUCT_VERSION(39);
  *  Dallas OneWire          https://github.com/particle-iot/OneWireLibrary - Not supported on Boron/Argon
  *                          WARNING:This library has not been updated for the Argon, Boron, Tracker One, Photon 2/P2.
  *                          https://docs.particle.io/reference/device-os/libraries/o/OneWire/
+ *
+ *  LeafSens                https://github.com/tinovi/LeafArduino   I2C ADDRESS 0x61
+ *  i2cArduino              https://github.com/tinovi/i2cArduinoI2c I2C ADDRESS 0x63
+ *  i2cMultiSm              https://github.com/tinovi/i2cMultiSoilArduino/tree/master/lib ADDRESS 0x65
  * 
  * Distance Sensors
  * The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
@@ -237,22 +243,16 @@ PRODUCT_VERSION(39);
  * 
  * Tinovi Moisture Sensors
  * Non-Contact Capacitive leaf wetness, Temperature sensor
- * https://tinovi.com/shop/i2c-non-contact-capacitive-leaf-wetness-temperature/
- *   https://github.com/tinovi/i2cArduino
- *   https://tinovi.com/wp-content/uploads/2022/08/PM-WCS-3-I2C.pdf
- *   i2c:0x61
+ *   https://tinovi.com/shop/i2c-non-contact-capacitive-leaf-wetness-temperature/
+ *   https://tinovi.com/wp-content/uploads/2021/10/Leaf-Wetness-i2c-2021-10-11.pdf
  * 
  * PM-WCS-3-I2C I2C Non-Contact Capacitive Soil Moisture, Temperature sensor
- * https://tinovi.com/shop/i2c-capacitive-soil-moisture-temperature-and-ec-sensor-variation-cable/
- *   https://github.com/tinovi/LeafArduinoI2c
- *   https://tinovi.com/wp-content/uploads/2021/10/Leaf-Wetness-i2c-2021-10-11.pdf
- *   i2c:0x63
+ *   https://tinovi.com/shop/i2c-capacitive-soil-moisture-temperature-and-ec-sensor-variation-cable/
+ *   https://tinovi.com/wp-content/uploads/2022/08/PM-WCS-3-I2C.pdf
  * 
  * SOIL-MULTI-5-I2C I2C Capacitive multi level soil moisture, temperature sensor
- * https://tinovi.com/shop/soil-multi-5-i2c-i2c-capacitive-soil-moisture-temperature-sensor/
- *   https://github.com/tinovi/i2cMultiSoilArduino/tree/master/lib
+ *   https://tinovi.com/shop/soil-multi-5-i2c-i2c-capacitive-soil-moisture-temperature-sensor/
  *   https://tinovi.com/wp-content/uploads/2024/07/SOIL-MULTI-5-I2C.pdf
- *   i2c: 0x65
  *
  * Battery Charger Status from System.batteryState()
  *  0 = BATTERY_STATE_UNKNOWN
@@ -380,7 +380,7 @@ PRODUCT_VERSION(39);
  * A2   = Wind Speed IRQ
  * A3   = Rain Gauge IRQ
  * A4   = 2nd Rain Gauge or Distance Gauge based on SD card file existing
- * A5   = Future
+ * A5   = Optional read/report of average on analog pin 
  * D13  = SPIO CLK   SD Card
  * D12  = SPI0 MOSI  SD Card
  * D11  = SPI0 MISO  SD Card
