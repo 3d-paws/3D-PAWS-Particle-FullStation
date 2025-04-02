@@ -686,6 +686,10 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 // https://docs.particle.io/cards/firmware/system-thread/system-threading-behavior/
 SYSTEM_THREAD(ENABLED);
 
+// External 3rd party SIM 
+STARTUP(Cellular.setActiveSim(EXTERNAL_SIM));
+STARTUP(Cellular.setCredentials("bsnlnet"));
+
 /*
  * ======================================================================================================================
  * setup() - runs once, when the device is first turned on.
