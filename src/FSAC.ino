@@ -1,11 +1,12 @@
-PRODUCT_VERSION(38);
+PRODUCT_VERSION(39);
 #define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-250121v39"
+#define VERSION_INFO "FSAC-250413v39"
 
 /*
  *======================================================================================================================
  * FullStation (FS) - Always Connected (AC)
  *   Board Type : Particle BoronLTE https://docs.particle.io/datasheets/boron/boron-datasheet/
+ *   LoRa Module: Adafruit RFM95W LoRa Radio Transceiver Breakout - 868 or 915 MHz https://www.adafruit.com/product/3072
  *   Description: Monitor 3D-PAWS Full Station and transmit data to Particle Cloud
  *   Author: Robert Bubon
  *   Date:   2021-01-14 RJB Initial Development
@@ -174,7 +175,7 @@ PRODUCT_VERSION(38);
  *                         Upgrading to use deviceOS 6.1.1
  *          2024-12-09 RJB INFO msg now sent before powering down do to low lipo battery.
  * 
- *          Version 38 Released on 2025-03-17
+ *          Version 38 Released on 2025-03-17 (Version 39 FEWSNET)
  *          2025-01-07 RJB Moved LORA_IRQ_PIN from A5 to D6.
  *          2025-01-14 RJB Rebuilt the LoRa message handling. 
  *                         We now receive LoRa messages in JSON format
@@ -188,8 +189,12 @@ PRODUCT_VERSION(38);
  *                         Added support for A5 to be configured for raw readings (Simple average of 5 samples) 10ms apart
  *                           DoAction A5RAW and A5CLR. Reports to Particle as a5r 
  *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil) 
- *          2025-03-17 RJB Switched Heat Index Temp, Wet Bulb Temp, Wet Bulb calcs to use sht1 temp from mcp1 temp    
- *                                       
+ *          2025-03-17 RJB Switched Heat Index Temp, Wet Bulb Temp, Wet Bulb calcs to use sht1 temp from mcp1 temp
+ *     
+ *          2025-04-08 RJB Removed the check for serial console in SimChangeCheck()
+ *          2025-04-13 RJB Reworked the handling of pin names. New function in PS.h called GetPinName()
+ *                         INFO will report "lora:NF" when LoRa is not found
+ *                         INFO Serial Console Enable now reports as "scepin(D8)":"DISABLED"                         
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -556,26 +561,6 @@ int DailyRebootCountDownTimer;
 uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
 
 char imsi[16] = "";  // International Mobile Subscriber Identity
-
-#if PLATFORM_ID == PLATFORM_BORON
-const char* pinNames[] = {
-    "A0", "A1", "A2", "A3", "A4", "A5",
-    "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
-    "D9", "D10", "D11", "D12", "D13", "D14", "D15",
-    "SDA", "SCL", "TX", "RX", "MISO", "MOSI", "SCK", "SS",
-    "WKP", "VUSB", "Li+"
-};
-#endif
-
-#if PLATFORM_ID == PLATFORM_ARGON
-const char* pinNames[] = {
-    "A0", "A1", "A2", "A3", "A4", "A5",
-    "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
-    "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19",
-    "SDA", "SCL", "TX", "RX", "MISO", "MOSI", "SCK", "SS",
-    "WKP", "VUSB", "Li+", "EN", "3V3", "GND"
-};
-#endif
 
 /*
  * ======================================================================================================================
