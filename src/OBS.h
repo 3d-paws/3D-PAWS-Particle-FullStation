@@ -176,7 +176,7 @@ int OBS_Relay_Build_JSON() {
   int relay_type = 0;
 
   memset(msgbuf, 0, sizeof(msgbuf));
-  JSONBufferWriter writer(msgbuf, sizeof(msgbuf)-1);
+  JSONBufferWriter writer(msgbuf, sizeof(msgbuf)-1); // Is this really needed
 
   // Locate message we need to log
   int i = lora_relay_need2log_idx();
@@ -302,7 +302,6 @@ void OBS_Do() {
   unsigned long rgds;    // rain gauge delta seconds, seconds since last rain gauge observation logged
   unsigned long rg2ds;   // rain gauge delta seconds, seconds since last rain gauge observation logged
   float BatteryPoC = 0.0; // Battery Percent of Charge
-  float mcp1_temp = 0.0;  // air temperature
   float mcp3_temp = 0.0;  // globe temperature
   float wetbulb_temp = 0.0;
   float sht1_humid = 0.0;
@@ -365,7 +364,7 @@ void OBS_Do() {
   raingauge1_interrupt_stime = System.millis();
   raingauge1_interrupt_ltime = 0; // used to debounce the tip
 
-  if (A4_State == A4_STATE_RAIN) {
+  if (OP1_State == OP1_STATE_RAIN) {
     rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
     rain2 = raingauge2_interrupt_count * 0.2;
     rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
@@ -816,8 +815,6 @@ void OBS_Do() {
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
-
-    mcp1_temp = t; // save for derived observations
 // Output("DB:OBS_MCP1x");
   }
 
@@ -891,24 +888,24 @@ void OBS_Do() {
 // Output("DB:OBS_BLXx");
   }
 
-  if (A4_State == A4_STATE_DISTANCE) {
-// Output("DB:OBS_A4D");
+  if (OP1_State == OP1_STATE_DISTANCE) {
+// Output("DB:OBS_OP1D");
     // 43 Distance Guage
     strcpy (obs[oidx].sensor[sidx].id, "sg"); // sg = snow or stream
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
-  if (A4_State == A4_STATE_RAW) {
-// Output("DB:OBS_A4R");
-    // 44 A4 Raw
-    strcpy (obs[oidx].sensor[sidx].id, "a4r");
+  if (OP1_State == OP1_STATE_RAW) {
+// Output("DB:OBS_OP1R");
+    // 44 OP1 Raw
+    strcpy (obs[oidx].sensor[sidx].id, "op1r");
     obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(A4);
+    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP1_PIN);
     obs[oidx].sensor[sidx++].inuse = true;
   }
-  else if (A4_State == A4_STATE_RAIN) {
-// Output("DB:OBS_A4R");
+  else if (OP1_State == OP1_STATE_RAIN) {
+// Output("DB:OBS_OP1R");
     // 45 Rain Guage 2
     strcpy (obs[oidx].sensor[sidx].id, "rg2");
     obs[oidx].sensor[sidx].type = F_OBS;
@@ -928,12 +925,12 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
-  if (A5_State == A5_STATE_RAW) {
-// Output("DB:OBS_A5R");
-    // 44 A4 Raw
-    strcpy (obs[oidx].sensor[sidx].id, "a5r");
+  if (OP2_State == OP2_STATE_RAW) {
+// Output("DB:OBS_OP2R");
+    // 48 OP2 Raw
+    strcpy (obs[oidx].sensor[sidx].id, "op2r");
     obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(A5);
+    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP2_PIN);
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
@@ -1018,6 +1015,7 @@ void OBS_Do() {
 // Output("DB:OBS_WBGTx");
   }
 
+#if (PLATFORM_ID != PLATFORM_MSOM)
   // 58,59 Tinovi Leaf Wetness
   if (TLW_exists) {
 // Output("DB:OBS_TLW");
@@ -1038,6 +1036,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
 // Output("DB:OBS_TLWx");
   }
+#endif
 
   // 60-63 Tinovi Soil Moisture
   if (TSM_exists) {
@@ -1116,7 +1115,19 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = (float) t;
     obs[oidx].sensor[sidx++].inuse = true;
 // Output("DB:OBS_TMSMx");
-  } 
+  }
+
+#if PLATFORM_ID == PLATFORM_MSOM
+  // Particle Muon on board temperature sensor 
+  if (PMTS_exists) {
+    float t = ptms_readtempc();
+    // t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t; // This is not and environmental sensor
+    strcpy (obs[oidx].sensor[sidx].id, "pmts");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) t;
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
+#endif
 
   // Set this after we read all sensors. So we capture if their state changes 
   obs[oidx].hth = SystemStatusBits;
@@ -1125,6 +1136,11 @@ void OBS_Do() {
   OBS_Log(oidx);
 
   lastOBS = System.millis();
+
+  // Lets force a publish if not doing 1 minute samples
+  if (obs_interval != DEFAULT_OBS_INTERVAL) {
+    LastTransmitTime = 0; 
+  }
 // Output("DB:OBS_Exit");
 }
 

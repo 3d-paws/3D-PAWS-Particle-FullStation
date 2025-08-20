@@ -30,9 +30,33 @@ void SD_NeedToSend_Add(char *observation);
  *  Note: We are dedicating SPI1 to the RH_RF95 driver. No need to mask interrupts.
  * ======================================================================================================================
  */
+#if (PLATFORM_ID == PLATFORM_MSOM)
+/*
+  #  Muon             LoRa Module
+  8  MOSI to D9  SPI1 MOSI (Master Out Slave In)
+  10 MISO to D10 SPI1 MISO (Master In Slave Out)
+  11 SCK  to D2  SPI1 SCK
+  36 CS   to D3  SPI1 ChipSel
+  38 RST  to D21      Reset
+  40 G0   to D20      DIO/IRQ
+*/
+#define LORA_IRQ_PIN  D20    // G0 on LoRa board
+#define LORA_SS       D3     // Slave Select Pin aka CS
+#define LORA_RESET    D21    // Used by lora_initialize()
+#else
+/*
+  Boron            LoRa Module
+  MISO to D4  SPI1 MISO
+  MOSI to D3  SPI1 MOSI
+  SCK  to D2  SPI1 SCK
+  CS   to D9       ChipSel
+  RST  to D10      Reset
+  G0   to D6       DIO/IRQ
+*/
 #define LORA_IRQ_PIN  D6    // G0 on LoRa board
 #define LORA_SS       D10   // Slave Select Pin
 #define LORA_RESET    D9    // Used by lora_initialize()
+#endif
 #define LORA_RESET_NOACTIVITY 30 // 30 minutes
 RH_RF95 rf95(LORA_SS, LORA_IRQ_PIN, hardware_spi); // SPI1
 bool LORA_exists = false;
@@ -202,7 +226,7 @@ bool lora_cf_validate() {
     sprintf(msgbuf, "AES_KEY[%s]", cf_aes_pkey); Output (msgbuf);
 
     AES_MYIV=cf_aes_myiv;
-    sprintf(msgbuf, "AES_MYIV[%u]", AES_MYIV); Output (msgbuf);
+    sprintf(msgbuf, "AES_MYIV[%llu]", AES_MYIV); Output (msgbuf);
 
     Output ("LORA CFV OK");
     return (true);
@@ -261,7 +285,7 @@ void lora_initialize() {
     }
   }
   else {
-    Output ("LORA INIT ERR");
+    Output ("LORA ERR CF NF");
   }
   // Even if LoRa not found set the timer for time we call initialize after setup()
   lora_alarm_timer = System.millis() + (LORA_RESET_NOACTIVITY * 60000);  // Minutes * 60 seconds
@@ -305,7 +329,7 @@ void lora_relay_msg(char *obs) {
   message_counter = atoi (strtok_r(p, ",", &p));
   message = p;
 
-  sprintf (Buffer32Bytes, "Relay %s ID:%d CNT:%d", relay_msgtypes[message_type], unit_id, message_counter);
+  sprintf (Buffer32Bytes, "LORA TYPE:%s ID:%d CNT:%d", relay_msgtypes[message_type], unit_id, message_counter);
   Output (Buffer32Bytes);
   // Output (message);
 
@@ -348,11 +372,11 @@ void lora_msg_check() {
       // Should be a message for us now
       uint8_t buf[RH_RF95_MAX_MESSAGE_LEN]; // 251 Bytes
       uint8_t len  = sizeof(buf);
-      uint8_t from = rf95.headerFrom();
-      uint8_t to   = rf95.headerTo();
-      uint8_t id   = rf95.headerId();
-      uint8_t flags= rf95.headerFlags();
-      int8_t  rssi = rf95.lastRssi(); 
+      [[maybe_unused]] uint8_t from = rf95.headerFrom();
+      [[maybe_unused]] uint8_t to   = rf95.headerTo();
+      [[maybe_unused]] uint8_t id   = rf95.headerId();
+      [[maybe_unused]] uint8_t flags= rf95.headerFlags();
+      [[maybe_unused]] int8_t  rssi = rf95.lastRssi(); 
       uint16_t checksum = 0;
       uint8_t byte1;
       uint8_t byte2;

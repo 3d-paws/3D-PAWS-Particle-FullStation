@@ -4,6 +4,13 @@
  * ======================================================================================================================
  */
 
+/*
+  SdFat library automatically calls SPI.beginTransaction() before it starts communicating with 
+  the SD card and SPI.endTransaction() when finished. This behavior ensures exclusive access 
+  to the SPI bus and correct configuration for the SD card, so you don’t need to wrap your 
+  calls to SdFat functions with these SPI commands yourself.
+*/
+
 #define CF_NAME           "CONFIG.TXT"
 #define KEY_MAX_LENGTH    30                // Config File Key Length
 #define VALUE_MAX_LENGTH  30                // Config File Value Length
@@ -20,8 +27,18 @@ void OBS_Do();
  *=======================================================================================================================
  */
 void SD_initialize() {
-
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  // Configure SPI using SdSpiConfig:
+  // Parameters:
+  //  - CS pin (SD_ChipSelect)
+  //  - SPI mode: SHARED_SPI lets you share the SPI bus with other devices
+  //  - SPI clock speed (here 10 MHz)
+  //  - SPI instance pointer (&SPI) for SPI0
+  SdSpiConfig spiConfig(SD_ChipSelect, SHARED_SPI, SD_SCK_MHZ(10), &SPI);
+  if (!SD.begin(spiConfig)) {
+#else
   if (!SD.begin(SD_ChipSelect)) {
+#endif
     Output ("SD:NF");
     SystemStatusBits |= SSB_SD;
     delay (5000);
@@ -43,6 +60,30 @@ void SD_initialize() {
       Output ("SD:Online");
       Output ("SD:OBS DIR Exists");
       SD_exists = true;
+    }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_RemoveFile()
+ *=======================================================================================================================
+ */
+void SD_RemoveFile(char *f) {
+  if (SD_exists) {
+    if (SD.exists(f)) {
+      if (SD.remove (f)) {
+        sprintf (msgbuf, "SDRF:%s OK", f);
+        Output (msgbuf);
+      }
+      else {
+        sprintf (msgbuf, "SDRF:%s ERR", f);
+        Output (msgbuf);
+      }
+    }
+    else {
+      sprintf (msgbuf, "SDRF:%s NF", f);
+      Output (msgbuf);
     }
   }
 }
@@ -160,7 +201,7 @@ void SD_N2S_Publish() {
   char ch;
   int i;
   int sent=0;
-  char *EventType;
+  char *EventType = (char*)"";
 
   if (SD_exists && SD.exists(SD_n2s_file)) {
     Output ("N2S:Publish");
@@ -236,7 +277,7 @@ void SD_N2S_Publish() {
             // So make the observation and stay in the loop if we have space in the OBS array.
             // We need to avoid a full array that would cause all observations to be saved to N2S file 
             // we currently have open, a bad thing.
-            if ( (System.millis() - lastOBS) > OBSERVATION_INTERVAL) {
+            if ( (System.millis() - lastOBS) > (obs_interval*60*1000)) {
               Output ("N2S:OBS Needed");
               if (OBS_Full()) {
                 // need to get out of this loop and let the main loop make the needed observation

@@ -4,6 +4,122 @@
  * ======================================================================================================================
  */
 
+ /*
+ * ======================================================================================================================
+ * GetPinName() - return the pin name in provider buffer
+ * ======================================================================================================================
+ */
+void GetPinName(pin_t pin, char *pinname) {
+  struct PinMap {
+    pin_t pin;
+    const char *name;
+  };
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  const PinMap pinTable[] = {
+    { A0, "A0" },   // Same pin as D19 
+    { A1, "A1" },   // Same pin as D18 
+    { A2, "A2" },   // Same pin as D17 
+    { A5, "A5" },   // Same pin as D14 
+    { A6, "A6" },   // Same pin as D29
+    { D0, "D0" },   // Same pin as SDA 
+    { D1, "D1" },   // Same pin as SCL
+    { D2, "D2" }, 
+    { D3, "D3" },
+    { D4, "D4" }, 
+    { D5, "D5" }, 
+    { D6, "D6" }, 
+    { D9, "D9" },   // Same pin as TX
+    { D10, "D10" }, // Same pin as RX
+    { D11, "D11" }, // Same pin as MISO
+    { D12, "D12" }, // Same pin as MOSI
+    { D13, "D13" }, // Same pin as SCK
+    { D20, "D20" }, { D21, "D21" }, { D22, "D22" }, { D24, "D24" },
+    { D25, "D25" }, { D26, "D26" }, { D27, "D27" }
+  };
+#else
+  const PinMap pinTable[] = {
+    { A0, "A0" },   // Same pin as D19 
+    { A1, "A1" },   // Same pin as D18 
+    { A2, "A2" },   // Same pin as D17 
+    { A3, "A3" },   // Same pin as D16
+    { A4, "A4" },   // Same pin as D15
+    { A5, "A5" },   // Same pin as D14 
+    { D0, "D0" },   // Same pin as SDA 
+    { D1, "D1" },   // Same pin as SCL
+    { D2, "D2" }, 
+    { D3, "D3" },
+    { D4, "D4" }, 
+    { D5, "D5" }, 
+    { D6, "D6" }, 
+    { D7, "D7" },
+    { D8, "D8" },
+    { D9, "D9" },   // Same pin as TX
+    { D10, "D10" }, // Same pin as RX
+    { D11, "D11" }, // Same pin as MISO
+    { D12, "D12" }, // Same pin as MOSI
+    { D13, "D13" }, // Same pin as SCK
+  };
+#endif
+
+  for (size_t i = 0; i < sizeof(pinTable) / sizeof(pinTable[0]); ++i) {
+      if (pin == pinTable[i].pin) {
+          strcpy(pinname, pinTable[i].name);
+          return;
+      }
+  }
+
+  strcpy(pinname, "NF");
+}
+
+/*
+ * ======================================================================================================================
+ * OutputResetReason() - 
+ * ======================================================================================================================
+ */
+void OutputResetReason() {
+  struct ResetReasonEntry {
+    int code;
+    const char* description;
+  };
+
+  const ResetReasonEntry resetReasonTable[] = {
+    {0,   "None / Unknown"},
+    {10,  "Unknown Reset Reason"},
+    {20,  "Reset Pin (button or pin)"},
+    {30,  "Low Power Management Reset"},
+    {40,  "Power Down Reset"},
+    {50,  "Brownout Reset"},
+    {60,  "Hardware Watchdog Reset"},
+    {70,  "Successful Firmware Update"},
+    {80,  "Firmware Update Error (deprecated)"},
+    {90,  "Firmware Update Timeout"},
+    {100, "Factory Reset Requested"},
+    {110, "Safe Mode Requested"},
+    {120, "DFU Mode Requested"},
+    {130, "System Panic (SOS Code)"},
+    {140, "User Reset (software call)"},
+    // Add more entries here as needed
+  };
+
+  // Enable reset info feature to get valid reset reason data
+
+  int resetReason = System.resetReason();
+  uint32_t resetData = System.resetReasonData();
+
+  // Find reset reason description by code inline
+  const char* reasonText = "Unknown Reset Reason";
+  for (unsigned int i = 0; i < sizeof(resetReasonTable) / sizeof(resetReasonTable[0]); i++) {
+    if (resetReasonTable[i].code == resetReason) {
+        reasonText = resetReasonTable[i].description;
+        break;
+    }
+  }
+
+  sprintf(msgbuf, "RR:%s (%d,%lu)", reasonText, resetReason, resetData);
+  Output(msgbuf);
+}
+
 /*
  * ======================================================================================================================
  * Output_CellBatteryInfo() - On OLED display station information
@@ -47,9 +163,8 @@ void DeviceReset() {
   // Should not get here if relay / watchdog is connected.
   digitalWrite(REBOOT_PIN, LOW);
   delay(2000); 
-
-  // May never get here if relay board / watchdog not connected.
-
+   // May never get here if relay cuts our power.
+ 
   // Resets the device, just like hitting the reset button or powering down and back up.
   System.reset();
 }
@@ -60,8 +175,8 @@ void DeviceReset() {
  * ======================================================================================================================
  */
 int Function_DoAction(String s) {
-  if (strcmp (s,"REBOOT") == 0) {  // Reboot
-    Output("DoAction:REBOOT");
+  if (s.equals("REBOOT")) {  // Reboot - We loose untransmitted observations. But they are save to SD.
+    Output("DoAction:REBOOT");     // Do a SEND before a REBOOT to address the abive issue.
     EEPROM_SaveUnreportedRain();
     delay(1000);
 
@@ -71,19 +186,19 @@ int Function_DoAction(String s) {
     return(0);  
   }
 
-  else if (strcmp (s,"INFO") == 0) {  // Send System Information
+  else if (s.equals("INFO")) {  // Send System Information
     Output("DoAction:INFO");
     SendSystemInformation=true;
     return(0);  
   }
 
-  else if (strcmp (s,"SEND") == 0) {  // Send OBS Now
+  else if (s.equals("SEND")) {  // Send OBS Now
     Output("DoAction:SEND");
     LastTransmitTime=0;
     return(0);  
   }
 
-  else if (strcmp (s,"CRT") == 0) { // Clear Rain Totals
+  else if (s.equals("CRT")) { // Clear Rain Totals
     time32_t current_time = Time.now();
     Output("DoAction:CRT");
     EEPROM_ClearRainTotals(current_time);
@@ -92,32 +207,32 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (strcmp (s,"A4DIST") == 0) { // Set A4 State File to Distance
-    Output("DoAction:A4DIST");
+  else if (s.equals("OP1DIST")) { // Set OP1 State File to Distance
+    Output("DoAction:OP1DIST");
     if (SD_exists) {
-      if (SD.exists(SD_A4_RAIN_FILE)) {
+      if (SD.exists(SD_OP1_RAIN_FILE)) {
         EEPROM_ClearRain2Totals();
-        if (SD.remove (SD_A4_RAIN_FILE)) {
-          Output ("A4=DIST, DEL RAIN:OK");
+        if (SD.remove (SD_OP1_RAIN_FILE)) {
+          Output ("OP1=DIST, DEL RAIN:OK");
         }
         else {
-          Output ("A4=DIST, DEL RAIN:ERR");
+          Output ("OP1=DIST, DEL RAIN:ERR");
           return(-2);
         }
       }
 
-      if (SD.exists(SD_A4_DIST_FILE)) {
-        Output ("A4=DIST, ALREADY EXISTS");    
+      if (SD.exists(SD_OP1_DIST_FILE)) {
+        Output ("OP1=DIST, ALREADY EXISTS");    
       }
       else {
         // Touch File
-        File fp = SD.open(SD_A4_DIST_FILE, FILE_WRITE);
+        File fp = SD.open(SD_OP1_DIST_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          Output ("A4=DIST, SET");
+          Output ("OP1=DIST, SET");
         }
         else {
-          Output ("A4=DIST, OPEN ERR");
+          Output ("OP1=DIST, OPEN ERR");
           return(-3);
         }
       }
@@ -126,72 +241,72 @@ int Function_DoAction(String s) {
       dg_adjustment = 2.5;
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
-          Output ("A4=DIST, DEL 5M:OK, 10M SET");
+          Output ("OP1=DIST, DEL 5M:OK, 10M SET");
         }
         else {
-          Output ("A4=DIST, DEL 5M:ERR");
+          Output ("OP1=DIST, DEL 5M:ERR");
           return(-4);
         }
       }
       else {
-        Output ("A4=DIST, 10M");
+        Output ("OP1=DIST, 10M");
       }
     }
     else {
-      Output("A4=DIST, SD NF"); 
+      Output("OP1=DIST, SD NF"); 
       return(-1);      
     }
  
     return(0);
   }
 
-  else if (strcmp (s,"A4RAIN") == 0) { // Set A4 State File to Rain
-    Output("DoAction:A4RAIN");
+  else if (s.equals("OP1RAIN")) { // Set OP1 State File to Rain
+    Output("DoAction:OP1RAIN");
     if (SD_exists) {
-      if (SD.exists(SD_A4_DIST_FILE)) {
-        if (SD.remove (SD_A4_DIST_FILE)) {
-          Output ("A4=RAIN, DEL DIST:OK");
+      if (SD.exists(SD_OP1_DIST_FILE)) {
+        if (SD.remove (SD_OP1_DIST_FILE)) {
+          Output ("OP1=RAIN, DEL DIST:OK");
         }
         else {
-          Output ("A4=RAIN, DEL DIST:ERR");
+          Output ("OP1=RAIN, DEL DIST:ERR");
           return(-2);
         }
       }
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
-          Output ("A4=RAIN, DEL 5M:OK");
+          Output ("OP1=RAIN, DEL 5M:OK");
         }
         else {
-          Output ("A4=RAIN, DEL 5M:ERR");
+          Output ("OP1=RAIN, DEL 5M:ERR");
           return(-4);
         }
       }
 
-      if (SD.exists(SD_A4_RAIN_FILE)) {
-        Output ("A4=RAIN, ALREADY EXISTS");      
+      if (SD.exists(SD_OP1_RAIN_FILE)) {
+        Output ("OP1=RAIN, ALREADY EXISTS");      
       }
       else {
         EEPROM_ClearRain2Totals(); // Just a good thing to do.
         // Touch File
-        File fp = SD.open(SD_A4_RAIN_FILE, FILE_WRITE);
+        File fp = SD.open(SD_OP1_RAIN_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          Output ("A4=RAIN, SET");
+          Output ("OP1=RAIN, SET");
         }
         else {
-          Output ("A4=RAIN, OPEN ERR");
+          Output ("OP1=RAIN, OPEN ERR");
           return(-3);
         }
       }
     }
     else {
-      Output("A4=RAIN, SD NF"); 
+      Output("OP1=RAIN, SD NF"); 
       return(-1);      
     }
     return(0);
   }
 
-  else if (strcmp (s,"5MDIST") == 0) { // Set 5M Distance Sensor State File
+  else if (s.equals("5MDIST")) { // Set 5M Distance Sensor State File
     Output("DoAction:5MDIST");
     if (SD_exists) {
       if (SD.exists(SD_5M_DIST_FILE)) {
@@ -218,29 +333,29 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (strcmp (s,"A4RAW") == 0) { // Set A4 State File to Raw
-    Output("DoAction:A4RAW");
+  else if (s.equals("OP1RAW")) { // Set OP1 State File to Raw
+    Output("DoAction:OP1RAW");
     if (SD_exists) {
 
       // Remove Rain Configuration
-      if (SD.exists(SD_A4_RAIN_FILE)) {
+      if (SD.exists(SD_OP1_RAIN_FILE)) {
         EEPROM_ClearRain2Totals();
-        if (SD.remove (SD_A4_RAIN_FILE)) {
-          Output ("A4=DIST, DEL RAIN:OK");
+        if (SD.remove (SD_OP1_RAIN_FILE)) {
+          Output ("OP1=DIST, DEL RAIN:OK");
         }
         else {
-          Output ("A4=DIST, DEL RAIN:ERR");
+          Output ("OP1=DIST, DEL RAIN:ERR");
           return(-2);
         }
       }
 
       // Remove Distance Configuration
-      if (SD.exists(SD_A4_DIST_FILE)) {
-        if (SD.remove (SD_A4_DIST_FILE)) {
-          Output ("A4=DIST, DEL DIST:OK");
+      if (SD.exists(SD_OP1_DIST_FILE)) {
+        if (SD.remove (SD_OP1_DIST_FILE)) {
+          Output ("OP1=DIST, DEL DIST:OK");
         }
         else {
-          Output ("A4=DIST, DEL DIST:ERR");
+          Output ("OP1=DIST, DEL DIST:ERR");
           return(-3);
         }
       }
@@ -249,168 +364,176 @@ int Function_DoAction(String s) {
       dg_adjustment = 2.5;
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
-          Output ("A4=DIST, DEL 5M:OK");
+          Output ("OP1=DIST, DEL 5M:OK");
         }
         else {
-          Output ("A4=DIST, DEL 5M:ERR");
+          Output ("OP1=DIST, DEL 5M:ERR");
           return(-4);
         }
       }
 
-      // Add A4 Raw configuration
-      if (SD.exists(SD_A4_RAW_FILE)) {
-        Output ("A4=RAW, ALREADY EXISTS");    
+      // Add OP1 Raw configuration
+      if (SD.exists(SD_OP1_RAW_FILE)) {
+        Output ("OP1=RAW, ALREADY EXISTS");    
       }
       else {
         // Touch File
-        File fp = SD.open(SD_A4_RAW_FILE, FILE_WRITE);
+        File fp = SD.open(SD_OP1_RAW_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          Output ("A4=RAW, SET");
+          Output ("OP1=RAW, SET");
         }
         else {
-          Output ("A4=RAW, OPEN ERR");
+          Output ("OP1=RAW, OPEN ERR");
           return(-5);
         }
       }
     }
     else {
-      Output("A4=RAW, SD NF"); 
+      Output("OP1=RAW, SD NF"); 
       return(-1);      
     }
     return(0);
   }
 
-  else if (strcmp (s,"A4CLR") == 0) { // Clear A4 State Files
+  else if (s.equals("OP1CLR")) { // Clear OP1 State Files
     int state=0;
-    Output("DoAction:A4CLR");
+    Output("DoAction:OP1CLR");
     if (SD_exists) {
-      if (SD.exists(SD_A4_DIST_FILE)) {
-        if (SD.remove (SD_A4_DIST_FILE)) {
-          A4_State = A4_STATE_NULL;
-          Output ("A4=CLR, DEL DIST:OK");
+      if (SD.exists(SD_OP1_DIST_FILE)) {
+        if (SD.remove (SD_OP1_DIST_FILE)) {
+          OP1_State = OP1_STATE_NULL;
+          Output ("OP1=CLR, DEL DIST:OK");
         }
         else {
-          Output ("A4=CLR, DEL DIST:ERR");
+          Output ("OP1=CLR, DEL DIST:ERR");
           state=-2;
         }
       }
       else {
-        Output ("A4=CLR, DEL RAIN:NF");
+        Output ("OP1=CLR, DEL RAIN:NF");
       }
 
-      if (SD.exists(SD_A4_RAIN_FILE)) {
-        if (SD.remove (SD_A4_RAIN_FILE)) {
-          A4_State = A4_STATE_NULL;      // We still need a reboot to get rid of ISR
-          Output ("A4=CLR, DEL RAIN:OK");
+      if (SD.exists(SD_OP1_RAIN_FILE)) {
+        if (SD.remove (SD_OP1_RAIN_FILE)) {
+          OP1_State = OP1_STATE_NULL;      // We still need a reboot to get rid of ISR
+          Output ("OP1=CLR, DEL RAIN:OK");
         }
         else {
-          Output ("A4=CLR, DEL RAIN:ERR");
+          Output ("OP1=CLR, DEL RAIN:ERR");
           state+=-3; // returns a -3 if also failed removing DIST file
         }
       }
       else {
-        Output ("A4=CLR, DEL RAIN:NF");
+        Output ("OP1=CLR, DEL RAIN:NF");
       }
 
-      if (SD.exists(SD_A4_RAW_FILE)) {
-        if (SD.remove (SD_A4_RAW_FILE)) {
-          A4_State = A4_STATE_NULL;
-          Output ("A4=CLR, DEL RAW:OK");
+      if (SD.exists(SD_OP1_RAW_FILE)) {
+        if (SD.remove (SD_OP1_RAW_FILE)) {
+          OP1_State = OP1_STATE_NULL;
+          Output ("OP1=CLR, DEL RAW:OK");
         }
         else {
-          Output ("A4=CLR, DEL RAW:ERR");
+          Output ("OP1=CLR, DEL RAW:ERR");
           state+=-4; // returns a -4 if also failed removing RAW file
         }
       }
       else {
-        Output ("A4=CLR, DEL RAIN:NF");
+        Output ("OP1=CLR, DEL RAIN:NF");
       }
 
       if (SD.exists(SD_5M_DIST_FILE)) {
         if (SD.remove (SD_5M_DIST_FILE)) {
-          Output ("A4=CLR, DEL 5M:OK");
+          Output ("OP1=CLR, DEL 5M:OK");
           dg_adjustment = 2.5;
         }
         else {
-          Output ("A4=CLR, DEL 5M:ERR");
+          Output ("OP1=CLR, DEL 5M:ERR");
           state+=-5;
         }
       }
     }
     else {
-      Output("A4=CLR, SD NF"); 
+      Output("OP1=CLR, SD NF"); 
       state=-1;     
     }
     return(state);
   }
 
-  else if (strcmp (s,"A5RAW") == 0) { // Set A5 State File to Raw
-    Output("DoAction:A5RAW");
-    // Add A5 Raw configuration
+  else if (s.equals("OP2RAW")) { // Set OP2 State File to Raw
+    Output("DoAction:OP2RAW");
+    // Add OP2 Raw configuration
     if (SD_exists) {
-      if (SD.exists(SD_A5_RAW_FILE)) {
-        Output ("A5=RAW, ALREADY EXISTS");    
+      if (SD.exists(SD_OP2_RAW_FILE)) {
+        Output ("OP2=RAW, ALREADY EXISTS");    
       }
       else {
         // Touch File
-        File fp = SD.open(SD_A5_RAW_FILE, FILE_WRITE);
+        File fp = SD.open(SD_OP2_RAW_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          A5_State = A5_STATE_RAW;
-          Output ("A5=RAW, SET");
+          OP2_State = OP2_STATE_RAW;
+          Output ("OP2=RAW, SET");
         }
         else {
-          Output ("A5=RAW, OPEN ERR");
+          Output ("OP2=RAW, OPEN ERR");
           return(-2);
         }
       }
     }
     else {
-      Output("A5=RAW, SD NF"); 
+      Output("OP2=RAW, SD NF"); 
       return(-1);      
     }
     return(0);
   }
 
     
-  else if (strcmp (s,"A5CLR") == 0) { // Clear A5 State Files
+  else if (s.equals("OP2CLR")) { // Clear OP2 State Files
     int state=0;
-    Output("DoAction:A5CLR");
+    Output("DoAction:OP2CLR");
     if (SD_exists) {
-      if (SD.exists(SD_A5_RAW_FILE)) {
-        if (SD.remove (SD_A4_RAW_FILE)) {
-          A5_State = A5_STATE_NULL;
-          Output ("A5=CLR, DEL RAW:OK");
+      if (SD.exists(SD_OP2_RAW_FILE)) {
+        if (SD.remove (SD_OP2_RAW_FILE)) {
+          OP2_State = OP2_STATE_NULL;
+          Output ("OP2=CLR, DEL RAW:OK");
         }
         else {
-          Output ("A5=CLR, DEL RAW:ERR");
+          Output ("OP2=CLR, DEL RAW:ERR");
           state=-2;
         }
       }
       else {
-        Output ("A5=CLR, DEL A5RAW:NF");
+        Output ("OP2=CLR, DEL OP2RAW:NF");
       }
     }
     else {
-      Output("A5=CLR, SD NF"); 
+      Output("OP2=CLR, SD NF"); 
       state=-1;     
     }
     return(state);
-}
+  }
 
-  else if (strcmp (s,"TXI5M") == 0) { // SetTransmit Interval to 5 Minutes
+  else if (s.equals("TXI5M")) { // Set 1 Minute Observations, Transmit Interval to 5 Minutes
     Output("DoAction:TXI5M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);  
+
     if (SD_exists) {
       if (SD.exists(SD_TX5M_FILE)) {
-        Output ("TXI5M, ALREADY SET"); 
-        obs_tx_interval = 5;     
+        Output ("TXI5M, ALREADY SET");     
       }
       else {
         // Touch File
         File fp = SD.open(SD_TX5M_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
+          //SD_RemoveFile (SD_TX5M_FILE);
+          SD_RemoveFile (SD_TX10M_FILE);
+          SD_RemoveFile (SD_OB5M_FILE);
+          SD_RemoveFile (SD_OB10M_FILE);
+          SD_RemoveFile (SD_OB15M_FILE);
+          obs_interval = DEFAULT_OBS_INTERVAL;
           obs_tx_interval = 5;
           Output ("TXI5M SET");
         }
@@ -418,12 +541,8 @@ int Function_DoAction(String s) {
           Output ("TXI5M OPEN ERR");
           return(-2);
         }
-      }
-
-      if (SD.exists(SD_TX10M_FILE)) {
-        if (SD.remove (SD_TX10M_FILE)) {
-          Output ("TXI5M: Removed TX10M File");
-        }
+        sprintf (msgbuf, "NEW: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        Output(msgbuf);
       }
     }
     else {
@@ -433,31 +552,35 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (strcmp (s,"TXI10M") == 0) { // SetTransmit Interval to 10 Minutes
+  else if (s.equals("TXI10M")) { // Set 1 Minute Observations, Transmit Interval to 10 Minutes
     Output("DoAction:TXI10M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);  
+
     if (SD_exists) {
       if (SD.exists(SD_TX10M_FILE)) {
-        Output ("TXI10M, ALREADY SET"); 
-        obs_tx_interval = 10;     
+        Output ("TXI10M, ALREADY SET");  
       }
       else {
         // Touch File
         File fp = SD.open(SD_TX10M_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          obs_tx_interval = 10;
           Output ("TXI10M SET");
+          SD_RemoveFile (SD_TX5M_FILE);
+          //SD_RemoveFile (SD_TX10M_FILE);
+          SD_RemoveFile (SD_OB5M_FILE);
+          SD_RemoveFile (SD_OB10M_FILE);
+          SD_RemoveFile (SD_OB15M_FILE);
+          obs_interval = DEFAULT_OBS_INTERVAL;
+          obs_tx_interval = 10;
         }
         else {
           Output ("TXI10M OPEN ERR");
           return(-2);
         }
-      }
-
-      if (SD.exists(SD_TX5M_FILE)) {
-        if (SD.remove (SD_TX5M_FILE)) {
-          Output ("TXI5M: Removed TX5M File");
-        }
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        Output(msgbuf);
       }
     }
     else {
@@ -467,31 +590,135 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (strcmp (s,"TXI15M") == 0) { // SetTransmit Interval to 15 Minutes
+  else if (s.equals("TXI15M")) { // Set 1 Minute Observations, Transmit Interval to 15 Minutes, 
     Output("DoAction:TXI15M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);
+
     if (SD_exists) {
-      if (!SD.exists(SD_TX5M_FILE) && !SD.exists(SD_TX10M_FILE)) {
-        Output ("TXI15M, ALREADY SET"); 
-        obs_tx_interval = 15;     
-      }
-      else {
-        // Remove Files
-        if (SD.exists(SD_TX5M_FILE)) {
-          if (SD.remove (SD_TX5M_FILE)) {
-            Output ("TXI15M: Removed TX5M File");
-          }
-        }
-        if (SD.exists(SD_TX10M_FILE)) {
-          if (SD.remove (SD_TX10M_FILE)) {
-            Output ("TXI15M: Removed TX10M File");
-          }
-        }      
-        obs_tx_interval = 15;
-        Output ("TXI15M SET"); 
-      }
+      SD_RemoveFile (SD_TX5M_FILE);
+      SD_RemoveFile (SD_TX10M_FILE);
+      SD_RemoveFile (SD_OB5M_FILE);
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+      obs_interval = DEFAULT_OBS_INTERVAL;
+      obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;
+      sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+      Output(msgbuf);
     }
     else {
       Output("TXI15M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (s.equals("OBI5M")) { // Set 5 Minute Observations, Transmit Interval to 5 Minutes
+    Output("DoAction:OBI5M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);  
+
+    if (SD_exists) {
+      if (SD.exists(SD_OB5M_FILE)) {
+        Output ("OBI5M, ALREADY SET");  
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_OB5M_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("OBI5M SET");
+          SD_RemoveFile (SD_TX5M_FILE);
+          SD_RemoveFile (SD_TX10M_FILE);
+          // SD_RemoveFile (SD_OB5M_FILE);
+          SD_RemoveFile (SD_OB10M_FILE);
+          SD_RemoveFile (SD_OB15M_FILE);
+          obs_interval = obs_tx_interval = 5;
+        }
+        else {
+          Output ("OBI5M OPEN ERR");
+          return(-2);
+        }
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        Output(msgbuf);
+      }
+    }
+    else {
+      Output("OBI5M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (s.equals("OBI10M")) { // Set 10 Minute Observations, Transmit Interval to 10 Minutes
+    Output("DoAction:OBI10M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);  
+
+    if (SD_exists) {
+      if (SD.exists(SD_OB10M_FILE)) {
+        Output ("OBI10M, ALREADY SET");  
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_OB10M_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("OBI10M SET");
+          SD_RemoveFile (SD_TX5M_FILE);
+          SD_RemoveFile (SD_TX10M_FILE);
+          SD_RemoveFile (SD_OB5M_FILE);
+          // SD_RemoveFile (SD_OB10M_FILE);
+          SD_RemoveFile (SD_OB15M_FILE);
+          obs_interval = obs_tx_interval = 10;
+        }
+        else {
+          Output ("OBI10M OPEN ERR");
+          return(-2);
+        }
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        Output(msgbuf);
+      }
+    }
+    else {
+      Output("OBI10M, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (s.equals("OBI105")) { // Set 15 Minute Observations, Transmit Interval to 15 Minutes
+    Output("DoAction:OBI15M");
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    Output(msgbuf);  
+
+    if (SD_exists) {
+      if (SD.exists(SD_OB15M_FILE)) {
+        Output ("OBI15M, ALREADY SET");  
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_OB15M_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("OBI15M SET");
+          SD_RemoveFile (SD_TX5M_FILE);
+          SD_RemoveFile (SD_TX10M_FILE);
+          SD_RemoveFile (SD_OB5M_FILE);
+          SD_RemoveFile (SD_OB10M_FILE);
+          //SD_RemoveFile (SD_OB15M_FILE);
+          obs_interval = obs_tx_interval = 15;
+        }
+        else {
+          Output ("OBI15M OPEN ERR");
+          return(-2);
+        }
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        Output(msgbuf);
+      }
+    }
+    else {
+      Output("OBI15M, SD NF"); 
       return(-1);      
     }
     return(0);
@@ -576,7 +803,7 @@ void WiFiChangeCheck() {
               Output("WIFI:SSID=Null Err");
             }
 
-            // UNSEC is allow to have no password just a ssid
+            // UNSEC is allowed to have no password just a ssid, but non of the others
             else if ((strcmp (auth, "UNSEC") != 0)  && (pw == NULL)) {
               Output("WIFI:PW=Null Err");
             }
@@ -658,7 +885,150 @@ void WiFiChangeCheck() {
     Output ("WIFI:NOSD USING NVAUTH");
   }
 }
+#endif
 
+#if PLATFORM_ID == PLATFORM_MSOM
+/*
+ * ======================================================================================================================
+ * network_initialize() - Setup WiFi if WIFI.TXT exists. Else setup Cellular            
+ * ======================================================================================================================
+ */
+void network_initialize() {
+  File fp;
+  int i=0;
+  char *p, *id, *ssid, *pw;
+  char ch, buf[128];
+
+  if (SD_exists) {
+    // Test for file WIFI.TXT
+    if (SD.exists(SD_wifi_file)) {
+      fp = SD.open(SD_wifi_file, FILE_READ); // Open the file for reading, starting at the beginning of the file.
+
+      if (fp) {
+        // Deal with too small or too big of file
+        if (fp.size()<=7 || fp.size()>127) {
+          fp.close();
+          Output ("WIFI:Invalid SZ");
+        }
+        else {
+          Output ("WIFI:Open");
+
+          // Read one line from file
+          while (fp.available() && (i < 127 )) {
+            ch = fp.read();
+
+            // sprintf (msgbuf, "%02X : %c", ch, ch);
+            // Output (msgbuf);
+
+            if ((ch == 0x0A) || (ch == 0x0D) ) {  // newline or linefeed
+              break;
+            }
+            else {
+              buf[i++] = ch;
+            }
+          }
+          fp.close();
+
+          // At this point we have encountered EOF, CR, or LF
+          // Now we need to terminate array with a null to make it a string
+          buf[i] = (char) NULL;
+
+          // Parse string for the following
+          //   WIFI ssid password
+          p = &buf[0];
+          id = strtok_r(p, ",", &p);
+
+          if (id == NULL) {
+            Output("WIFI:ID=Null Err");
+          }
+          else if (strcmp (id, "MUON") != 0) { 
+            sprintf (msgbuf, "WIFI:ID[%s] Err", id);          
+            Output(msgbuf);
+          }
+          else {
+            ssid = strtok_r(p, ",", &p);
+            pw  = strtok_r(p, ",", &p);
+            
+            if (ssid == NULL) {
+              Output("WIFI:SSID=Null Err");
+            }
+            else if (pw == NULL) {
+              Output("WIFI:PW=Null Err");
+            }
+            else {
+              Output("NETWORK:SET WIFI");
+              MuonWifiEnabled = true;
+
+              sprintf (msgbuf, "WIFI:SSID[%s]", ssid);
+              Output(msgbuf);
+              sprintf (msgbuf, "WIFI:PW[%s]", pw);
+              Output(msgbuf);
+
+              Output("WIFI:Particle Cloud Disconnect");  // We should no be connected, but do anyway
+              Particle.disconnect();
+
+              Output("WIFI:Turning Off Cellular");
+              Cellular.off();    // Turn off cellular modem
+              waitUntil(Cellular.isOff);  // Optional: wait for cellular modem to power down
+
+              Output("WIFI:Turning On Wifi");
+              WiFi.on();
+              
+              if (WiFi.clearCredentials()) {
+                Output("WIFI:Cleared Wifi Creds");
+              } else {
+                Output("WIFI:Clear Wifi Creds Err");
+              }
+
+              if (WiFi.setCredentials(ssid, pw)) {
+                Output("WIFI:Credentials Set");
+              } else {
+                Output("WIFI:Credentials Set Err");
+              }
+
+              Output("WIFI:Connect Called");
+              WiFi.connect();
+              // waitUntil(WiFi.ready);  // No we want to move on with out network
+            }
+          }
+        }
+      }
+      else {
+        sprintf (msgbuf, "WIFI:OPENERR[%s]", SD_wifi_file);          
+        Output(msgbuf);
+        Output ("WIFI:USING CELLULAR");
+      }
+    } 
+    else {
+      Output ("WIFO:NOFILE USING CELLULAR");
+    }
+  } // SD enabled
+  else {
+    Output ("WIFI:NOSD USING CELLULAR");
+  }
+
+  if (MuonWifiEnabled == false) {
+    Output("NETWORK:SET CELL");
+    Output("CELL:Particle Cloud Disconnect");  // We should no be connected, but do anyway
+    Particle.disconnect();
+
+    Output("CELL:Turning Off WiFi");
+    WiFi.disconnect();      // Disconnect Wi-Fi cleanly
+    WiFi.off();             // Turn Wi-Fi radio off to save power and avoid interference
+
+    if (WiFi.clearCredentials()) {
+      Output("CELL:Cleared Wifi Creds");
+    } else {
+      Output("CELL:Clear Wifi Creds Err");
+    }
+
+    Output("CELL:Turning On Cellular");
+    Cellular.on();          // Power on cellular modem
+  }
+}
+#endif
+
+#if (PLATFORM_ID == PLATFORM_ARGON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
  * WiFiPrintCredentials() - Read NVRAM and print WiFi Creditials     
@@ -672,7 +1042,6 @@ void WiFiPrintCredentials() {
   byte mac[6];
 
   WiFi.macAddress(mac);
-
 
   sprintf (msgbuf, "WIFI MAC[%02x:%02x:%02x:%02x:%02x:%02x]", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   Output(msgbuf);
@@ -752,7 +1121,7 @@ void SimChangeCheck() {
     Output (msgbuf);
   }
 
-  if (SerialConsoleEnabled && SD_exists) {
+  if (SD_exists) {
     // Test for file SIM.TXT
     if (SD.exists(SD_sim_file)) {
       fp = SD.open(SD_sim_file, FILE_READ); // Open the file for reading, starting at the beginning of the file.
@@ -926,7 +1295,7 @@ void SimChangeCheck() {
 }
 #endif
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
  * callback_imsi() - Callback for International Mobile Subscriber Identity 
@@ -952,31 +1321,47 @@ int callback_imsi(int type, const char* buf, int len, char* cimi) {
 
 /* 
  *=======================================================================================================================
- * TXI_Initialize() - Transmit Interval 5, 10 or 15 minutes
+ * OBI_TXI_Initialize() - OBservation Interval Transmit Interval Initialize
  *=======================================================================================================================
  */
-void TXI_Initialize() {
-  Output ("TXI:INIT");
+void OBI_TXI_Initialize() {
+  Output ("OBSTXI:INIT");
   if (SD_exists) {
     if (SD.exists(SD_TX5M_FILE)) {
       Output ("TXI5M Found");
       obs_tx_interval = 5;
-      if (SD.exists(SD_TX10M_FILE)) {
-        if (SD.remove (SD_TX10M_FILE)) {
-          Output ("TXI:RM 10M");
-        }
-      }
+      SD_RemoveFile (SD_TX10M_FILE);
+      SD_RemoveFile (SD_OB5M_FILE);
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
     }
     else if (SD.exists(SD_TX10M_FILE)) {
       Output ("TXI10M Found");
       obs_tx_interval = 10;
-      if (SD.exists(SD_TX5M_FILE)) {
-        if (SD.remove (SD_TX5M_FILE)) {
-          Output ("TXI:RM 5M");
-        }
-      }
+      SD_RemoveFile (SD_OB5M_FILE);
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB5M_FILE)) {
+      Output ("OBI5M Found");
+      obs_interval = obs_tx_interval = 5;
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB10M_FILE)) {
+      Output ("OBI10M Found");
+      obs_interval = obs_tx_interval = 10;
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB15M_FILE)) {
+      Output ("OBI15M Found");
+      obs_interval = obs_tx_interval = 15;
+    }
+    else {
+      obs_interval = DEFAULT_OBS_INTERVAL;
+      obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;
     }
   }
-  sprintf (msgbuf, "TXI=%dM", (int) obs_tx_interval);
+  sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
   Output(msgbuf);  
 }

@@ -57,13 +57,13 @@ void StationMonitor() {
   raingauge1_interrupt_stime = millis();
   raingauge1_interrupt_ltime = 0;
 
-  if (A4_State == A4_STATE_RAIN) {
+  if (OP1_State == OP1_STATE_RAIN) {
     sprintf (msgbuf+strlen(msgbuf), " RG2:%02d", raingauge2_interrupt_count);
     raingauge2_interrupt_count = 0;
     raingauge2_interrupt_stime = millis();
     raingauge2_interrupt_ltime = 0;
   }
-  else if (A4_State == A4_STATE_DISTANCE) {
+  else if (OP1_State == OP1_STATE_DISTANCE) {
     float dg = DistanceGauge_Median();
     sprintf (msgbuf+strlen(msgbuf), " DG:%02d.%02d", (int)dg, (int)(dg*100)%100);
   }
@@ -384,7 +384,7 @@ void StationMonitor() {
 
   // Give the use some time to read line 3 before changing
   if (count++ >= 2) {
-    cycle = ++cycle % 18;
+    cycle = (cycle+1) % 18;
     count = 0;
   }
 

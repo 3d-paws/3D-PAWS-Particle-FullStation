@@ -104,7 +104,7 @@ void EEPROM_ClearRainTotals(time32_t current_time) {
     EEPROM.put(eeprom_address, eeprom);
   }
   else {
-    Output("EEPROM CLEAR ERROR");
+    Output("EEPROM CRT ERROR");
   }
 }
 
@@ -216,7 +216,7 @@ void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
       eeprom.rgp1 = eeprom.rgt1;
       eeprom.rgt1 = 0;
 
-      if (A4_State == A4_STATE_RAIN) {
+      if (OP1_State == OP1_STATE_RAIN) {
         eeprom.rgp2 = eeprom.rgt2;
         eeprom.rgt2 = 0;
       }
@@ -226,7 +226,7 @@ void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
     if (rgt1>0) {
       eeprom.rgt1 += rgt1;
     }
-    if ((A4_State == A4_STATE_RAIN) && (rgt2>0)) {
+    if ((OP1_State == OP1_STATE_RAIN) && (rgt2>0)) {
       eeprom.rgt2 += rgt2;
     }
 
@@ -243,7 +243,7 @@ void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
  *=======================================================================================================================
  */
 void EEPROM_SaveUnreportedRain() {
-  if (raingauge1_interrupt_count || ((A4_State == A4_STATE_RAIN) && raingauge2_interrupt_count)) {
+  if (raingauge1_interrupt_count || ((OP1_State == OP1_STATE_RAIN) && raingauge2_interrupt_count)) {
     unsigned long rgds;     // rain gauge delta seconds, seconds since last rain gauge observation logged
     unsigned long rg2ds = 0;     // rain gauge delta seconds, seconds since last rain gauge observation logged
     float rain2 = 0.0;
@@ -252,7 +252,7 @@ void EEPROM_SaveUnreportedRain() {
     rgds = (System.millis()-raingauge1_interrupt_stime)/1000;  // seconds since last rain gauge observation logged
     rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
     
-    if (A4_State == A4_STATE_RAIN) {
+    if (OP1_State == OP1_STATE_RAIN) {
       rain2 = raingauge2_interrupt_count * 0.2;
       rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;  // seconds since last rain gauge observation logged
       rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;

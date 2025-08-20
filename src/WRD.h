@@ -53,7 +53,11 @@ WIND_STR wind;
  * ======================================================================================================================
  */
 bool      AS5600_exists     = true;
+#if PLATFORM_ID == PLATFORM_MSOM
+int       AS5600_ADR        = 0x40;   // AS5600L
+#else
 int       AS5600_ADR        = 0x36;
+#endif
 const int AS5600_raw_ang_hi = 0x0c;
 const int AS5600_raw_ang_lo = 0x0d;
 
@@ -69,34 +73,47 @@ bool ws_refresh = false;           // Set to true when we have delayed too long 
 
 /*
  * ======================================================================================================================
- *  Pin A4 State Setup
+ *  Option Pin Defination Setup
  * ======================================================================================================================
  */
-#define A4_STATE_NULL       0
-#define A4_STATE_DISTANCE   1
-#define A4_STATE_RAIN       2
-#define A4_STATE_RAW        3
-char SD_A4_DIST_FILE[] = "A4DIST.TXT";         // File used to set pin A4 as a Distance Gauge
-char SD_A4_RAIN_FILE[] = "A4RAIN.TXT";         // File used to set pin A4 as a 2nd Rain Gauge
-char SD_A4_RAW_FILE[]  = "A4RAW.TXT";          // File used to set pin A4 as generic analog device connected
-int A4_State = A4_STATE_NULL;                  // Default is not used
+#if (PLATFORM_ID == PLATFORM_MSOM) 
+#define OP1_PIN  A0     // Grove D5, PIN 29 A0/D19
+#define OP2_PIN  A1     // Grove D5, PIN 31 A1/D18
+#else
+#define OP1_PIN  A4
+#define OP2_PIN  A5
+#endif
 
 /*
  * ======================================================================================================================
- *  Pin A5 State Setup
+ *  Pin OP1 State Setup
  * ======================================================================================================================
  */
-#define A5_STATE_NULL       0
-#define A5_STATE_RAW        1
-char SD_A5_RAW_FILE[]  = "A5RAW.TXT";          // File used to set pin A5 as generic analog device connected
-int A5_State = A5_STATE_NULL;                  // Default is not used
+#define OP1_STATE_NULL       0
+#define OP1_STATE_DISTANCE   1
+#define OP1_STATE_RAIN       2
+#define OP1_STATE_RAW        3
+char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";         // File used to set pin as a Distance Gauge
+char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";         // File used to set pin as a 2nd Rain Gauge
+char SD_OP1_RAW_FILE[]  = "OP1RAW.TXT";          // File used to set pin as generic analog device connected
+int OP1_State = OP1_STATE_NULL;                  // Default is not used
+
+/*
+ * ======================================================================================================================
+ *  Pin OP2 State Setup
+ * ======================================================================================================================
+ */
+#define OP2_STATE_NULL       0
+#define OP2_STATE_RAW        1
+char SD_OP2_RAW_FILE[]  = "OP2RAW.TXT";          // File used to set pin as generic analog device connected
+int OP2_State = OP2_STATE_NULL;                  // Default is not used
 
 /*
  * =======================================================================================================================
  *  Distance Gauge - Can be Distance or Stream
  * =======================================================================================================================
  */
-#define DISTANCE_GAUGE_PIN  A4
+#define DISTANCE_GAUGE_PIN  OP1_PIN
 #define DG_BUCKETS          60
 char SD_5M_DIST_FILE[] = "5MDIST.TXT";        // Multiply by 1.25 for 5m Distance Gauge
 unsigned int dg_bucket = 0;
@@ -120,7 +137,7 @@ uint64_t anemometer_interrupt_stime;
  *  anemometer_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#define ANEMOMETER_IRQ_PIN  A2
+#define ANEMOMETER_IRQ_PIN  D5
 void anemometer_interrupt_handler()
 {
   anemometer_interrupt_count++;
@@ -141,7 +158,11 @@ uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
  *  raingauge1_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#define RAINGAUGE1_IRQ_PIN D4
+#else
 #define RAINGAUGE1_IRQ_PIN A3
+#endif
 void raingauge1_interrupt_handler()
 {
   if ((System.millis() - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
@@ -154,7 +175,7 @@ void raingauge1_interrupt_handler()
 
 /*
  * ======================================================================================================================
- *  Optipolar Hall Effect Sensor SS451A - Rain Gauge 2 - Optional pin A4
+ *  Optipolar Hall Effect Sensor SS451A - Rain Gauge 2 - Option 1
  * ======================================================================================================================
  */
 volatile unsigned int raingauge2_interrupt_count;
@@ -167,7 +188,7 @@ uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
  *  raingauge2_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#define RAINGAUGE2_IRQ_PIN   A4
+#define RAINGAUGE2_IRQ_PIN OP1_PIN
 void raingauge2_interrupt_handler()
 {
   if ((System.millis() - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
@@ -180,7 +201,7 @@ void raingauge2_interrupt_handler()
 
 /* 
  *=======================================================================================================================
- * as5600_initialize() - wind direction sensor
+ * as5600_initialize() - wind direction sensor I2C 0x36
  *=======================================================================================================================
  */
 void as5600_initialize() {
@@ -199,15 +220,15 @@ void as5600_initialize() {
 
 /* 
  *=======================================================================================================================
- * A4_Initialize()
+ * OP1_Initialize()
  *=======================================================================================================================
  */
-void A4_Initialize() {
-  Output ("A4:INIT");
+void OP1_Initialize() {
+  Output ("OP1:INIT");
   if (SD_exists) {
-    if (SD.exists(SD_A4_DIST_FILE)) {
-      Output ("A4=DIST");
-      A4_State = A4_STATE_DISTANCE;
+    if (SD.exists(SD_OP1_DIST_FILE)) {
+      Output ("OP1=DIST");
+      OP1_State = OP1_STATE_DISTANCE;
       if (SD.exists(SD_5M_DIST_FILE)) {
         dg_adjustment = 1.25;
         Output ("DIST=5M");
@@ -217,46 +238,46 @@ void A4_Initialize() {
         Output ("DIST=10M");
       }
     }
-    else if (SD.exists(SD_A4_RAIN_FILE)) {
-      Output ("A4=RAIN");
-      A4_State = A4_STATE_RAIN;
+    else if (SD.exists(SD_OP1_RAIN_FILE)) {
+      Output ("OP1=RAIN");
+      OP1_State = OP1_STATE_RAIN;
       // Optipolar Hall Effect Sensor SS451A - Rain Gauge 2
       raingauge2_interrupt_count = 0;
       raingauge2_interrupt_stime = System.millis();
       raingauge2_interrupt_ltime = 0;  // used to debounce the tip
       attachInterrupt(RAINGAUGE2_IRQ_PIN, raingauge2_interrupt_handler, FALLING);
     }
-    else if (SD.exists(SD_A4_RAW_FILE)) {
-      Output ("A4=RAW");
-      A4_State = A4_STATE_RAW;
+    else if (SD.exists(SD_OP1_RAW_FILE)) {
+      Output ("OP1=RAW");
+      OP1_State = OP1_STATE_RAW;
     }
     else {
-      Output ("A4=NULL");
+      Output ("OP1=NULL");
     }
   }
   else {
-    Output ("A4=NULL,SD NF");
+    Output ("OP1=NULL,SD NF");
   }
 }
 
 /* 
  *=======================================================================================================================
- * A5_Initialize()
+ * OP2_Initialize()
  *=======================================================================================================================
  */
-void A5_Initialize() {
-  Output ("A5:INIT");
+void OP2_Initialize() {
+  Output ("OP2:INIT");
   if (SD_exists) {
-    if (SD.exists(SD_A5_RAW_FILE)) {
-      Output ("A5=RAW");
-      A5_State = A5_STATE_RAW;
+    if (SD.exists(SD_OP2_RAW_FILE)) {
+      Output ("OP2=RAW");
+      OP2_State = OP2_STATE_RAW;
     }
     else {
-      Output ("A5=NULL");
+      Output ("OP2=NULL");
     }
   }
   else {
-    Output ("A5=NULL,SD NF");
+    Output ("OP2=NULL,SD NF");
   }
 }
 
@@ -282,7 +303,7 @@ float Pin_ReadAvg(int pin) {
  */
 void DistanceGauge_TakeReading() {
   dg_buckets[dg_bucket] = (int) analogRead(DISTANCE_GAUGE_PIN) * dg_adjustment;
-  dg_bucket = (++dg_bucket) % DG_BUCKETS; // Advance bucket index for next reading
+  dg_bucket = (dg_bucket+1) % DG_BUCKETS; // Advance bucket index for next reading
 }
 
 /* 
@@ -496,7 +517,7 @@ void Wind_GustUpdate() {
       ws_sum = sum;
       ws_bucket = bucket;
     }
-    bucket = (++bucket) % WIND_READINGS;
+    bucket = (bucket+1) % WIND_READINGS;
   }
   wind.gust = ws_sum/3;
   
@@ -532,7 +553,7 @@ void Wind_GustUpdate() {
     NS_vector_sum += cos(r) * s;
     EW_vector_sum += sin(r) * s;
 
-    bucket = (++bucket) % WIND_READINGS;
+    bucket = (bucket+1) % WIND_READINGS;
   }
 
   rtod = (atan2(EW_vector_sum, NS_vector_sum)*4068.0)/71.0;
@@ -557,7 +578,7 @@ void Wind_GustUpdate() {
 void Wind_TakeReading() {
   wind.bucket[wind.bucket_idx].direction = (int) Wind_SampleDirection();
   wind.bucket[wind.bucket_idx].speed = Wind_SampleSpeed();
-  wind.bucket_idx = (++wind.bucket_idx) % WIND_READINGS; // Advance bucket index for next reading
+  wind.bucket_idx = (wind.bucket_idx+1) % WIND_READINGS; // Advance bucket index for next reading
 }
 
 /* 
@@ -582,7 +603,7 @@ void Wind_Distance_Air_Initialize() {
     lora_msg_poll(); // 750ms Second Delay
     HeartBeat();     // Provides a 250ms delay
     Wind_TakeReading();
-    if (A4_State == A4_STATE_DISTANCE) {
+    if (OP1_State == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
     }
     if (PM25AQI_exists) {
@@ -594,7 +615,7 @@ void Wind_Distance_Air_Initialize() {
 
   // Now we have N readings we can compute other wind related global varibles
   Wind_TakeReading();
-  if (A4_State == A4_STATE_DISTANCE) {
+  if (OP1_State == OP1_STATE_DISTANCE) {
     DistanceGauge_TakeReading();
   }
 

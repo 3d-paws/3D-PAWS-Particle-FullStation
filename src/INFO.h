@@ -14,6 +14,7 @@ bool INFO_Do() {
   char buf[256];
   const char *comma = "";
   time_t ts = Time.now();
+  bool result;
 
   Output("INFO_DO()");
 
@@ -34,7 +35,10 @@ bool INFO_Do() {
   writer.name("type").value("argon");
 #endif
 #if PLATFORM_ID == PLATFORM_BORON
-  writer.name("board").value("boron");
+  writer.name("type").value("boron");
+#endif
+#if PLATFORM_ID == PLATFORM_MSOM
+  writer.name("type").value("muon");
 #endif
 
   sprintf (Buffer32Bytes, "%d-%02d-%02dT%02d:%02d:%02d",
@@ -45,7 +49,11 @@ bool INFO_Do() {
   writer.name("ver").value(VERSION_INFO);
   writer.name("hth").value((int) SystemStatusBits);
 
-  sprintf (Buffer32Bytes,"%ds", OBSERVATION_INTERVAL/1000);
+  // Reboot/Reset Reason and data
+  sprintf (Buffer32Bytes,"%d-%d", (int) System.resetReason(), (int) System.resetReasonData());
+  writer.name("rr").value(Buffer32Bytes);;
+
+  sprintf (Buffer32Bytes,"%dm", (int) obs_interval);
   writer.name("obsi").value(Buffer32Bytes);
   sprintf (Buffer32Bytes,"%dm", (int) obs_tx_interval);
   writer.name("obsti").value(Buffer32Bytes);
@@ -78,7 +86,7 @@ bool INFO_Do() {
   writer.name("bcs").value((digitalRead(PWR) && !digitalRead(CHG)) ? "CHARGING" : "!CHARGING"); // Battery Charger State
 #endif
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
   // Power Source
   const char *ps[] = {"UNKN", "VIN", "USB_HOST", "USB_ADAPTER", "USB_OTG", "BATTERY"};
   int sps = System.powerSource();
@@ -120,13 +128,43 @@ bool INFO_Do() {
   writer.name("bssid").value(Buffer32Bytes);
 #endif
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON)
   CellularSignal sig = Cellular.RSSI();
   writer.name("css").value(sig.getStrength(), 4);
   writer.name("csq").value(sig.getQuality(), 4);
-
   writer.name("imsi").value(imsi); // International Mobile Subscriber Identity
+#endif
 
+#if PLATFORM_ID == PLATFORM_MSOM
+  if (MuonWifiEnabled) {
+    writer.name("nw").value("WIFI");
+    WiFiSignal sig = WiFi.RSSI();
+    writer.name("wss").value(sig.getStrength(), 4);
+    writer.name("wsq").value(sig.getQuality(), 4);
+    byte mac[6];
+    WiFi.macAddress(mac);
+    sprintf (Buffer32Bytes, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    writer.name("mac").value(Buffer32Bytes);
+    writer.name("ip").value(WiFi.localIP().toString().c_str());
+    writer.name("mask").value(WiFi.subnetMask().toString().c_str());
+    writer.name("gateway").value(WiFi.gatewayIP().toString().c_str());
+    writer.name("dns").value(WiFi.dnsServerIP().toString().c_str());
+    writer.name("dhcps").value(WiFi.dhcpServerIP().toString().c_str());
+    writer.name("ssid").value(WiFi.SSID());
+    WiFi.BSSID(mac);
+    sprintf (Buffer32Bytes, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    writer.name("bssid").value(Buffer32Bytes);
+  }
+  else {
+    writer.name("nw").value("CELL");
+    CellularSignal sig = Cellular.RSSI();
+    writer.name("css").value(sig.getStrength(), 4);
+    writer.name("csq").value(sig.getQuality(), 4);
+    writer.name("imsi").value(imsi); // International Mobile Subscriber Identity
+  }
+#endif
+
+#if PLATFORM_ID == PLATFORM_BORON
   SimType simType = Cellular.getActiveSim();
   if (simType == INTERNAL_SIM) {
     writer.name("actsim").value("INTERNAL");
@@ -137,30 +175,40 @@ bool INFO_Do() {
   }
 #endif
 
-  // How Pin A4 is Configured
-  if (A4_State == A4_STATE_DISTANCE) {
+#if PLATFORM_ID == PLATFORM_MSOM
+  // Particle Muon on board temperature sensor 
+  if (PMTS_exists) {
+    writer.name("pmts").value(ptms_readtempc(), 2);
+  }
+  else {
+    writer.name("pmts").value("NF");
+  }
+#endif
+
+  // How Option 1 is Configured
+  if (OP1_State == OP1_STATE_DISTANCE) {
     if (dg_adjustment == 1.25) {
-      writer.name("a4").value("DIST 5M");
+      writer.name("op1").value("DIST 5M");
     }
     else {
-      writer.name("a4").value("DIST 10M");
+      writer.name("op1").value("DIST 10M");
     }
   }
-  else if (A4_State == A4_STATE_RAIN){
-    writer.name("a4").value("RG2");
+  else if (OP1_State == OP1_STATE_RAIN){
+    writer.name("op1").value("RG2");
   }
-  else if (A4_State == A4_STATE_RAW){
-    writer.name("a4").value("RAW");
+  else if (OP1_State == OP1_STATE_RAW){
+    writer.name("op1").value("RAW");
   }
   else {
-    writer.name("a4").value("NS"); // Not Set
+    writer.name("op1").value("NS"); // Not Set
   }
 
-  if (A5_State == A5_STATE_RAW){
-    writer.name("a5").value("RAW");
+  if (OP2_State == OP2_STATE_RAW){
+    writer.name("op2").value("RAW");
   }
   else {
-    writer.name("a5").value("NS"); // Not Set
+    writer.name("op2").value("NS"); // Not Set
   }
 
   // Sensors
@@ -232,10 +280,12 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sAS5600", comma);
     comma=",";
   }
+#if (PLATFORM_ID != PLATFORM_MSOM)
   if (TLW_exists) {
     sprintf (buf+strlen(buf), "%sTLW", comma);
     comma=",";
   }
+#endif
   if (TSM_exists) {
     sprintf (buf+strlen(buf), "%sTSM", comma);
     comma=",";
@@ -266,15 +316,19 @@ bool INFO_Do() {
     comma=",";
   }
 
-  sprintf (buf+strlen(buf), "%sRG(%s)", comma, pinNames[RAINGAUGE1_IRQ_PIN]);
+  GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
+  sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
 
   writer.name("sensors").value(buf);
 
   // LoRa
   if (LORA_exists) {
-    sprintf (buf, "%d,%d,%dMHz", cf_lora_unitid, cf_lora_txpower, cf_lora_freq);
-    writer.name("lora").value(buf);
+    sprintf (buf, "%d,%d,%dMHz", cf_lora_unitid, cf_lora_txpower, cf_lora_freq);  
   }
+  else {
+    sprintf (buf, "NF");
+  }
+  writer.name("lora").value(buf);
 
   // Oled Display
   if (oled_type) {
@@ -283,8 +337,43 @@ bool INFO_Do() {
   else {
     writer.name("oled").value("NF");
   }
-  writer.name("scepin").value((digitalRead(SCE_PIN)) ? "DISABLED" : "ENABLED");
+
+  // Serial Console Enable
+  GetPinName(SCE_PIN, Buffer32Bytes);
+  sprintf (buf, "scepin(%s)", Buffer32Bytes);
+  writer.name(buf).value((digitalRead(SCE_PIN)) ? "DISABLED" : "ENABLED");
   writer.name("sce").value((SerialConsoleEnabled) ? "TRUE" : "FALSE");
+
+#if PLATFORM_ID == PLATFORM_MSOM
+/*
+  struct LocationPoint
+    unsigned int fix;               Indication of GNSS locked status
+    time_t epochTime;               Epoch time from device sources
+    time32_t systemTime;            System epoch time
+    double latitude;                Point latitude in degrees
+    double longitude;               Point longitude in degrees
+    float altitude;                 Point altitude in meters
+    float speed;                    Point speed in meters per second
+    float heading;                  Point heading in degrees
+    float horizontalAccuracy;       Point horizontal accuracy in meters
+    float horizontalDop;            Point horizontal dilution of precision
+    float verticalAccuracy;         Point vertical accuracy in meters
+    float verticalDop;              Point vertical dilution of precision
+    float timeToFirstFix;           Time-to-first-fix in seconds
+    unsigned int satsInUse;         Point satellites in use
+*/
+
+  LocationPoint point = {};
+
+  HeartBeat(); // Reset WatchDog before we make the next long running call
+  auto results = Location.getLocation(point, true); // True means wait for fix up to 90 seconds !!!
+  if (results == LocationResults::Fixed) {
+    writer.name("lat").value(point.latitude, 6);
+    writer.name("lon").value(point.longitude, 6);
+    writer.name("alt").value(point.altitude, 6);
+    writer.name("sat").value(point.satsInUse);
+  }
+#endif
 
   writer.endObject();
 
@@ -309,11 +398,22 @@ bool INFO_Do() {
     Serial_write (msgbuf);
     sprintf (Buffer32Bytes, "INFO->PUB OK[%d]", strlen(msgbuf)+1);
     Output(Buffer32Bytes);
-    return(true);
+    result = true;
   }
   else {
     sprintf (Buffer32Bytes, "INFO->PUB ERR");
     Output(Buffer32Bytes);
-    return(false);
+    result = false;
   }
+
+  // Deal with how long this took. More than likely we will always need to do a refresh of wind
+  time_t endTime = Time.now();
+  unsigned long delta = (unsigned long)endTime-(unsigned long)ts;
+  if (delta) { // More than a second
+    sprintf(buf, "INFO:EXTM=%lu,WSRefreshSet", delta);
+    Output (buf);
+    ws_refresh = true;
+  }
+
+  return(result);
 }

@@ -1,15 +1,18 @@
-PRODUCT_VERSION(39);
-#define COPYRIGHT "Copyright [2024] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FSAC-250413v39"
+PRODUCT_VERSION(1);
+//PRODUCT_VERSION(40);
+#define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
+#define VERSION_INFO "FS-250815v40"
 
 /*
  *======================================================================================================================
- * FullStation (FS) - Always Connected (AC)
- *   Board Type : Particle BoronLTE https://docs.particle.io/datasheets/boron/boron-datasheet/
- *   LoRa Module: Adafruit RFM95W LoRa Radio Transceiver Breakout - 868 or 915 MHz https://www.adafruit.com/product/3072
+ * FullStation (FS)
+ *   Board Type : Particle Boron https://docs.particle.io/reference/datasheets/b-series/b404x-datasheet/
+ *   Board Type : Particle Argon https://docs.particle.io/reference/datasheets/wi-fi/argon-datasheet
+ *   Board Type : Particle Muon  https://docs.particle.io/reference/datasheets/m-series/muon-datasheet
+ * 
  *   Description: Monitor 3D-PAWS Full Station and transmit data to Particle Cloud
  *   Author: Robert Bubon
- *   Date:   2021-01-14 RJB Initial Development
+  *   Date:   2021-01-14 RJB Initial Development
  *           2021-02-10 RJB Work on SD code area
  *           2021-03-08 RJB LoRa added, 15min samples, Cell Power Off, Wind Observations Corrected
  *           2021-03-13 RJB Reworked N2S sending
@@ -191,10 +194,77 @@ PRODUCT_VERSION(39);
  *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil) 
  *          2025-03-17 RJB Switched Heat Index Temp, Wet Bulb Temp, Wet Bulb calcs to use sht1 temp from mcp1 temp
  *     
+ *          Version 40 Released on 2025-??-??
  *          2025-04-08 RJB Removed the check for serial console in SimChangeCheck()
  *          2025-04-13 RJB Reworked the handling of pin names. New function in PS.h called GetPinName()
  *                         INFO will report "lora:NF" when LoRa is not found
  *                         INFO Serial Console Enable now reports as "scepin(D8)":"DISABLED"                         
+ *          2025-07-17 RJB Support for Muon - PLATFORM_MSOM
+ *                         Updated SdFat Library from 1.0.16 to 2.3.0
+ *                         Added support for TMP117 to support Muon built in Temperature sensor
+ *                           Reports as PMTS = Particle Muon Temperature Sensor 
+ *                         Bug, Left the 0 && in prior release - if (0 && countdown && digitalRead(SCE_PIN) == LOW)
+ *                         Added resetReason to be printed at startup and in INFO
+ *                         Added GNSS to INFO
+ *                         Reworked when we initialize wind and make first obs at startup
+ *                         AS5600 is same i2c addrss as as fuel gauge 0x36. Muon will need to use AS5600L for wind direction.
+ *                         Added Support for AS5600L just for the Muon. Can not have a HTU21DF connected, same i2c address as fuel gauge
+ *                         Added Support for Observation Interval and Transmit time controls
+ *                                TXI5M  Set 1 Minute Observations, Transmit Interval to 5 Minutes (TXI5M.TXT)- Already in place
+ *                                TXI10M Set 1 Minute Observations, Transmit Interval to 10 Minutes (TXI10M.TXT)- Already in place
+ *                                TXI15M Set 1 Minute Observations, Transmit Interval to 15 Minutes (NO FILE) - Already in place Default
+ *                                OBI5M  Set 5 Minute Observations, Transmit Interval to 5 Minutes (OBI5M.TXT)
+ *                                OBI10M Set 10 Minute Observations, Transmit Interval to 10 Minutes (OBI10M.TXT)
+ *                                OBI15M Set 15 Minute Observations, Transmit Interval to 15 Minutes (OBI15M.TXT)
+ *                         Rename A4 option to OP1 = OP1DIST, OP1RAIN, OP1RAW, OP1CLR; OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT
+ *                                A5 option to OP2 = OP2RAW, OP2CLR; OP2RAW.TXT
+ *                         Muon can not support Tinovi Leaf Wetness sensor i2c 0x61 conflicts with KG200Z LoRaWAN radio - removed from Muon compile
+ *                         Muon WiFi Enable, create WIFI.TXT with 1 line inside with the following format MUON,ssid,password
+ *                         
+ *  Muon Port Notes:
+ *     PLATFORM_ID == PLATFORM_MSOM
+ *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
+ * 
+ *     Pin  Name
+ *     LORA MODULE 
+ *     40 D20 LORA_IRQ_PIN - G0 on LoRa board
+ *     36 D3  LORA_SS
+ *     38 D21 LORA_RESET
+ *
+ *     SERIAL CONSOLE 
+ *     26  D17/A2 SCE_PIN
+ * 
+ *     SD CARD
+ *     17  3v3
+ *     19  SPI MOSI
+ *     21  SPI MISO
+ *     23  SPI SCK
+ *     25  GND
+ *     24  D29/A6  CS
+ *     
+ *     LED
+ *     22  D22 LED_PIN
+ * 
+ *     GPS
+ *     16 D24 Serial2 TX (UART transmit from MCU)
+ *     18 D25 Serial2 RX (UART receive to MCU)
+ * 
+ *     GROVE PWM
+ *     15  D27 RELAY/REBOOT PIN
+ *     14  DO NOT USE
+ * 
+ *     GROVE PWM
+ *     32 D5 Wind
+ *     33 D4 Rain1
+ *     
+ *     Muon on board I2C addresses
+ *     0x28: STUSB4500 USB-C power controller
+ *     0x36: MAX17043 Fuel Gauge
+ *     0x48: TMP112A temperature sensor
+ *     0x61: KG200Z LoRaWAN radio
+ *     0x69: AM1805 RTC/Watchdog
+ *     0x6B: bq24195 Power Management IC (PMIC)
+ *                 
  * NOTES:
  * When there is a successful transmission of an observation any need to send obersavations will be sent. 
  * On transmit a failure of these need to send observations, processing is stopped and the file is deleted.
@@ -222,7 +292,7 @@ PRODUCT_VERSION(39);
  *  DFRobot_B_LUX_V30B      https://github.com/DFRobot/DFRobot_B_LUX_V30B - 1.0.1 I2C ADDRESS 0x4A (Not Used Reference Only) SEN0390
  *                          https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390
  *  RTCLibrary              https://github.com/adafruit/RTClib - 1.13.0
- *  SdFat                   https://github.com/greiman/SdFat.git - 1.0.16 by Bill Greiman
+ *  SdFat                   https://github.com/greiman/SdFat.git - 1.0.16 by Bill Greiman 2.3.0
  *  RF9X-RK-SPI1            https://github.com/rickkas7/AdafruitDataLoggerRK - 0.2.0 - Modified RadioHead LoRa for SPI1
  *  AES-master              https://github.com/spaniakos/AES - 0.0.1 - Modified to make it compile
  *  CryptoLW-RK             https://github.com/rickkas7/CryptoLW-RK - 0.2.0
@@ -241,6 +311,33 @@ PRODUCT_VERSION(39);
  *  LeafSens                https://github.com/tinovi/LeafArduino   I2C ADDRESS 0x61
  *  i2cArduino              https://github.com/tinovi/i2cArduinoI2c I2C ADDRESS 0x63
  *  i2cMultiSm              https://github.com/tinovi/i2cMultiSoilArduino/tree/master/lib ADDRESS 0x65
+ * 
+ *  AS5600                  Wind Direction - Bit Banged I2C ADDRESS 0x36
+ *  AS5600L                 Wind Direction - Bit Banged I2C ADDRESS 0x40
+ *  TMP112A                 Particle Muon on board temperature sensor - Bit Banged I2C ADDRESS 0x48
+ * 
+ * GPS Module - GNSS library for Particle SOMs - particle-som-gnss v1.0.0
+ *   This standalone GNSS (Global Navigation Satellite System) library is designed specifically for Particle 
+ *   cellular modems with built-in GNSS support, including the M-SOM platform.  
+ *   It provides a simple and efficient interface to access and utilize GNSS data for location-based 
+ *   applications on Particle devices.
+ * 
+ *   Adds location.h  Source at https://github.com/particle-iot/particle-som-gnss
+ * 
+ *  The GPS (GNSS) functionality on the Particle Muon will continue to work even if you run Cellular.off();,
+ *  as the GNSS module operates independently from the cellular modem on supported Particle devices.
+ *  It communicates internally over UART (Serial2 on pins D24/D25)
+ *     D24 (Pin 16): Serial2 TX (UART transmit from MCU)
+ *     D25 (Pin 18): Serial2 RX (UART receive to MCU)
+ * 
+ * LoRa Module
+ *   Adafruit RFM95W LoRa Radio Transceiver Breakout - 868 or 915 MHz https://www.adafruit.com/product/3072
+ * 
+ *  LoRa Antenna Options
+ *    915 MHz - 3 inches or 7.8 cm
+ *    868 MHz - 3.25 inches or 8.2 cm
+ *    433 MHz - 6.5 inches, or 16.5 cm
+ *    https://learn.adafruit.com/adafruit-feather-m0-radio-with-lora-radio-module/antenna-options
  * 
  * Distance Sensors
  * The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
@@ -341,6 +438,7 @@ PRODUCT_VERSION(39);
  *  cfr    Charger Fault Register
  *  css  = Cell Signal Strength - percentage (0.0 - 100.0)
  *  hlth = Health 32bits - See System Status Bits in below define statements
+ *  pmts = Particle Muon on board temperature sensor
  * 
  * AN002 Device Powerdown
  * https://support.particle.io/hc/en-us/articles/360044252554?input_string=how+to+handle+low+battery+and+recovery
@@ -367,9 +465,25 @@ PRODUCT_VERSION(39);
  *     }
  *   }
  * 
+ * In SdFat/src/common/ArduinoFiles.h 
+ * #if defined(ARDUINO_SAM_DUE) && !defined(ARDUINO_API_VERSION)
+ * void flush() { BaseFile::sync(); }
+ * #else
+ * // void flush() override { BaseFile::sync(); } <<<< Replace with below
+ * void flush()  { BaseFile::sync(); }
+ * #endi
+
  * DFRobot_B_LUX_V30B Library Not used it. It's bit banging with possible infinate loops - RJB
  * 
- * PIN Assignments
+ * ========================================================
+ * Particle Connection code based on below
+ * ========================================================
+ * https://community.particle.io/t/calling-particle-disconnect-after-a-failed-particle-connect-does-not-stop-led-from-blinking-green/19723/6
+ * Note: Max Particle message size 622 characters 
+ * 
+ * ========================================================
+ * Boron/Argon PIN Assignments
+ * ========================================================
  * D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
  * D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
  * D6   = Reserved for Lora IRQ - Not on Grove Shield
@@ -384,7 +498,7 @@ PRODUCT_VERSION(39);
  * A1   = WatchDog Monitor Heartbeat
  * A2   = Wind Speed IRQ
  * A3   = Rain Gauge IRQ
- * A4   = 2nd Rain Gauge or Distance Gauge based on SD card file existing
+ * A4   = Option 1 = Rain Gauge or Distance Gauge based on SD card file existing
  * A5   = Optional read/report of average on analog pin 
  * D13  = SPIO CLK   SD Card
  * D12  = SPI0 MOSI  SD Card
@@ -392,13 +506,8 @@ PRODUCT_VERSION(39);
  * D10  = UART1 RX - Reserved for LoRa CS
  * D9   = UART1 TX - Reserved for LoRa RESET
  * 
- * Connection code based on below
- * https://community.particle.io/t/calling-particle-disconnect-after-a-failed-particle-connect-does-not-stop-led-from-blinking-green/19723/6
- * 
- * Max Particle message size 622 characters 
- * 
  * ========================================================
- * Support for 3rd Party Sim 
+ * Support for 3rd Party Sim Boron Only
  * ========================================================
  *   SEE https://support.particle.io/hc/en-us/articles/360039741113-Using-3rd-party-SIM-cards
  *   SEE https://docs.particle.io/cards/firmware/cellular/setcredentials/
@@ -416,8 +525,9 @@ PRODUCT_VERSION(39);
  *
  * ========================================================
  * Support for Argon WiFi Boards
- * https://docs.particle.io/reference/device-os/api/wifi/wifi/
  * ========================================================
+ * SEE: https://docs.particle.io/reference/device-os/api/wifi/wifi/
+ *
  * At the top level of the SD card make a file called WIFI.TXT
  * Add one line to the file
  * This line has 3 items that are comma separated Example
@@ -426,9 +536,21 @@ PRODUCT_VERSION(39);
  * 
  * Where AuthType is one of these keywords (WEP WPA WPA2 UNSEC)
  * Blank password is supported for UNSEC
- * ======================================================================================================================
  * 
+ * ========================================================
+ * MUON WiFi Enable
+ * ========================================================
+ * At the top level of the SD card make a file called WIFI.TXT
+ * Add one line to the file
+ * This line has 3 items that are comma separated Example
+ * 
+ * MUON,ssid,password
+ * 
+ * MUON is a keyword to distinguish from Argon WIFI.TXT file
+ * 
+ * ========================================================
  * Collecting Wind Data
+ * ========================================================
  * Wind_SampleSpeed() - Return a wind speed based on how many interrupts and duration between calls to this function
  * Wind_SampleDirection() - Talk i2c to the AS5600 sensor and get direction
  * Wind_TakeReading() - Call this function every second. It calls wind direction and wind speed functions. Then saves samples in a circular buffer of 60 buckets.
@@ -458,13 +580,21 @@ PRODUCT_VERSION(39);
 #include <Adafruit_PM25AQI.h>
 #include <Adafruit_HDC302x.h>
 #include <Adafruit_LPS35HW.h>
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>
+#include <location.h>
+#else
 #include <RTClib.h>
+#endif
 #include <SdFat.h>
 #include <RH_RF95.h>
 #include <AES.h>
-#include <i2cArduino.h>
+
+#if (PLATFORM_ID != PLATFORM_MSOM)
 #include <LeafSens.h>
+#endif
 #include <i2cMultiSm.h>
+#include <i2cArduino.h>
 
 /*
  * ======================================================================================================================
@@ -472,7 +602,7 @@ PRODUCT_VERSION(39);
  * ======================================================================================================================
  */
 #define DELAY_NO_RTC               60000    // Loop delay when we have no valided RTC
-#define OBSERVATION_INTERVAL       60000    // 60000 = 1 minute
+#define DEFAULT_OBS_INTERVAL           1    // 1 minute
 #define DEFAULT_OBS_TRANSMIT_INTERVAL 15    // Transmit observations every N minutes Set to 15 for 15min Transmits
 
 /*
@@ -480,9 +610,12 @@ PRODUCT_VERSION(39);
  *  Relay Power Control Pin
  * ======================================================================================================================
  */
+#if PLATFORM_ID == PLATFORM_MSOM
+#define REBOOT_PIN            D27  // Trigger Watchdog or external relay to cycle power
+#else
 #define REBOOT_PIN            A0  // Trigger Watchdog or external relay to cycle power
 #define HEARTBEAT_PIN         A1  // Watchdog Heartbeat Keep Alive
-
+#endif
 /*
  * ======================================================================================================================
  * System Status Bits used for report health of systems - 0 = OK
@@ -490,7 +623,6 @@ PRODUCT_VERSION(39);
  * 
  * OFF =   SSB &= ~SSB_PWRON
  * ON =    SSB |= SSB_PWROFF
- * 
  * ======================================================================================================================
  */
 #define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
@@ -522,7 +654,6 @@ PRODUCT_VERSION(39);
 #define SSB_TSM             0x4000000 // Set if Tinovi Soil Moisture I2C Sensor missing
 #define SSB_TMSM            0x8000000 // Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
 
-
 /*
   0  = All is well, no data needing to be sent, this observation is not from the N2S file
   16 = There is N2S data, This observation is not from the N2S file
@@ -541,7 +672,12 @@ PRODUCT_VERSION(39);
 char msgbuf[MAX_MSGBUF_SIZE]; // Used to hold messages
 char *msgp;                   // Pointer to message text
 char Buffer32Bytes[32];       // General storage
+#if (PLATFORM_ID == PLATFORM_MSOM)
+int LED_PIN = D22;             // Added LED Header Pin 22
+bool MuonWifiEnabled = false;  // Set if we find a WIFI.TXT file
+#else
 int  LED_PIN = D7;            // Built in LED
+#endif
 bool TurnLedOff = false;      // Set true in rain gauge interrupt
 unsigned long SystemStatusBits = SSB_PWRON; // Set bit 1 to 1 for initial value power on. Is set to 0 after first obs
 bool JustPoweredOn = true;    // Used to clear SystemStatusBits set during power on device discovery
@@ -558,6 +694,7 @@ int  cf_reboot_countdown_timer = 79200; // There is overhead transmitting data s
                                         // Set to 0 to disable feature
 int DailyRebootCountDownTimer;
 
+uint64_t obs_interval = DEFAULT_OBS_INTERVAL;  // Default OBS interval 1 Minute
 uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
 
 char imsi[16] = "";  // International Mobile Subscriber Identity
@@ -567,7 +704,11 @@ char imsi[16] = "";  // International Mobile Subscriber Identity
  *  SD Card Stuff
  * ======================================================================================================================
  */
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#define SD_ChipSelect D29               // Pin 24 A6/D29
+#else
 #define SD_ChipSelect D5                // GPIO 10 is Pin 10 on Feather and D5 on Particle Boron Board
+#endif
 SdFat SD;                               // File system object.
 File SD_fp;
 char SD_obsdir[] = "/OBS";              // Store our observations in this directory. At Poewer on it is created if not exist
@@ -580,19 +721,31 @@ char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim con
 
 char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
 
-char SD_TX5M_FILE[]  = "TXI5M.TXT";     // Transmit every 5 Minutes 
-char SD_TX10M_FILE[] = "TXI10M.TXT";    // Transmit every 10 Minutes
+                                        
+char SD_TX5M_FILE[]  = "TXI5M.TXT";     // Transmit Interval every 5 Minutes with 1 Minute Observations
+char SD_TX10M_FILE[] = "TXI10M.TXT";    // Transmit Interval every 10 Minutes with 1 Minute Observations
+                                        // Transmit Interval every 15 Minutes with 1 Minute Observations Default
+
+char SD_OB5M_FILE[]  = "OBI5M.TXT";     // Observation Interval every 5 Minutes
+char SD_OB10M_FILE[] = "OBI10M.TXT";    // Observation Interval every 10 Minutes
+char SD_OB15M_FILE[] = "OBI15M.TXT";    // Observation Interval every 15 Minutes
 
 char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
 
-
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
- *  Power Management IC (bq24195)
+ *  Power Management IC (bq24195) I2C 0x6B
  * ======================================================================================================================
  */
 PMIC pmic;
+
+/*
+ * ======================================================================================================================
+ *  Fuel Gauge IC (MAX17043) I2C 0x36
+ * ======================================================================================================================
+ */
+// FuelGauge fuel;
 #endif
 
 /*
@@ -617,13 +770,19 @@ PMIC pmic;
 
 /*
  * ======================================================================================================================
- * HeartBeat() - Burns 250 ms 
+ * HeartBeat() - Burns 250 ms and part of our loop delay timing
  * ======================================================================================================================
  */
 void HeartBeat() {
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  uint64_t MsFromNow = System.millis() + 250;
+  Watchdog.refresh();
+  delay((int64_t)(MsFromNow - System.millis()));
+#else
   digitalWrite(HEARTBEAT_PIN, HIGH);
   delay(250);
   digitalWrite(HEARTBEAT_PIN, LOW);
+#endif
 }
 
 /*
@@ -638,7 +797,7 @@ void BackGroundWork() {
 
   Wind_TakeReading();
 
-  if (A4_State == A4_STATE_DISTANCE) {
+  if (OP1_State == OP1_STATE_DISTANCE) {
     DistanceGauge_TakeReading();
   }
 
@@ -646,7 +805,7 @@ void BackGroundWork() {
     pm25aqi_TakeReading();
   }
 
-  HeartBeat();  // Burns 250ms
+  HeartBeat();  // Provides a 250ms delay
 
   if (LORA_exists) {
     lora_msg_poll(); // Provides a 750ms delay
@@ -677,26 +836,54 @@ SYSTEM_THREAD(ENABLED);
  * ======================================================================================================================
  */
 void setup() {
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  //  https://docs.particle.io/reference/datasheets/m-series/muon-datasheet/#firmware-settings
+
+  // Retrive the current system power configuration object so it can be modified.
+  SystemPowerConfiguration powerConfig = System.getPowerConfiguration();
+
+  // This enables the feature related to PMIC detection. 
+  powerConfig.feature(SystemPowerFeature::PMIC_DETECTION)
+      .auxiliaryPowerControlPin(D7)  // sets the GPIO pin D7 as the auxiliary power control pin aka 3.3V
+      .interruptPin(A7); // detect changes from the power management IC or related events
+  System.setPowerConfiguration(powerConfig);
+
+  // Enable 3.3V on GPIO Header from my code. Avoid the System.setPowerConfiguration.
+  pinMode(D7, OUTPUT);
+  digitalWrite(D7, 1);
+#endif
+
   // The device has booted, reconnect the battery.
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 	pmic.enableBATFET();
 #endif
 
   // Set Default Time Format
   Time.setFormat(TIME_FORMAT_ISO8601_FULL);
 
-  // WatchDog 
-  pinMode (REBOOT_PIN, OUTPUT);
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  Watchdog.init(WatchdogConfiguration().timeout(120s));
+  Watchdog.start();
+#else
   pinMode (HEARTBEAT_PIN, OUTPUT);
+#endif
 
+  pinMode (REBOOT_PIN, OUTPUT);
   pinMode (LED_PIN, OUTPUT);
   
-  Output_Initialize();
+  Output_Initialize(); // Waits for Serial if Jumper in place for 60s
   delay(2000); // Prevents usb driver crash on startup, Arduino needed this so keeping for Particle
 
   Serial_write(COPYRIGHT);
   Output (VERSION_INFO);
-  delay(4000);
+
+  System.enableFeature(FEATURE_RESET_INFO); 
+  OutputResetReason();
+
+  delay(2000); // Give some time to see this
+
+  HeartBeat(); // Lets refresh Watchdog - just because we can
 
   // Set Daily Reboot Timer
   DailyRebootCountDownTimer = cf_reboot_countdown_timer;
@@ -728,22 +915,46 @@ void setup() {
   // Check if correct time has been maintained by RTC
   // Uninitialized clock would be 2000-01-00T00:00:00
   stc_timestamp();
-  sprintf (msgbuf, "%s+", timestamp);
+  sprintf (msgbuf, "%sS", timestamp);
   Output(msgbuf);
 
-  // Read RTC and set system clock if RTC clock valid
+  // Read RTC and set system clock if RTC clock valid 
   rtc_initialize();
 
+  stc_timestamp();
+  sprintf (msgbuf, "%sS", timestamp);
+  Output(msgbuf);
+
   if (Time.isValid()) {
-    Output("STC: Valid");
+    Output("STC:VALID");
   }
   else {
-    Output("STC: Not Valid");
+    Output("STC:!VALID");
   }
 
   stc_timestamp();
-  sprintf (msgbuf, "%s=", timestamp);
+  sprintf (msgbuf, "%sS", timestamp);
   Output(msgbuf);
+
+  // System Power and Battery State
+  sprintf (msgbuf, "PS:%d", System.powerSource());
+  Output(msgbuf);
+  sprintf (msgbuf, "BS:%d", System.batteryState());
+  Output(msgbuf);
+  float bpc = System.batteryCharge();
+  sprintf (msgbuf, "BPC:%d.%02d", (int)bpc, (int)(bpc*100)%100);
+  Output(msgbuf);
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  network_initialize();
+  WiFiPrintCredentials();
+
+  // Turn on GPS
+  Output("GPS:Enable");
+  LocationConfiguration config;
+  config.enableAntennaPower(GNSS_ANT_PWR);
+  Location.begin(config);
+#endif
 
 #if PLATFORM_ID == PLATFORM_ARGON
 	pinMode(PWR, INPUT);
@@ -754,7 +965,9 @@ void setup() {
   WiFiPrintCredentials();
   WiFiChangeCheck();
   WiFiPrintCredentials();
-#else
+#endif
+
+#if PLATFORM_ID == PLATFORM_BORON
   //==================================================
   // Check if we need to program for Sim change
   //==================================================
@@ -776,18 +989,25 @@ void setup() {
   raingauge1_interrupt_ltime = 0;  // used to debounce the tip
   attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
 
-  // Check SD Card for files to determine Transmit Interval for OBS 5,10 or 15 minutes
-  TXI_Initialize();
+  // Check SD Card for files to determine Observation and Transmit Intervals
+  OBI_TXI_Initialize();
   
-  // Check SD Card for files to determine if pin A4 has a DIST, 2nd Rain Gauge or Raw file
-  A4_Initialize();
+  // Check SD Card for files to determine if pin OP1 has a DIST, 2nd Rain Gauge or Raw file
+  OP1_Initialize();
 
-  // Check SD Card for files to determine if pin A5 Raw file
-  A5_Initialize();
+  // Check SD Card for files to determine if pin OP2 Raw file
+  OP2_Initialize();
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+  pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
+#endif
 
   // Adafruit i2c Sensors
   bmx_initialize();
-  htu21d_initialize();
+
+#if (PLATFORM_ID != PLATFORM_MSOM)
+  htu21d_initialize();  // This sensor has same i2c address as AS5600L
+#endif
   mcp9808_initialize();
   sht_initialize();
   hih8_initialize();
@@ -800,7 +1020,9 @@ void setup() {
   lps_initialize();
 
   // Tinovi Mositure Sensors
+#if (PLATFORM_ID != PLATFORM_MSOM)
   tlw_initialize();
+#endif
   tsm_initialize();
   tmsm_initialize();
   
@@ -830,9 +1052,8 @@ void setup() {
   else {
     Output ("DoAction:ERR");
   }
-  Wind_Distance_Air_Initialize(); // Will call HeartBeat()
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
   // Get International Mobile Subscriber Identity
   if ((RESP_OK == Cellular.command(callback_imsi, imsi, 10000, "AT+CIMI\r\n")) && (strcmp(imsi,"") != 0)) {
     sprintf (msgbuf, "IMSI:%s", imsi);
@@ -845,9 +1066,14 @@ void setup() {
 
   if (Time.isValid()) {
     // We now a a valid clock so we can initialize the EEPROM and make an observation
-    EEPROM_Initialize();
-    OBS_Do();   
+    EEPROM_Initialize();     
   }
+  // Lets force a publish if not doing 1 minute observations
+  if (obs_interval != DEFAULT_OBS_INTERVAL) {
+    lastOBS = 0;
+    LastTransmitTime = 0; 
+  }
+  ws_refresh = true;
 }
 
 /*
@@ -857,7 +1083,8 @@ void setup() {
  */
 void loop() {
   // If Serial Console Pin LOW then Display Station Information
-  if (0 && countdown && digitalRead(SCE_PIN) == LOW) {
+  // if (0 && countdown && digitalRead(SCE_PIN) == LOW) {     // !!!!!!!!!!!! Remove the 0
+  if (countdown && digitalRead(SCE_PIN) == LOW) {     
     StationMonitor();
     BackGroundWork();
     countdown--;
@@ -876,14 +1103,21 @@ void loop() {
         EEPROM_Initialize();
       }
 
-      // Perform an Observation, save in OBS structure, Write to SD
-      if ( (System.millis() - lastOBS) > OBSERVATION_INTERVAL) {  // 1 minute
-        I2C_Check_Sensors(); // Make sure Sensors are online
-        OBS_Do(); 
-      }
-
       if (SendSystemInformation && Particle.connected()) {
         INFO_Do(); // Function sets SendSystemInformation back to false.
+      }
+
+      // If we waited too long for acks while publishing and this threw off our wind observations.
+      // In that code ws_refresh was set to true for us to reinit wind data.
+      if (ws_refresh) {
+        Output ("WS Refresh Required");
+        Wind_Distance_Air_Initialize();
+      }
+
+      // Perform an Observation, save in OBS structure, Write to SD
+      if ( (lastOBS == 0) || (System.millis() - lastOBS) > (obs_interval*60*1000)) {  // 1 minute
+        I2C_Check_Sensors(); // Make sure Sensors are online
+        OBS_Do();
       }
 
       // Time to Enable Network and Send Observations we have collected
@@ -906,13 +1140,6 @@ void loop() {
           }
 
           OBS_PublishAll();
-
-          // If we waited too long for acks while publishing and this threw off our wind observations.
-          // In that code ws_refresh was set to true for us to reinit wind data.
-          if (ws_refresh) {
-            Output ("WS Refresh Required");
-            Wind_Distance_Air_Initialize();
-          }
 
           // Update OLED and Console
           stc_timestamp();
@@ -962,7 +1189,7 @@ void loop() {
       Particle.disconnect();
       waitFor(Particle.disconnected, 1000);  // Returns true when disconnected from the Cloud.
 
- #if PLATFORM_ID == PLATFORM_BORON     
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
       // Be kind to the cell modem and try to shut it down
       Cellular.disconnect();
       delay(1000);
@@ -977,7 +1204,7 @@ void loop() {
       // We should never get here, but just incase 
       Output("I'm Alive! Why?");  
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 		  Cellular.on();
       delay(1000);
 #endif
@@ -990,7 +1217,7 @@ void loop() {
       Wind_Distance_Air_Initialize();
     }   
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
     // ========================================================================================
     // Low Power Check and Power Off
     // ========================================================================================
@@ -1003,13 +1230,7 @@ void loop() {
     // the battery and transmit with out current drops causing the board to reset or 
     // power down out of our control.
 
-    // Could change the below to...
-    // SEE: https://docs.particle.io/reference/device-os/api/system-calls/system-uptime/
-    // int powerSource = System.powerSource();
-    // if ((powerSource == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 10.0) {
-
-    if (!pmic.isPowerGood() && (System.batteryCharge() <= 15.0)) {
-
+    if ((System.powerSource() == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 15.0)) {
       Output("Low Power!");
 
       if (Particle.connected()) {

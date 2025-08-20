@@ -132,7 +132,7 @@ void mysort(unsigned int a[], unsigned int n) {
  * =======================================================================================================================
  */
 bool isnumeric(char *s) {
-  for (int i=0; i< strlen(s); i++) {
+  for (int i=0; i< (int)strlen(s); i++) {
     if (!isdigit(*(s+i)) ) {
       return(false);
     }
@@ -239,6 +239,8 @@ void JPO_ClearBits() {
   if (JustPoweredOn) {
     JustPoweredOn = false;
     SystemStatusBits &= ~SSB_PWRON;   // Turn Off Power On Bit
+    // SystemStatusBits &= ~SB_SD;    // Turn Off SD Missing Bit - Required keep On
+    // SystemStatusBits &= ~SSB_RTC;  // Turn Off RTC Missing Bit - Required keep On
     SystemStatusBits &= ~SSB_OLED;    // Turn Off OLED Missing Bit
     SystemStatusBits &= ~SSB_LORA;    // Turn Off LoRa Missing Bit
     SystemStatusBits &= ~SSB_BMX_1;   // Turn Off BMX_1 Not Found Bit
