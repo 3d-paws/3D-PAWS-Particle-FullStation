@@ -11,8 +11,8 @@ PRODUCT_VERSION(1);
  *   Board Type : Particle Muon  https://docs.particle.io/reference/datasheets/m-series/muon-datasheet
  * 
  *   Description: Monitor 3D-PAWS Full Station and transmit data to Particle Cloud
- *   Author: Robert Bubon
-  *   Date:   2021-01-14 RJB Initial Development
+ *   Author: Robert J Bubon
+ *   Date:   2021-01-14 RJB Initial Development
  *           2021-02-10 RJB Work on SD code area
  *           2021-03-08 RJB LoRa added, 15min samples, Cell Power Off, Wind Observations Corrected
  *           2021-03-13 RJB Reworked N2S sending
@@ -220,6 +220,12 @@ PRODUCT_VERSION(1);
  *                                A5 option to OP2 = OP2RAW, OP2CLR; OP2RAW.TXT
  *                         Muon can not support Tinovi Leaf Wetness sensor i2c 0x61 conflicts with KG200Z LoRaWAN radio - removed from Muon compile
  *                         Muon WiFi Enable, create WIFI.TXT with 1 line inside with the following format MUON,ssid,password
+ *          2025-08-27 RJB Missed reporting sensor tmsms5.
+ *          2025-08-27 RJB Support added to change FS to a Air Quality Station - with power management of the AQS.
+ *                         OPTAQS.TXT - Enables Air Quality Station. Pin A5 is wired to SET pin on sensor.
+ *                                      SET pin, when low, puts sensor into sleep mode.
+ *                                      Disable Wind, rain, and other OPT configs
+ *                                      Files OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT, OP2RAW.TXT are ignored
  *                         
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -431,6 +437,7 @@ PRODUCT_VERSION(1);
  *  tmsms2  Tinovi Multi Level Soil Moisture Soil Sensor 2 vwc
  *  tmsms3  Tinovi Multi Level Soil Moisture Soil Sensor 3 vwc
  *  tmsms4  Tinovi Multi Level Soil Moisture Soil Sensor 4 vwc
+ *  tmsms5  Tinovi Multi Level Soil Moisture Soil Sensor 5 vwc
  * 
  * State of Health - Variables included with transmitted sensor readings
  *  bcs  = Battery Charger Status
@@ -563,6 +570,30 @@ PRODUCT_VERSION(1);
  *   Call this function before calling Wind_Gust() and Wind_GustDirection()
  * Wind_Gust() - Returns wind.gust
  * Wind_GustDirection() - Returns wind.gust_direction
+ * 
+ * ========================================================
+ * Setup for Air Quality Station
+ * ========================================================
+ * File OPTAQS.TXT - Enables Air Quality Station.
+ * This feature then disable Wind, rain, and other OPT configs
+ * Files OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT, OP2RAW.TXT are ignored
+ * Pin OP2_PIN is wired to SET pin on sensor. The SET pin, when low, puts sensor into sleep mode.
+ * The sleep mode on the Plantower PMSA003I is a feature that allows the sensor to enter a low-power state to conserve 
+ *   energy and extend the lifetime of the laser and fan components. Reduces wear on moving parts, especially the fan 
+ *   and laser, both of which have a finite lifespan (laser is about 8000 hours).
+ * After waking the sensor by setting the SET pin high:
+ *   The sensor resumes normal operation on the same I2C bus address.
+ *   The Arduino library and communication remain established unless the microcontroller itself has reset or the sensor 
+ *     was power-cycled (not just slept).
+ *   It is still necessary to wait at least 30 seconds after waking before trusting the sensor’s data, 
+ *     due to the required warm-up/stabilization period following wake from sleep mode.
+ *   So after waiting 30 seconds:
+ *     Take a first reading and discard it.
+ *     Take a second reading and use that value for your application.
+ *     This approach clears any stale or buffered data and helps avoid using outdated measurements from 
+ *        the sensor's startup phase.
+ * 
+ * Typical Files needed CONFIG.TXT OBI5M.TXT OPTAQS.TXT
  * ======================================================================================================================
  */
 
@@ -582,7 +613,7 @@ PRODUCT_VERSION(1);
 #include <Adafruit_LPS35HW.h>
 #if (PLATFORM_ID == PLATFORM_MSOM)
 #include <AB1805_RK.h>
-#include <location.h>
+#include <location.h>       // particle-som-gnss library
 #else
 #include <RTClib.h>
 #endif
@@ -732,6 +763,23 @@ char SD_OB15M_FILE[] = "OBI15M.TXT";    // Observation Interval every 15 Minutes
 
 char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
 
+char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
+bool AQS_Enabled = false;               // if file found this is set
+int AQS_Correction = 0;                   // This will set to 30500ms for time we wait for sensor to initialize
+
+/*
+ * ======================================================================================================================
+ *  Option Pin Defination Setup
+ * ======================================================================================================================
+ */
+#if (PLATFORM_ID == PLATFORM_MSOM) 
+#define OP1_PIN  A0     // Grove D5, PIN 29 A0/D19
+#define OP2_PIN  A1     // Grove D5, PIN 31 A1/D18
+#else
+#define OP1_PIN  A4
+#define OP2_PIN  A5
+#endif
+
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
@@ -795,14 +843,16 @@ void BackGroundWork() {
 
   uint64_t OneSecondFromNow = System.millis() + 1000;
 
-  Wind_TakeReading();
+  if (!AQS_Enabled) {
+    Wind_TakeReading();
 
-  if (OP1_State == OP1_STATE_DISTANCE) {
-    DistanceGauge_TakeReading();
-  }
+    if (OP1_State == OP1_STATE_DISTANCE) {
+      DistanceGauge_TakeReading();
+    }
 
-  if (PM25AQI_exists) {
-    pm25aqi_TakeReading();
+    if (PM25AQI_exists) {
+      pm25aqi_TakeReading();
+    }
   }
 
   HeartBeat();  // Provides a 250ms delay
@@ -816,9 +866,11 @@ void BackGroundWork() {
     delay (TimeRemaining);
   }
 
-  if (TurnLedOff) {   // Turned on by rain gauge interrupt handler
-    digitalWrite(LED_PIN, LOW);  
-    TurnLedOff = false;
+  if (!AQS_Enabled) {
+    if (TurnLedOff) {   // Turned on by rain gauge interrupt handler
+      digitalWrite(LED_PIN, LOW);  
+      TurnLedOff = false;
+    }
   }
 }
 
@@ -974,29 +1026,37 @@ void setup() {
   SimChangeCheck();
 #endif
 
+  // Check SD Card for file to determine if we are a Air Quality Station
+  OBI_AQS_Initialize(); // Sets AQS_Enabled to true
+
+
   //==================================================
   // Wind Speed and Rain Gauge Interrupt Based Sensors
   //==================================================
 
-  // Optipolar Hall Effect Sensor SS451A - Wind Speed
-  anemometer_interrupt_count = 0;
-  anemometer_interrupt_stime = System.millis();
-  attachInterrupt(ANEMOMETER_IRQ_PIN, anemometer_interrupt_handler, FALLING);
+  if (!AQS_Enabled) {
+    // Optipolar Hall Effect Sensor SS451A - Wind Speed
+    anemometer_interrupt_count = 0;
+    anemometer_interrupt_stime = System.millis();
+    attachInterrupt(ANEMOMETER_IRQ_PIN, anemometer_interrupt_handler, FALLING);
 
-  // Optipolar Hall Effect Sensor SS451A - Rain Gauge
-  raingauge1_interrupt_count = 0;
-  raingauge1_interrupt_stime = System.millis();
-  raingauge1_interrupt_ltime = 0;  // used to debounce the tip
-  attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
+    // Optipolar Hall Effect Sensor SS451A - Rain Gauge
+    raingauge1_interrupt_count = 0;
+    raingauge1_interrupt_stime = System.millis();
+    raingauge1_interrupt_ltime = 0;  // used to debounce the tip
+    attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
+  }
 
   // Check SD Card for files to determine Observation and Transmit Intervals
   OBI_TXI_Initialize();
   
-  // Check SD Card for files to determine if pin OP1 has a DIST, 2nd Rain Gauge or Raw file
-  OP1_Initialize();
+  if (!AQS_Enabled) {
+    // Check SD Card for files to determine if pin OP1 has a DIST, 2nd Rain Gauge or Raw file
+    OP1_Initialize();
 
-  // Check SD Card for files to determine if pin OP2 Raw file
-  OP2_Initialize();
+    // Check SD Card for files to determine if pin OP2 Raw file
+    OP2_Initialize();
+  }
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
@@ -1109,13 +1169,15 @@ void loop() {
 
       // If we waited too long for acks while publishing and this threw off our wind observations.
       // In that code ws_refresh was set to true for us to reinit wind data.
-      if (ws_refresh) {
-        Output ("WS Refresh Required");
-        Wind_Distance_Air_Initialize();
+      if (!AQS_Enabled) {
+        if (ws_refresh) {
+          Output ("WS Refresh Required");
+          Wind_Distance_Air_Initialize();
+        }
       }
 
       // Perform an Observation, save in OBS structure, Write to SD
-      if ( (lastOBS == 0) || (System.millis() - lastOBS) > (obs_interval*60*1000)) {  // 1 minute
+      if ( (lastOBS == 0) || (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) ) {  // 1 minute
         I2C_Check_Sensors(); // Make sure Sensors are online
         OBS_Do();
       }
@@ -1214,7 +1276,9 @@ void loop() {
       DailyRebootCountDownTimer = cf_reboot_countdown_timer; // Reset count incase reboot fails
 
       // We need to reinitialize our wind readings before we can move on.
-      Wind_Distance_Air_Initialize();
+      if (!AQS_Enabled) {
+        Wind_Distance_Air_Initialize();
+      }
     }   
 
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
@@ -1282,7 +1346,9 @@ void loop() {
 		  Particle.connect();
 
       // We need to reinitialize our wind readings before we can move on.
-      Wind_Distance_Air_Initialize();
+      if (!AQS_Enabled) {
+        Wind_Distance_Air_Initialize();
+      }
     }
 #endif
   }

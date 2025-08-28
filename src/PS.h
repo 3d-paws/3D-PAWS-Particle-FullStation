@@ -1321,7 +1321,29 @@ int callback_imsi(int type, const char* buf, int len, char* cimi) {
 
 /* 
  *=======================================================================================================================
- * OBI_TXI_Initialize() - OBservation Interval Transmit Interval Initialize
+ * OBI_AQS_Initialize() - Check SD Card for file to determine if we are a Air Quality Station
+ *=======================================================================================================================
+ */
+void OBI_AQS_Initialize() {
+  Output ("OBSAQS:INIT");
+  if (SD_exists) {
+    if (SD.exists(SD_OPTAQS_FILE)) {
+      Output ("OPTAQI Enabled");
+      pinMode (OP2_PIN, OUTPUT);
+      digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
+      AQS_Enabled = true;
+      AQS_Correction = 30500;  // Correction to be subtracted from poll and transmission wait timing in main loop
+    }
+    else {
+      Output ("OPTAQI NF");
+      AQS_Enabled = false;
+    }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * OBI_TXI_Initialize() - Observation Interval Transmit Interval Initialize
  *=======================================================================================================================
  */
 void OBI_TXI_Initialize() {
@@ -1362,6 +1384,19 @@ void OBI_TXI_Initialize() {
       obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;
     }
   }
+
+  // Do a check and make sure OBS and Transmit is at 5m or greater
+  if (AQS_Enabled) {
+    if (obs_interval<5) {
+      Output ("OBI Corrected 5M");
+      obs_tx_interval = 5;
+    }
+    if (obs_tx_interval<5) {
+      Output ("TXI Corrected 5M");
+      obs_tx_interval = 5;
+    }
+  }
+
   sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
   Output(msgbuf);  
 }

@@ -73,19 +73,6 @@ bool ws_refresh = false;           // Set to true when we have delayed too long 
 
 /*
  * ======================================================================================================================
- *  Option Pin Defination Setup
- * ======================================================================================================================
- */
-#if (PLATFORM_ID == PLATFORM_MSOM) 
-#define OP1_PIN  A0     // Grove D5, PIN 29 A0/D19
-#define OP2_PIN  A1     // Grove D5, PIN 31 A1/D18
-#else
-#define OP1_PIN  A4
-#define OP2_PIN  A5
-#endif
-
-/*
- * ======================================================================================================================
  *  Pin OP1 State Setup
  * ======================================================================================================================
  */
@@ -826,24 +813,26 @@ void I2C_Check_Sensors() {
   }
 
   // PM25AQI
-  if (I2C_Device_Exist (PM25AQI_ADDRESS)) {
-    // Sensor online but our state had it offline
-    if (PM25AQI_exists == false) {
-      // See if we can bring sensor online
-      if (pmaq.begin_I2C()) {
-        PM25AQI_exists = true;
-        Output ("PM ONLINE");
-        SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
-        pm25aqi_clear();
+  if (!AQS_Enabled) { //  When AQS is enabled the sensor powers down
+    if (I2C_Device_Exist (PM25AQI_ADDRESS)) {
+      // Sensor online but our state had it offline
+      if (PM25AQI_exists == false) {
+        // See if we can bring sensor online
+        if (pmaq.begin_I2C()) {
+          PM25AQI_exists = true;
+          Output ("PM ONLINE");
+          SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
+          pm25aqi_clear();
+        }
       }
     }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (PM25AQI_exists == true) {
-      PM25AQI_exists = false;
-      Output ("PM OFFLINE");
-      SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
-    }   
+    else {
+      // Sensor offline but we our state has it online
+      if (PM25AQI_exists == true) {
+        PM25AQI_exists = false;
+        Output ("PM OFFLINE");
+        SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
+      }   
+    }
   }
 }

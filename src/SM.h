@@ -35,13 +35,16 @@ void StationMonitor() {
   // =================================================================
   // Line 1 of OLED
   // =================================================================
-  if (AS5600_exists) {
-    float ws = Wind_SpeedAverage();
-    sprintf (msgbuf, "WD:%3d WS:%d.%02d", 
-      Wind_SampleDirection(), (int)ws, (int)(ws*100)%100);
-  }
-  else {
-    sprintf (msgbuf, "WD/WS:NF ");
+  memset(msgbuf, 0, sizeof(msgbuf));
+  if (!AQS_Enabled) {
+    if (AS5600_exists) {
+      float ws = Wind_SpeedAverage();
+      sprintf (msgbuf, "WD:%3d WS:%d.%02d", 
+        Wind_SampleDirection(), (int)ws, (int)(ws*100)%100);
+    }
+    else {
+      sprintf (msgbuf, "WD/WS:NF ");
+    }
   }
   len = (strlen (msgbuf) > 21) ? 21 : strlen (msgbuf);
   for (c=0; c<=len; c++) oled_lines [1][c] = *(msgbuf+c);
@@ -51,24 +54,25 @@ void StationMonitor() {
   // Line 2 of OLED RG1 and RG2 Interrupt counts or Distance Gauge
   // =================================================================
   memset(msgbuf, 0, sizeof(msgbuf));
-  
-  sprintf (msgbuf+strlen(msgbuf), "RG1:%02d", raingauge1_interrupt_count); 
-  raingauge1_interrupt_count = 0;
-  raingauge1_interrupt_stime = millis();
-  raingauge1_interrupt_ltime = 0;
+  if (!AQS_Enabled) {
+    sprintf (msgbuf+strlen(msgbuf), "RG1:%02d", raingauge1_interrupt_count); 
+    raingauge1_interrupt_count = 0;
+    raingauge1_interrupt_stime = millis();
+    raingauge1_interrupt_ltime = 0;
 
-  if (OP1_State == OP1_STATE_RAIN) {
-    sprintf (msgbuf+strlen(msgbuf), " RG2:%02d", raingauge2_interrupt_count);
-    raingauge2_interrupt_count = 0;
-    raingauge2_interrupt_stime = millis();
-    raingauge2_interrupt_ltime = 0;
-  }
-  else if (OP1_State == OP1_STATE_DISTANCE) {
-    float dg = DistanceGauge_Median();
-    sprintf (msgbuf+strlen(msgbuf), " DG:%02d.%02d", (int)dg, (int)(dg*100)%100);
-  }
-  else {
-    sprintf (msgbuf+strlen(msgbuf), " RG2/DG:NF");
+    if (OP1_State == OP1_STATE_RAIN) {
+      sprintf (msgbuf+strlen(msgbuf), " RG2:%02d", raingauge2_interrupt_count);
+      raingauge2_interrupt_count = 0;
+      raingauge2_interrupt_stime = millis();
+      raingauge2_interrupt_ltime = 0;
+    }
+    else if (OP1_State == OP1_STATE_DISTANCE) {
+      float dg = DistanceGauge_Median();
+      sprintf (msgbuf+strlen(msgbuf), " DG:%02d.%02d", (int)dg, (int)(dg*100)%100);
+    }
+    else {
+      sprintf (msgbuf+strlen(msgbuf), " RG2/DG:NF");
+    }
   }
 
   len = (strlen (msgbuf) > 21) ? 21 : strlen (msgbuf);
@@ -339,7 +343,7 @@ void StationMonitor() {
 
   if (cycle == 15) {
     if (PM25AQI_exists) {
-      sprintf (msgbuf, "PM 10:%d 25:%d 100:%d", 
+      sprintf (msgbuf, "PM 10:%ld 25:%ld 100:%ld", 
         pm25aqi_obs.max_s10,
         pm25aqi_obs.max_s25,
         pm25aqi_obs.max_s100);

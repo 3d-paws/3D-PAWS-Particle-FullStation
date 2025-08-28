@@ -356,88 +356,140 @@ void OBS_Do() {
   obs[oidx].sensor[sidx].i_obs = cfr;
   obs[oidx].sensor[sidx++].inuse = true;
 
-  // 03 Rain Gauge - Each tip is 0.2mm of rain
-  rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
-  rain = raingauge1_interrupt_count * 0.2;
-  rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
-  raingauge1_interrupt_count = 0;
-  raingauge1_interrupt_stime = System.millis();
-  raingauge1_interrupt_ltime = 0; // used to debounce the tip
+  if (!AQS_Enabled) {
+    // 03 Rain Gauge - Each tip is 0.2mm of rain
+    rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
+    rain = raingauge1_interrupt_count * 0.2;
+    rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
+    raingauge1_interrupt_count = 0;
+    raingauge1_interrupt_stime = System.millis();
+    raingauge1_interrupt_ltime = 0; // used to debounce the tip
 
-  if (OP1_State == OP1_STATE_RAIN) {
-    rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
-    rain2 = raingauge2_interrupt_count * 0.2;
-    rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
-    raingauge2_interrupt_count = 0;
-    raingauge2_interrupt_stime = System.millis();
-    raingauge2_interrupt_ltime = 0; // used to debounce the tip
-  }
+    if (OP1_State == OP1_STATE_RAIN) {
+      rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
+      rain2 = raingauge2_interrupt_count * 0.2;
+      rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
+      raingauge2_interrupt_count = 0;
+      raingauge2_interrupt_stime = System.millis();
+      raingauge2_interrupt_ltime = 0; // used to debounce the tip
+    }
 
 // Output("DB:OBS_URT");
-  EEPROM_UpdateRainTotals(rain, rain2);
+    EEPROM_UpdateRainTotals(rain, rain2);
 // Output("DB:OBS_URTx");
 
-  // 04 Rain Gauge
-  strcpy (obs[oidx].sensor[sidx].id, "rg");
-  obs[oidx].sensor[sidx].type = F_OBS;
-  obs[oidx].sensor[sidx].f_obs = rain;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 04 Rain Gauge
+    strcpy (obs[oidx].sensor[sidx].id, "rg");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = rain;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 05 Rain Gauge Delta Seconds
-  // strcpy (obs[oidx].sensor[sidx].id, "rgs");
-  // obs[oidx].sensor[sidx].type = U_OBS;
-  // obs[oidx].sensor[sidx].u_obs = rgds;
-  // obs[oidx].sensor[sidx++].inuse = true;
+    // 05 Rain Gauge Delta Seconds
+    // strcpy (obs[oidx].sensor[sidx].id, "rgs");
+    // obs[oidx].sensor[sidx].type = U_OBS;
+    // obs[oidx].sensor[sidx].u_obs = rgds;
+    // obs[oidx].sensor[sidx++].inuse = true;
 
-  // 06 Rain Gauge Total
-  strcpy (obs[oidx].sensor[sidx].id, "rgt");
-  obs[oidx].sensor[sidx].type = F_OBS;
-  obs[oidx].sensor[sidx].f_obs = eeprom.rgt1;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 06 Rain Gauge Total
+    strcpy (obs[oidx].sensor[sidx].id, "rgt");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = eeprom.rgt1;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 07 Rain Gauge  Prior Day
-  strcpy (obs[oidx].sensor[sidx].id, "rgp");
-  obs[oidx].sensor[sidx].type = F_OBS;
-  obs[oidx].sensor[sidx].f_obs = eeprom.rgp1;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 07 Rain Gauge  Prior Day
+    strcpy (obs[oidx].sensor[sidx].id, "rgp");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = eeprom.rgp1;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 08 Wind Speed (Global)
-  strcpy (obs[oidx].sensor[sidx].id, "ws");
-  obs[oidx].sensor[sidx].type = F_OBS;
-  ws = Wind_SpeedAverage();
-  ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
-  obs[oidx].sensor[sidx].f_obs = ws;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 08 Wind Speed (Global)
+    strcpy (obs[oidx].sensor[sidx].id, "ws");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    ws = Wind_SpeedAverage();
+    ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
+    obs[oidx].sensor[sidx].f_obs = ws;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 09 Wind Direction
-  strcpy (obs[oidx].sensor[sidx].id, "wd");
-  obs[oidx].sensor[sidx].type = I_OBS;
-  wd = Wind_DirectionVector();
-  wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
-  obs[oidx].sensor[sidx].i_obs = wd;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 09 Wind Direction
+    strcpy (obs[oidx].sensor[sidx].id, "wd");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    wd = Wind_DirectionVector();
+    wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
+    obs[oidx].sensor[sidx].i_obs = wd;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 10 Wind Gust (Global)
-  strcpy (obs[oidx].sensor[sidx].id, "wg");
-  obs[oidx].sensor[sidx].type = F_OBS;
-  ws = Wind_Gust();
-  ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
-  obs[oidx].sensor[sidx].f_obs = ws;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 10 Wind Gust (Global)
+    strcpy (obs[oidx].sensor[sidx].id, "wg");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    ws = Wind_Gust();
+    ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
+    obs[oidx].sensor[sidx].f_obs = ws;
+    obs[oidx].sensor[sidx++].inuse = true;
 
-  // 11 Wind Gust Direction (Global)
-  strcpy (obs[oidx].sensor[sidx].id, "wgd");
-  obs[oidx].sensor[sidx].type = I_OBS;
-  wd = Wind_GustDirection();
-  wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
-  obs[oidx].sensor[sidx].i_obs = wd;
-  obs[oidx].sensor[sidx++].inuse = true;
+    // 11 Wind Gust Direction (Global)
+    strcpy (obs[oidx].sensor[sidx].id, "wgd");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    wd = Wind_GustDirection();
+    wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
+    obs[oidx].sensor[sidx].i_obs = wd;
+    obs[oidx].sensor[sidx++].inuse = true;
+  }
 
 // Output("DB:OBS_I2C");
 
   //
   // Add I2C Sensors
   //
+
+  // Do AQ before others since we have a 30s wakeup time when we are in AQS mode
+  if (PM25AQI_exists) {
+// Output("DB:OBS_PM");
+    // Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
+    if (AQS_Enabled) {
+      pm25aqi_TakeReading_AQS();
+    }
+
+    // 49 Standard Particle PM1.0 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 50 Standard Particle PM2.5 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 51 Standard Particle PM10.0 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 52 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 53 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // 54  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
+    strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // Clear readings
+    pm25aqi_clear();
+// Output("DB:OBS_PMx");
+  }
+
   if (BMX_1_exists) {
 // Output("DB:OBS_BMX1");
 
@@ -934,49 +986,6 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
-  if (PM25AQI_exists) {
-// Output("DB:OBS_PM");
-    // 49 Standard Particle PM1.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // 50 Standard Particle PM2.5 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // 51 Standard Particle PM10.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // 52 Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // 53 Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // 54  Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // Clear readings
-    pm25aqi_clear();
-// Output("DB:OBS_PMx");
-  }
-
   // 55 Heat Index Temperature
   if (HI_exists) {
 // Output("DB:OBS_HI");
@@ -1099,6 +1108,11 @@ void OBS_Do() {
     strcpy (obs[oidx].sensor[sidx].id, "tmsms4");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[3];
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "tmsms5");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) multi.vwc[4];
     obs[oidx].sensor[sidx++].inuse = true;
 
     t = multi.temp[0];

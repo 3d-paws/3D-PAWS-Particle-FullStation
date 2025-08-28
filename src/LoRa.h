@@ -293,7 +293,7 @@ void lora_initialize() {
 
 /* 
  *=======================================================================================================================
- * lora_relay_msg() -LoRa Rain and Soil Remote Sensors we relay their messages to Particle
+ * lora_relay_msg() - LoRa Remote Sensors we relay their messages to Particle
  *    
  * Relay Message Format
  *   NCS    Length (N) and Checksum (CS)

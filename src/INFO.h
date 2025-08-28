@@ -41,6 +41,13 @@ bool INFO_Do() {
   writer.name("type").value("muon");
 #endif
 
+  if (AQS_Enabled) {
+    writer.name("mode").value("AQS");
+  }
+  else {
+    writer.name("mode").value("FS");
+  }
+
   sprintf (Buffer32Bytes, "%d-%02d-%02dT%02d:%02d:%02d",
     Time.year(ts), Time.month(ts), Time.day(ts),
     Time.hour(ts), Time.minute(ts), Time.second(ts));
@@ -407,12 +414,14 @@ bool INFO_Do() {
   }
 
   // Deal with how long this took. More than likely we will always need to do a refresh of wind
-  time_t endTime = Time.now();
-  unsigned long delta = (unsigned long)endTime-(unsigned long)ts;
-  if (delta) { // More than a second
-    sprintf(buf, "INFO:EXTM=%lu,WSRefreshSet", delta);
-    Output (buf);
-    ws_refresh = true;
+  if (!AQS_Enabled) {
+    time_t endTime = Time.now();
+    unsigned long delta = (unsigned long)endTime-(unsigned long)ts;
+    if (delta) { // More than a second
+      sprintf(buf, "INFO:EXTM=%lu,WSRefreshSet", delta);
+     Output (buf);
+      ws_refresh = true;
+    }
   }
 
   return(result);

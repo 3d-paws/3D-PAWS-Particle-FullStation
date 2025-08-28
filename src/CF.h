@@ -24,7 +24,7 @@ aes_myiv=1234567
 lora_unitid=1
 
 # You can set transmitter power from 5 to 23 dBm, default is 13
-lora_txpower=23
+lora_txpower=5
 
 # Valid entries are 433, 866, 915
 lora_freq=915

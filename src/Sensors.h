@@ -195,8 +195,8 @@ bool BLX_exists = false;
  * ======================================================================================================================
  */
 typedef struct {
-  uint16_t max_s10, max_s25, max_s100; 
-  uint16_t max_e10, max_e25, max_e100;
+  int32_t max_s10, max_s25, max_s100; 
+  int32_t max_e10, max_e25, max_e100;
 } PM25AQI_OBS_STR;
 PM25AQI_OBS_STR pm25aqi_obs;
 
@@ -1154,6 +1154,57 @@ void pm25aqi_TakeReading() {
       PM25AQI_exists = false;
       Output ("PM OFFLINE");
     }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * pm25aqi_TakeReading_AQS() - Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
+ *=======================================================================================================================
+ */
+void pm25aqi_TakeReading_AQS() {
+  if (PM25AQI_exists) {
+    PM25_AQI_Data aqid;
+
+    Output("AQS:WAKEUP");
+    digitalWrite(OP2_PIN, HIGH); // Wakeup Air Quality Sensor
+
+    pm25aqi_clear();
+
+    // Wait 30s for sensor to wakeup
+    for (int i=0; i<30; i++) {
+      BackGroundWork(); // Delays 1s
+      if (SerialConsoleEnabled) Serial.print(".");  // Provide Serial Console some feedback as we loop and wait til next observation
+      OLED_spin();
+    }
+    if (SerialConsoleEnabled) Serial.println();
+
+    Output("AQS:Take Reading");
+    // Toss 1st reading after wakeup
+    pmaq.read(&aqid);
+    delay(500);
+
+    if (pmaq.read(&aqid)) {
+      pm25aqi_obs.max_s10  = aqid.pm10_standard;
+      pm25aqi_obs.max_s25  = aqid.pm25_standard;
+      pm25aqi_obs.max_s100 = aqid.pm100_standard;
+
+      pm25aqi_obs.max_e10  = aqid.pm10_env;
+      pm25aqi_obs.max_e25  = aqid.pm25_env;
+      pm25aqi_obs.max_e100 = aqid.pm100_env;
+      Output("AQS:OK");
+    }
+    else {
+      Output("AQS:FAIL");
+      pm25aqi_obs.max_s10 = -999;
+      pm25aqi_obs.max_s25 = -999;
+      pm25aqi_obs.max_s100 = -999;
+      pm25aqi_obs.max_e10 = -999;
+      pm25aqi_obs.max_e25 = -999;
+      pm25aqi_obs.max_e100 = -999;
+    }
+    Output("AQS:SLEEP");
+    digitalWrite(OP2_PIN, LOW); // Put to Sleep Air Quality Sensor
   }
 }
 
