@@ -1332,8 +1332,8 @@ void OBI_AQS_Initialize() {
       pinMode (OP2_PIN, OUTPUT);
       digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
       AQS_Enabled = true;
-      AQS_Correction = AQSWarmUpTime + 10000;  // Correction to be subtracted from mainloop poll interval 
-                                                // to account for the AQS warmup time and 10s for sampling
+      AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
+                                                     // to account for the AQS warmup time and 10s for sampling
     }
     else {
       Output ("OPTAQI NF");
