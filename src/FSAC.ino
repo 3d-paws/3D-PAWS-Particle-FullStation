@@ -1,7 +1,7 @@
 PRODUCT_VERSION(1);
 //PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250815v40"
+#define VERSION_INFO "FS-250831v40"
 
 /*
  *======================================================================================================================
@@ -1187,7 +1187,7 @@ void loop() {
       }
 
       // Perform an Observation, save in OBS structure, Write to SD
-      if ( (lastOBS == 0) || (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) ) {  // 1 minute
+      if ( (lastOBS == 0) || (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) ) {
         I2C_Check_Sensors(); // Make sure Sensors are online
         OBS_Do();
       }
