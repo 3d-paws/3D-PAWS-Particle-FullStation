@@ -192,30 +192,32 @@ bool INFO_Do() {
   }
 #endif
 
-  // How Option 1 is Configured
-  if (OP1_State == OP1_STATE_DISTANCE) {
-    if (dg_adjustment == 1.25) {
-      writer.name("op1").value("DIST 5M");
+  if (!AQS_Enabled) {
+    // How Option 1 is Configured
+    if (OP1_State == OP1_STATE_DISTANCE) {
+      if (dg_adjustment == 1.25) {
+        writer.name("op1").value("DIST 5M");
+      }
+      else {
+        writer.name("op1").value("DIST 10M");
+      }
+    }
+    else if (OP1_State == OP1_STATE_RAIN){
+      writer.name("op1").value("RG2");
+    }
+    else if (OP1_State == OP1_STATE_RAW){
+      writer.name("op1").value("RAW");
     }
     else {
-      writer.name("op1").value("DIST 10M");
+      writer.name("op1").value("NS"); // Not Set
     }
-  }
-  else if (OP1_State == OP1_STATE_RAIN){
-    writer.name("op1").value("RG2");
-  }
-  else if (OP1_State == OP1_STATE_RAW){
-    writer.name("op1").value("RAW");
-  }
-  else {
-    writer.name("op1").value("NS"); // Not Set
-  }
 
-  if (OP2_State == OP2_STATE_RAW){
-    writer.name("op2").value("RAW");
-  }
-  else {
-    writer.name("op2").value("NS"); // Not Set
+    if (OP2_State == OP2_STATE_RAW){
+      writer.name("op2").value("RAW");
+    }
+    else {
+      writer.name("op2").value("NS"); // Not Set
+    }
   }
 
   // Sensors
@@ -323,8 +325,10 @@ bool INFO_Do() {
     comma=",";
   }
 
-  GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
-  sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
+  if (!AQS_Enabled) {
+    GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
+    sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
+  }
 
   writer.name("sensors").value(buf);
 

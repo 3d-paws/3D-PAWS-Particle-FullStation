@@ -216,7 +216,7 @@ PRODUCT_VERSION(1);
  *                                OBI5M  Set 5 Minute Observations, Transmit Interval to 5 Minutes (OBI5M.TXT)
  *                                OBI10M Set 10 Minute Observations, Transmit Interval to 10 Minutes (OBI10M.TXT)
  *                                OBI15M Set 15 Minute Observations, Transmit Interval to 15 Minutes (OBI15M.TXT)
- *                         Rename A4 option to OP1 = OP1DIST, OP1RAIN, OP1RAW, OP1CLR; OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT
+ *                         Rename A4 option to OP1 = OP1DIST, OP1RAIN, OP1RAW, OP1CLR, OP1D5M; OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT, OP1D5M.TXT
  *                                A5 option to OP2 = OP2RAW, OP2CLR; OP2RAW.TXT
  *                         Muon can not support Tinovi Leaf Wetness sensor i2c 0x61 conflicts with KG200Z LoRaWAN radio - removed from Muon compile
  *                         Muon WiFi Enable, create WIFI.TXT with 1 line inside with the following format MUON,ssid,password
@@ -262,6 +262,10 @@ PRODUCT_VERSION(1);
  *     GROVE PWM
  *     32 D5 Wind
  *     33 D4 Rain1
+ * 
+ *     GROVE D5
+ *     29 A0/D19 OP1 PIN
+ *     31 A1/D18 OP2 PIN
  *     
  *     Muon on board I2C addresses
  *     0x28: STUSB4500 USB-C power controller
@@ -593,7 +597,7 @@ PRODUCT_VERSION(1);
  *     This approach clears any stale or buffered data and helps avoid using outdated measurements from 
  *        the sensor's startup phase.
  * 
- * Typical Files needed CONFIG.TXT OBI5M.TXT OPTAQS.TXT
+ * Files needed CONFIG.TXT OBI5M.TXT OPTAQS.TXT
  * ======================================================================================================================
  */
 
@@ -765,7 +769,8 @@ char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. 
 
 char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
 bool AQS_Enabled = false;               // if file found this is set
-int AQS_Correction = 0;                   // This will set to 30500ms for time we wait for sensor to initialize
+int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
+int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
 
 /*
  * ======================================================================================================================
@@ -812,6 +817,7 @@ PMIC pmic;
 #include "EP.h"                   // EEPROM
 #include "SDC.h"                  // SD Card
 #include "OBS.h"                  // Do Observation Processing
+#include "MUX.h"                  // PCA9548 I2C MUX
 #include "SM.h"                   // Station Monitor
 #include "PS.h"                   // Particle Support Functions
 #include "INFO.h"                 // Station Information
@@ -953,6 +959,10 @@ void setup() {
     Output("N2S:None");
   }
 
+  // Rename A4 and A5 files used in releases prior to release 40. 
+  // Remove function this when we determine all sites are at release 40 or greater
+  SD_A4A5_Rename();
+
   if (SD_exists && SD.exists(CF_NAME)) {
     SD_ReadConfigFile();
   }
@@ -1062,9 +1072,9 @@ void setup() {
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
 #endif
 
-  // Adafruit i2c Sensors
+  // Scan for i2c Devices and Sensors
+  mux_initialize();
   bmx_initialize();
-
 #if (PLATFORM_ID != PLATFORM_MSOM)
   htu21d_initialize();  // This sensor has same i2c address as AS5600L
 #endif

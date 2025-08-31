@@ -239,8 +239,8 @@ int Function_DoAction(String s) {
 
       // Set Distance Sensor Divisor to that of 10m
       dg_adjustment = 2.5;
-      if (SD.exists(SD_5M_DIST_FILE)) {
-        if (SD.remove (SD_5M_DIST_FILE)) {
+      if (SD.exists(SD_OP1_D5M_FILE)) {
+        if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=DIST, DEL 5M:OK, 10M SET");
         }
         else {
@@ -272,8 +272,8 @@ int Function_DoAction(String s) {
           return(-2);
         }
       }
-      if (SD.exists(SD_5M_DIST_FILE)) {
-        if (SD.remove (SD_5M_DIST_FILE)) {
+      if (SD.exists(SD_OP1_D5M_FILE)) {
+        if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=RAIN, DEL 5M:OK");
         }
         else {
@@ -306,28 +306,28 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (s.equals("5MDIST")) { // Set 5M Distance Sensor State File
-    Output("DoAction:5MDIST");
+  else if (s.equals("OP1D5M")) { // Set 5M Distance Sensor State File
+    Output("DoAction:OP1D5M");
     if (SD_exists) {
-      if (SD.exists(SD_5M_DIST_FILE)) {
-        Output ("5MDIST, ALREADY EXISTS");      
+      if (SD.exists(SD_OP1_D5M_FILE)) {
+        Output ("OP1D5M, ALREADY EXISTS");      
       }
       else {
         // Touch File
-        File fp = SD.open(SD_5M_DIST_FILE, FILE_WRITE);
+        File fp = SD.open(SD_OP1_D5M_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
           dg_adjustment = 1.25;
-          Output ("5MDIST SET");
+          Output ("OP1D5M SET");
         }
         else {
-          Output ("5MDIST OPEN ERR");
+          Output ("OP1D5M OPEN ERR");
           return(-5);
         }
       }
     }
     else {
-      Output("5MDIST, SD NF"); 
+      Output("OP1D5M, SD NF"); 
       return(-1);      
     }
     return(0);
@@ -362,8 +362,8 @@ int Function_DoAction(String s) {
 
       // Remove Distanve sensor type and reset distance adjustment to default 10m
       dg_adjustment = 2.5;
-      if (SD.exists(SD_5M_DIST_FILE)) {
-        if (SD.remove (SD_5M_DIST_FILE)) {
+      if (SD.exists(SD_OP1_D5M_FILE)) {
+        if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=DIST, DEL 5M:OK");
         }
         else {
@@ -442,8 +442,8 @@ int Function_DoAction(String s) {
         Output ("OP1=CLR, DEL RAIN:NF");
       }
 
-      if (SD.exists(SD_5M_DIST_FILE)) {
-        if (SD.remove (SD_5M_DIST_FILE)) {
+      if (SD.exists(SD_OP1_D5M_FILE)) {
+        if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=CLR, DEL 5M:OK");
           dg_adjustment = 2.5;
         }
@@ -1332,7 +1332,8 @@ void OBI_AQS_Initialize() {
       pinMode (OP2_PIN, OUTPUT);
       digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
       AQS_Enabled = true;
-      AQS_Correction = 30500;  // Correction to be subtracted from poll and transmission wait timing in main loop
+      AQS_Correction = AQSWarmUpTime + 10000;  // Correction to be subtracted from mainloop poll interval 
+                                                // to account for the AQS warmup time and 10s for sampling
     }
     else {
       Output ("OPTAQI NF");
@@ -1389,7 +1390,7 @@ void OBI_TXI_Initialize() {
   if (AQS_Enabled) {
     if (obs_interval<5) {
       Output ("OBI Corrected 5M");
-      obs_tx_interval = 5;
+      obs_interval = 5;
     }
     if (obs_tx_interval<5) {
       Output ("TXI Corrected 5M");
@@ -1399,4 +1400,27 @@ void OBI_TXI_Initialize() {
 
   sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
   Output(msgbuf);  
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_A4A5_Rename() - Rename A4 A5 files to OP1 and OP2 names
+ * 
+ *   A4DIST.TXT -> OP1DIST.TXT
+ *   A4RAIN.TXT -> OP1RAIN.TXT
+ *   A4RAW.TXT  -> OP1RAW.TXT
+ *   A5RAW.TXT  -> OP2RAW.TXT
+ *   5MDIST.TXT -> OP1D5M.TXT
+ *=======================================================================================================================
+ */
+void SD_A4A5_Rename() {
+  Output ("A4A5FU:START");
+  if (SD_exists) {
+    SD_RenameFile ((char*) "A4DIST.TXT", SD_OP1_DIST_FILE);
+    SD_RenameFile ((char*) "A4RAIN.TXT", SD_OP1_RAIN_FILE);
+    SD_RenameFile ((char*) "A4RAW.TXT",  SD_OP1_RAW_FILE);
+    SD_RenameFile ((char*) "A5RAW.TXT",  SD_OP2_RAW_FILE);
+    SD_RenameFile ((char*) "5MDIST.TXT", SD_OP1_D5M_FILE);
+  }
+  Output ("A4A5FU:END");
 }

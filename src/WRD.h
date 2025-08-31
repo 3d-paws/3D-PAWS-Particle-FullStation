@@ -102,7 +102,7 @@ int OP2_State = OP2_STATE_NULL;                  // Default is not used
  */
 #define DISTANCE_GAUGE_PIN  OP1_PIN
 #define DG_BUCKETS          60
-char SD_5M_DIST_FILE[] = "5MDIST.TXT";        // Multiply by 1.25 for 5m Distance Gauge
+char SD_OP1_D5M_FILE[] = "OP1D5M.TXT";        // Multiply by 1.25 for 5m Distance Gauge
 unsigned int dg_bucket = 0;
 float dg_adjustment = 2.5;                    // Default sensor is 10m
 unsigned int dg_buckets[DG_BUCKETS];
@@ -216,7 +216,7 @@ void OP1_Initialize() {
     if (SD.exists(SD_OP1_DIST_FILE)) {
       Output ("OP1=DIST");
       OP1_State = OP1_STATE_DISTANCE;
-      if (SD.exists(SD_5M_DIST_FILE)) {
+      if (SD.exists(SD_OP1_D5M_FILE)) {
         dg_adjustment = 1.25;
         Output ("DIST=5M");
       }

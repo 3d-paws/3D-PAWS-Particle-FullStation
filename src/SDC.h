@@ -73,17 +73,76 @@ void SD_RemoveFile(char *f) {
   if (SD_exists) {
     if (SD.exists(f)) {
       if (SD.remove (f)) {
-        sprintf (msgbuf, "SDRF:%s OK", f);
-        Output (msgbuf);
+        sprintf (Buffer32Bytes, "SDRF:%s OK", f);
+        Output (Buffer32Bytes);
       }
       else {
-        sprintf (msgbuf, "SDRF:%s ERR", f);
-        Output (msgbuf);
+        sprintf (Buffer32Bytes, "SDRF:%s ERR", f);
+        Output (Buffer32Bytes);
       }
     }
     else {
-      sprintf (msgbuf, "SDRF:%s NF", f);
-      Output (msgbuf);
+      sprintf (Buffer32Bytes, "SDRF:%s NF", f);
+      Output (Buffer32Bytes);
+    }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_TouchFile()
+ *=======================================================================================================================
+ */
+void SD_TouchFile(char *f) {
+  if (SD_exists) {
+    if (!SD.exists(f)) {
+      File fp = SD.open(SD_OP1_DIST_FILE, FILE_WRITE);
+      if (fp) {
+        fp.close();
+        sprintf (Buffer32Bytes, "SDTF:%s OK", f);
+        Output (Buffer32Bytes);
+      }
+      else {
+        sprintf (Buffer32Bytes, "SDTF:%s ERR", f);
+        Output (Buffer32Bytes);
+      }
+    }
+    else {
+      sprintf (Buffer32Bytes, "SDTF:%s Exists", f);
+      Output (Buffer32Bytes);
+    }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_RenameFile()
+ *=======================================================================================================================
+ */
+void SD_RenameFile(char *oldf, char *newf) {
+  if (SD_exists) {
+    // Test for file SIM.TXT
+    if (SD.exists(oldf)) {
+      File fp = SD.open(oldf, FILE_WRITE);
+      if (fp) {
+        if (fp.rename(newf)) {
+          sprintf (Buffer32Bytes, "SDRN:%s->%s OK", oldf, newf);
+          Output (Buffer32Bytes);
+        }
+        else {
+          sprintf (Buffer32Bytes, "SDRN:%s->%s ERR", oldf, newf);
+          Output (Buffer32Bytes);
+        }
+        fp.close();
+      }
+      else {
+        sprintf (Buffer32Bytes, "SDRN:%s OPEN ERR", oldf);
+        Output (Buffer32Bytes);
+      }
+    }
+    else {
+      sprintf (Buffer32Bytes, "SDRN:%s NF", oldf);
+      Output (Buffer32Bytes);
     }
   }
 }

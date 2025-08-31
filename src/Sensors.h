@@ -1169,10 +1169,11 @@ void pm25aqi_TakeReading_AQS() {
     Output("AQS:WAKEUP");
     digitalWrite(OP2_PIN, HIGH); // Wakeup Air Quality Sensor
 
+    // Clear readings
     pm25aqi_clear();
 
     // Wait 30s for sensor to wakeup
-    for (int i=0; i<30; i++) {
+    for (int i=0; i<AQSWarmUpTime; i++) {
       BackGroundWork(); // Delays 1s
       if (SerialConsoleEnabled) Serial.print(".");  // Provide Serial Console some feedback as we loop and wait til next observation
       OLED_spin();
@@ -1180,21 +1181,29 @@ void pm25aqi_TakeReading_AQS() {
     if (SerialConsoleEnabled) Serial.println();
 
     Output("AQS:Take Reading");
-    // Toss 1st reading after wakeup
-    pmaq.read(&aqid);
-    delay(500);
-
-    if (pmaq.read(&aqid)) {
-      pm25aqi_obs.max_s10  = aqid.pm10_standard;
-      pm25aqi_obs.max_s25  = aqid.pm25_standard;
-      pm25aqi_obs.max_s100 = aqid.pm100_standard;
-
-      pm25aqi_obs.max_e10  = aqid.pm10_env;
-      pm25aqi_obs.max_e25  = aqid.pm25_env;
-      pm25aqi_obs.max_e100 = aqid.pm100_env;
-      Output("AQS:OK");
+    
+    pmaq.read(&aqid); // Toss 1st reading after wakeup
+    
+    int count=0;
+    int fail_count;
+    for (int i=0; i<11; i++) {
+      delay(800); // sensor takes reading every 1s, so wait for the next
+      if (pmaq.read(&aqid)) {
+        pm25aqi_obs.max_s10  += aqid.pm10_standard;
+        pm25aqi_obs.max_s25  += aqid.pm25_standard;
+        pm25aqi_obs.max_s100 += aqid.pm100_standard;
+        pm25aqi_obs.max_e10  += aqid.pm10_env;
+        pm25aqi_obs.max_e25  += aqid.pm25_env;
+        pm25aqi_obs.max_e100 += aqid.pm100_env;
+        count++;
+      }
+      else {
+        fail_count++;
+      }
     }
-    else {
+
+    if (fail_count > 5) {
+      // Fail if half our sample reads failed. - I think this is reasonable - rjb
       Output("AQS:FAIL");
       pm25aqi_obs.max_s10 = -999;
       pm25aqi_obs.max_s25 = -999;
@@ -1202,6 +1211,16 @@ void pm25aqi_TakeReading_AQS() {
       pm25aqi_obs.max_e10 = -999;
       pm25aqi_obs.max_e25 = -999;
       pm25aqi_obs.max_e100 = -999;
+    }
+    else {
+      // Do average
+      Output("AQS:OK");
+      pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10 / count);
+      pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25 / count);
+      pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / count);
+      pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10 / count);
+      pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25 / count);
+      pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / count); 
     }
     Output("AQS:SLEEP");
     digitalWrite(OP2_PIN, LOW); // Put to Sleep Air Quality Sensor
@@ -1355,7 +1374,6 @@ void tmsm_initialize() {
   }
   Output (msgp);
 }
-
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
 /*
