@@ -1185,8 +1185,8 @@ void pm25aqi_TakeReading_AQS() {
     pmaq.read(&aqid); // Toss 1st reading after wakeup
     
     int count=0;
-    int fail_count;
-    for (int i=0; i<12; i++) {
+    int fail_count=0;
+    for (int i=0; i<11; i++) {
       delay(800); // sensor takes reading every 1s, so wait for the next
       if (pmaq.read(&aqid)) {
         pm25aqi_obs.max_s10  += aqid.pm10_standard;
