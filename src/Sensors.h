@@ -1186,7 +1186,7 @@ void pm25aqi_TakeReading_AQS() {
     
     int count=0;
     int fail_count;
-    for (int i=0; i<11; i++) {
+    for (int i=0; i<12; i++) {
       delay(800); // sensor takes reading every 1s, so wait for the next
       if (pmaq.read(&aqid)) {
         pm25aqi_obs.max_s10  += aqid.pm10_standard;
@@ -1202,7 +1202,7 @@ void pm25aqi_TakeReading_AQS() {
       }
     }
 
-    if (fail_count > 5) {
+    if (fail_count > 6) {
       // Fail if half our sample reads failed. - I think this is reasonable - rjb
       Output("AQS:FAIL");
       pm25aqi_obs.max_s10 = -999;
