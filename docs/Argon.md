@@ -1,30 +1,59 @@
-# Argon WiFi Board Support
-[←](../README.md)<BR>
+# Argon Board Support
+[← Back to Top](../README.md)
 
-When setting up an Argon for the first time you use the Particle phone app and pair with the Argon board. This process includes configuring the WiFi settings.  These settings are saved in nonvolatile memory.  At this point you are done. But, if you want to change WiFi settings stored in nonvolatile memory you can: Use the app on your phone or create a file on the SD card with the WiFi credentials.
+---
 
-WiFi credentials file  
-At the top level of the SD card, create a file called WIFI.TXT. This file has one line with 3 comma separated items. Example:
+**Particle Argon Datasheet:**  
+[Particle Argon Datasheet (official)](https://docs.particle.io/reference/datasheets/wi-fi/argon-datasheet)
 
->AuthType,ssid,password
+---
 
-Where AuthType is one of these keywords  
->UNSEC  
-WEP  
-WPA  
-WPA2  
-WPA_ENTERPRISE  
-WPA2_ENTERPRISE  
+## Wi-Fi Setup
 
-When WiFi Information is successfully read and parsed from the file at startup, the below will display on Serial Console:
-WIFI:Open
-WIFI:ATYPE[WPA2]
-WIFI:SSID[NotMySSID]
-WIFI:PW[NotMyPassword]
-WIFI:Credentials Cleared
-WIFI:Credentials Set [One of the above AuthTypes]
+When setting up an Argon for the first time, use the Particle mobile app to pair with the Argon board.  
+This process configures the Wi-Fi credentials, which are saved to non-volatile memory.
 
-If WiFi file not found the below will display on Serial Console:  
->WIFI:NOFILE USING NVAUTH
+- If the initial setup is complete, setup is finished.  
+- To change the saved Wi-Fi credentials later, you can:  
+  1. Use the Particle mobile app, **or**  
+  2. Place a file on the SD card with the new Wi-Fi information.
 
-Note: If something went wrong obtaining WiFi credentials the credentials in non volatile memory are used.
+---
+
+### Wi-Fi Credentials via SD Card
+
+At the **top level of the SD card**, create a file named `WIFI.TXT`.
+
+- The file should have **one line** with **three comma-separated items**:  
+
+    AuthType,ssid,password
+
+#### AuthType Options
+- `UNSEC`  
+- `WEP`  
+- `WPA`  
+- `WPA2`  
+- `WPA_ENTERPRISE`  
+- `WPA2_ENTERPRISE`  
+
+---
+
+### Serial Console Output
+
+#### When Wi-Fi info is successfully read:
+WIFI:Open  
+WIFI:ATYPE[WPA2]  
+WIFI:SSID[NotMySSID]  
+WIFI:PW[NotMyPassword]  
+WIFI:Credentials Cleared  
+WIFI:Credentials Set [WPA2]
+
+#### When Wi-Fi file not found:
+WIFI:NOFILE USING NVAUTH
+
+**Note:** If Wi-Fi credentials cannot be obtained from the SD card, the Argon uses the credentials stored in **non-volatile memory**.
+
+---
+
+## Pin Mappings
+- [Argon Pin Mappings](ArgonBoronPins.md)

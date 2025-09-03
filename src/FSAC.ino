@@ -1,7 +1,7 @@
 PRODUCT_VERSION(1);
 //PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250902v40"
+#define VERSION_INFO "FS-250903v40"
 
 /*
  *======================================================================================================================
@@ -316,7 +316,7 @@ PRODUCT_VERSION(1);
  *                          Since the data is spread across a large number of flash sectors, 
  *                          flash erase-write cycle limits should not be an issue in general.
  * 
- *  Dallas OneWire          https://github.com/particle-iot/OneWireLibrary - Not supported on Boron/Argon
+ *  Dallas OneWire          https://github.com/particle-iot/OneWireLibrary - Not supported on Boron/Argon/Muon
  *                          WARNING:This library has not been updated for the Argon, Boron, Tracker One, Photon 2/P2.
  *                          https://docs.particle.io/reference/device-os/libraries/o/OneWire/
  *

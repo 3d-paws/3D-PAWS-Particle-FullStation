@@ -337,7 +337,10 @@ void OBS_Do() {
   oidx = OBS_Open();    // Get a free observation spot
 
   obs[oidx].inuse = true;
-  obs[oidx].ts = Time.now();
+
+  if (!AQS_Enabled) {
+    obs[oidx].ts = Time.now();
+  }
   obs[oidx].css = sig.getStrength();
 
   // Battery Charging State
@@ -450,6 +453,7 @@ void OBS_Do() {
     // Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
     if (AQS_Enabled) {
       pm25aqi_TakeReading_AQS(); // This does Over Sampling and sleep management
+      obs[oidx].ts = Time.now(); // Get time after the above wakeup and reading of sensor.
     }
     else {
       pm25aqi_TakeReading(); // If we call list multiple time the highest values will be returned.

@@ -16,7 +16,7 @@ If an OLED display is detected at startup, messages are also sent to this displa
 ### [Station Monitor](docs/StationMonitor.md)
 Upon setup completion.  If the jumper wire is in place then the Station Monitor will run instead of the main work loop.  
 
-### [Boron Board Support](docs/Argon.md)
+### [Boron Board Support](docs/Boron.md)
 Particle Cellular Board Support.
 
 ### [Argon Board Support](docs/Argon.md)
@@ -25,40 +25,12 @@ Particle WiFi Board Support.
 ### [Muon Board Support](docs/Muon.md)
 Particle Muon Board Support.
 
-### [Particle Console Do Action Functions](docs/DoAction.md)
-From Particle Consolde send commands to boards.
+### [Particle Console](docs/ParticleConsole.md)
+Features and Setup of the Particle Web Console
 
+### [SD Card Information](docs/SD.md)
+Information on what is stored on the SD card.
 
-### SD card Information
-
-Size: 32 Gig or smaller cards. Larger SD cards will not be seen.  
-
-Format Tool: SD Card Formatter by TUXERA <https://www.sdcard.org/downloads/formatter/>  
-
-Format: MS-DOS (FAT32) Format  
-
-Files and Directories:
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
-  /OBS              Directory containing observation files.  
-  /OBS/20231024.LOG Dated observation file. One file per day. Data in JSON format  
-  /N2SOBS.TXT       Need to Send file. Stores observations that have not been
-                    transmitted. If file is greater than 512 *60* 48 bytes.
-                    File is deleted and we start over. File is deleted when all
-                    N2S observations have been sent.  
-  /A4RAIN.TXT   Set pin A4 to be a 2nd rain gauge.
-  /A4RAW.TXT    set pin A4 for raw readings (Average of 5 samples 10ms apart).
-  /A4DIST.TXT   Set pin A4 to be a distance gauge of type 10m.
-  /5MDIST.TXT   Set distance gauge of type 5m.
-  /SIM.TXT      Support 3rd party SIM.
-  /A5RAW.TXT    set pin A5 for raw readings (Average of 5 samples 10ms apart).  
-  /WIFI.TXT     Support for Argon WiFi Boards. Stores WiFi information.
-  /INFO.TXT     INFO feature information. Every INFO call will overwrite files content.
-  /TXI5M.TXT    Set Transmit Interval to 5 minutes.
-  /TXI10M.TXT   Set Transmit Interval to 10 minutes.
-  No TXIxxM.TXT Set Transmit Interval to 15 minutes.
-</pre>
-</div>
 
 ## Code Operation
 
@@ -106,136 +78,7 @@ RS observations are sent to Particle Cloud with Particle Event Name "RS".
 
 The Full Station can support receiving and storing 32 LoRa messages in memory. They will be added to the N2S file when necessary.
 
-### Example of Particle Webhook for Full Station Observations (FS)
 
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
-
-Observation Time (at)
-Chords ID (id)
-Battery Voltage bv
-Health (hth)
-Rain Gauge (rg)
-Soil Temperature and Moisture (st1, sm1, st1, sm1)
-BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
-
-{
- "name": "station-01 -> FS for chordsrt.com",
- "event": "FS",
- "deviceID": "Place Device ID Here",
- "url": "<http://3d.chordsrt.com/measurements/url_create>",
- "requestType": "GET",
- "noDefaults": true,
- "rejectUnauthorized": false,
- "query": {
-     "key": "Place Chords Token ID Here",
-     "instrument_id": "53",
-     "at": "{{at}}",
-     "hth": "{{hth}}",
-     "bcs": "{{bcs}}",
-     "bpc": "{{bpc}}",
-     "cfr": "{{cfr}}",
-     "css": "{{css}}",
-     "bp1": "{{bp1}}",
-     "bt1": "{{bt1}}",
-     "bh1": "{{bh1}}",
-     "hh1": "{{hh1}}",
-     "ht1": "{{ht1}}",
-     "st1": "{{st1}}",
-     "sh1": "{{sh1}}",
-     "st2": "{{st2}}",
-     "sh2": "{{sh2}}",
-     "hdt1": "{{hdt1}}",
-     "hdh1": "{{hdh1}}",
-     "hdt2": "{{hdt2}}",
-     "hdh2": "{{hdh2}}",
-     "sv1": "{{sv1}}",
-     "si1": "{{si1}}",
-     "su1": "{{su1}}",
-     "vlx": "{{vlx}}",
-     "blx": "{{blx}}",
-     "mt1": "{{mt1}}",
-     "rg": "{{rg}}",
-     "rgt": "{{rg}}",
-     "rgp": "{{rgp}}",
-     "rg2": "{{rg2}}",
-     "rgt2": "{{rgt2}}",
-     "rgp2": "{{rgp2}}",
-     "a4r": "{{a4r}}",
-     "a5r": "{{a5r}}",
-     "ws": "{{ws}}",
-     "wd": "{{wd}}",
-     "wg": "{{wg}}",
-     "wgd": "{{wgd}}",
-     "sg1": "{{sg1}}",
-     "sg1v": "{{sg1v}}",
-     "sg1p1": "{{sg1p1}}",
-     "sg1t1": "{{sg1t1}}",
-     "sg1h1": "{{sg1h1}}",
-     "sg1p2": "{{sg1p2}}",
-     "sg1t2": "{{sg1t2}}",
-     "sg1h2": "{{sg1h2}}",
-     "tlww": "{{tlww}}",
-     "tlwt": "{{tlwt}}",
-     "tsme25": "{{tsme25}}",
-     "tsmeec": "{{tsmeec}}"
-     "tsmvwc": "{{tsmvwc}}",
-     "tsmt": "{{tsmt}}",
-     "tmsms1": "{{tmsms1}}",
-     "tmsms2": "{{tmsms2}}",
-     "tmsms3": "{{tmsms3}}",
-     "tmsms4": "{{tmsms4}}",
-     "tmsmt1": "{{tmsmt1}}",
-     "tmsmt2": "{{tmsmt2}}"
-  }
-}
-</pre>
-</div>
-Example of Particle Webhook for Feather LoRaRemoteMO deployments.
-If you define the below with no "deviceID". The webhook can be used by multiple devices.
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
-{
- "name": "LR for chordsrt.com",
- "event": "LR",
- "deviceID": "Place Device ID Here",
- "url": "<http://3d.chordsrt.com/measurements/url_create>",
- "requestType": "GET",
- "noDefaults": true,
- "rejectUnauthorized": false,
- "query": {
-     "key": "Place Chords Token ID Here",
-     "instrument_id": "{{id}}",
-     "at": "{{at}}",
-     "rg": "{{rg}}",
-     "sg": "{{sg}}",
-
-     "st1": "{{st1}}",
-     "sm1": "{{sm1}}",
-     "st2": "{{st2}}",
-     "sm2": "{{sm2}}",
-
-     "bp1": "{{bp1}}",
-     "bt1": "{{bt1}}",
-     "bh1": "{{bh1}}",
-     "bp2": "{{bp2}}",
-     "bt2": "{{bt2}}",
-     "bh2": "{{bh2}}",
-
-     "st1": "{{st1}}",
-     "sh1": "{{sh1}}",
-     "st2": "{{st2}}",
-     "sh2": "{{sh2}}",
-
-     "mt1": "{{mt1}}",
-     "mt2": "{{mt2}}",
-
-     "bv": "{{bv}}",
-     "hth": "{{hth}}"
-  }
-}
-</pre>
-</div>
 
 
 ### Battery Charger Status (bcs)
@@ -338,34 +181,7 @@ Random board shut offs could cause SD corruption when in the middle of writing t
 INFO is sent at boot. When we are going to power down do to low power,  And when we request it from particle console.  So the daily reboot will cause a INFO to be sent.
 
 
-Pins Assignments as of release FSAC-240223
-See the releases code and Fritzing Wiring Drawings current information
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 300px; border: 1px solid black; padding: 10px;">
-<pre>
 
- D8   = Serial Console (Ground Pin to Enable) - Not on Grove Shield
- D7   = On Board LED - Lit when rain gauge tips, blinks when console connection needed
- D6   = Reserved for Lora IRQ - Not on Grove Shield
- D5   = SD Card Chip Select
- D4   = SPI1 MSIO - Reserved for LoRa
- D3   = SPI1 MOSI - Reserved for LoRa
- D2   = SPI1 SCK  - Reserved for LoRa
- D1   = I2C SCL
- D0   = I2C SDA
-
- A0   = WatchDog Monitor/Relay Reset Trigger
- A1   = WatchDog Monitor Heartbeat
- A2   = Wind Speed IRQ
- A3   = Rain Gauge IRQ
- A4   = 2nd Rain Gauge, Distance Gauge based on SD card file existing, or Raw pin value
- A5   = Future
- D13  = SPIO CLK   SD Card
- D12  = SPI0 MOSI  SD Card
- D11  = SPI0 MISO  SD Card
- D10  = UART1 RX - Reserved for LoRa CS
- D9   = UART1 TX - Reserved for LoRa RESET
-</pre>
-</div>
 
 ### PM25AQI - I2C - Air Quality Sensor
 

@@ -1,5 +1,5 @@
 # Serial Monitor
-[←](../README.md)<BR>
+[←Top](../README.md)<BR>
 Adding a jumper wire between Particle pin D8 (Boron & Argon), A2 (Muon) and ground will enable serial text output on the USB port at boot time.
 
 A serial monitor from Arduino's IDE can be used. TIP: With the Arduino serial monitor. Select "Both NL & CR" on the pull down menu at the bottom.  On a Mac with Visual Studio installed with Particle's Development Environment; the shell command "particle serial monitor" can be used.
