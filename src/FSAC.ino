@@ -1,12 +1,12 @@
 PRODUCT_VERSION(1);
 //PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250831v40"
+#define VERSION_INFO "FS-250902v40"
 
 /*
  *======================================================================================================================
  * FullStation (FS)
- *   Board Type : Particle Boron https://docs.particle.io/reference/datasheets/b-series/b404x-datasheet/
+ *   Board Type : Particle Boron https://docs.particle.io/reference/datasheets/b-series/b404x-datasheet
  *   Board Type : Particle Argon https://docs.particle.io/reference/datasheets/wi-fi/argon-datasheet
  *   Board Type : Particle Muon  https://docs.particle.io/reference/datasheets/m-series/muon-datasheet
  * 
@@ -226,6 +226,8 @@ PRODUCT_VERSION(1);
  *                                      SET pin, when low, puts sensor into sleep mode.
  *                                      Disable Wind, rain, and other OPT configs
  *                                      Files OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT, OP2RAW.TXT are ignored
+ *          2025-08-29  RJB Added support to rename A4 and A5 files to OP1 and OP2 names
+ *          2025-09-02  RJB Fixed issues with MUX and TSM.
  *                         
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -436,6 +438,13 @@ PRODUCT_VERSION(1);
  *  tsme25  Tinovi Soil Moisture e25
  *  tsmec   Tinovi Soil Moisture ec
  *  tsmvwc  Tinovi Soil Moisture vwc
+ * 
+ *  MUX sensors where [1-8] is the MUX channel
+ *  tsmt-[1-8]    Tinovi Soil Moisture temperature
+ *  tsme25-[1-8]  Tinovi Soil Moisture e25
+ *  tsmec-[1-8]   Tinovi Soil Moisture ec
+ *  tsmvwc-[1-8]  Tinovi Soil Moisture vwc
+ * 
  *  tmsmt   Tinovi Multi Level Soil Moisture
  *  tmsms1  Tinovi Multi Level Soil Moisture Soil Sensor 1 vwc
  *  tmsms2  Tinovi Multi Level Soil Moisture Soil Sensor 2 vwc
@@ -617,7 +626,7 @@ PRODUCT_VERSION(1);
 #include <Adafruit_LPS35HW.h>
 #if (PLATFORM_ID == PLATFORM_MSOM)
 #include <AB1805_RK.h>
-#include <location.h>       // particle-som-gnss library
+// #include <particle-som-gnss>     // particle-som-gnss library
 #else
 #include <RTClib.h>
 #endif
@@ -1074,6 +1083,9 @@ void setup() {
 
   // Scan for i2c Devices and Sensors
   mux_initialize();
+  if (!MUX_exists) {
+    tsm_initialize(); // Check main bus
+  }
   bmx_initialize();
 #if (PLATFORM_ID != PLATFORM_MSOM)
   htu21d_initialize();  // This sensor has same i2c address as AS5600L
@@ -1093,7 +1105,6 @@ void setup() {
 #if (PLATFORM_ID != PLATFORM_MSOM)
   tlw_initialize();
 #endif
-  tsm_initialize();
   tmsm_initialize();
   
   // Derived Observations

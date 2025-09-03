@@ -1,11 +1,11 @@
-# 3D-PAWS Particle Full Station
+# 3D-PAWS Particle Full Station v39 and Before
 
 Last Updated: 2025-09-01
 
 ## Description
 
 This software is supported on a Particle Boron and Argon boards. It provides full weather station features.
-This document supports Version 39 and before. See README.md for Version 40.
+This document supports Version 39 and before. See [README.md](../README.md) for Version 40.
 
 ## Features
 

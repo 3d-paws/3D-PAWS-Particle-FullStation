@@ -164,6 +164,7 @@ void mux_scan() {
       int tsm_id = 0;
 
       if (I2C_Device_Exist(TSM_ADDRESS)) {
+        tsm.init(TSM_ADDRESS);
         mux[c].inuse = true;
         // Tinovi Soil Moisture
         mux[c].sensor[s].state = ONLINE;

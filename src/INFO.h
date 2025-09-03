@@ -299,6 +299,18 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sTSM", comma);
     comma=",";
   }
+  if (MUX_exists) {
+    for (int c=0; c<MUX_CHANNELS; c++) {
+      if (mux[c].inuse) {
+        for (int s = 0; s < MAX_CHANNEL_SENSORS; s++) {
+          if (mux[c].sensor[s].type == m_tsm) {
+            sprintf (buf+strlen(buf), "%sTSM%d(%d.%d)", comma, mux[c].sensor[s].id, c, s);
+            comma=",";
+          }
+        }
+      }
+    }
+  }
   if (TMSM_exists) {
     sprintf (buf+strlen(buf), "%sTMSM", comma);
     comma=",";

@@ -1,249 +1,33 @@
 # 3D-PAWS Particle Full Station
 
-Last Updated: 2025-01-23
+Last Updated: 2025-09-01
 
 ## Description
 
-This software is supported on a Particle Boron and Argon boards. It provides full weather station features.
-
+This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and aftere. See [README_v39.md](docs/README_v39.md) for prior releases.
 ## Features
 
-### Serial Monitor
+### [Serial Monitor](docs/SerialMonitor.md)
+Adding a jumper wire between Particle pin D8 (Boron & Argon), A2 (Muon) and ground will enable serial text output on the USB connector at boot time.
 
-Adding a jumper wire between Particle pin D8 and ground will enable serial text output on the USB connector at boot time. Software is configured to run at 9600 baud.  
-
-A serial monitor from Arduino's IDE can be used. On a Mac with Visual Studio installed with Particle's Development Environment; the shell command "particle serial monitor" can be used.
-
-Upon Particle board boot with the jumper wire connected, software will wait 60 seconds for you to connect the serial monitor. Flashing the board led.  After 60 seconds the software will continue the boot process. Below is an example of what you might see as the software initializes and discovers connected devices.
-
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
-$ particle serial monitor
-Opening serial monitor for com port: "/dev/tty.usbmodem14101"
-Serial monitor opened successfully
-
-OLED:Enabled
-SC:Enabled
-SER:OK
-Copyright [2024] [University Corporation for Atmospheric Research]
-FSAC-241206v37
-SD:Online
-SD:OBS DIR Exists
-N2S:None
-CF:aes_pkey=[....]
-CF:aes_myiv=[....]
-CF:lora_unitid=[1]
-CF:lora_txpower=[23]
-CF:lora_freq=[915]
-EEPROM DUMP
- LEN:4096
- RT1:0.20
- RP1:0.00
- RT2:0.00
- RP2:0.00
- RGTS:1733949583
- N2SFP:0
- CS:1733949583
- CSC:1733949583
-2000-01-01T00:00:16+
-2024-12-11T20:41:15*
-RTC:VALID
-STC: Valid
-2024-12-11T20:41:15=
-SIM:Internal
-SIM:NO UPDATE FILE
-TXI:INIT
-TXI5M Found
-TXI=5M
-A4:INIT
-A4=DIST
-DIST=5M
-A5:INIT
-A5=NF
-BMX:INIT
-get_Bosch_ChipID()
-  I2C:77 Reg:00
-  CHIPID:60 BME/390
-BMP390_1 OK
-get_Bosch_ChipID()
-  I2C:76 Reg:00
-  ERR_ET:7
-  I2C:76 Reg:D0
-  ERR_ET:7
-BMX_2 NF
-HTU21D:INIT
-HTU NF
-MCP9808:INIT
-MCP1 OK
-MCP2 NF
-MCP3 NF
-MCP4 NF
-SHT:INIT
-SHT1 OK
-SHT2 NF
-HIH8:INIT
-HIH8 OK
-SI1145:INIT
-SI:NF
-VLX:INIT
-VLX OK
-BLX:INIT
-BLX:OK
-AS5600:INIT
-WD:OK
-PM25AQI:INIT
-PM:NF
-HDC:INIT
-HDC1 OK
-HDC2 OK
-LPS:INIT
-LPS1 OK
-LPS2 NF
-TLW:INIT
-TLW NF
-TSM:INIT
-TSM NF
-TMSM:INIT
-TMSM NF
-WBT:INIT
-WBT:OK
-HI:INIT
-HI:OK
-WBGT:INIT
-WBGT:OK wo/Globe
-AES_KEY[....]
-AES_MYIV[....]
-LORA CFV OK
-LORA NF
-DoAction:OK
-WindDist Init()
-............................................................
-IMSI:234103519249568
-T>6, RT>6 - OK
-EEPROM RT UPDATED
-OBS[0]->SD
-{"at":"2024-12-11T20:42:23","css":42.4994,"hth":17397249,"bcs":3,"bpc":96.9,"cfr":0,"rg":0.0,"rgt":0.2,"rgp":0.0,"ws":0.0,"wd":181,"wg":0.0,"wgd":-999,"bp1":843.6,"bt1":22.5,"st1":22.0,"sh1":30.5,"hdt1":22.2,"hdh1":29.3,"hdt2":22.2,"hdh2":29.3,"lpt1":17.0,"lpp1":843.1,"ht2":23.3,"hh2":29.3,"mt1":22.2,"vlx":7.0,"blx":293.5,"sg":431.0,"hi":21.8,"wbt":12.6,"wbgt":17.1}
-DB:OBS_Exit
-RTC: 1ST SYNC
-2024-12-11T20:42:26*
-INFO_DO()
-{"devid":"e00fce68bde8f63590a3b118","devos":"6.1.1","freemem":56248,"uptime":88,"board":"boron","at":"2024-12-11T20:42:26","ver":"FSAC-241206v37","hth":17397249,"obsi":"60s","obsti":"5m","t2nt":"212s","drct":79200,"n2s":"NF","ps":"VIN","bcs":"CHARGED","bpc":96.9,"css":42.4994,"csq":37.4990,"imsi":"234103519249568","actsim":"INTERNAL","a4":"DIST 5M","sensors":"BMX1(BMP390),MCP1,SHT1,HDC1,HDC2,LPS1,HIH8,VEML,BLX,AS5600,HI,WBT,WBGT WO/GLOBE","oled":"32","scepin":"ENABLED","sce":"TRUE"}
-INFO->PUB OK[488]
-Connected
-{"at":"2024-12-11T20:42:23","css":54.9996,"hth":17397249,"bcs":3,"bpc":96.9,"cfr":0,"rg":0.0,"rgt":0.2,"rgp":0.0,"ws":0.0,"wd":181,"wg":0.0,"wgd":-999,"bp1":843.6,"bt1":22.5,"st1":22.0,"sh1":30.5,"hdt1":22.2,"hdh1":29.3,"hdt2":22.2,"hdh2":29.3,"lpt1":17.0,"lpp1":843.1,"ht2":23.3,"hh2":29.3,"mt1":22.2,"vlx":7.0,"blx":293.5,"sg":431.0,"hi":21.8,"wbt":12.6,"wbgt":17.1}
-FS[0]->PUB OK[369]
-2024-12-11T20:42:30
-CS:52.49 B:3,96.91
-</pre>
-</div>
-
-### OLED Display
-
+### [OLED Display](docs/OLED_Display.md)
 If an OLED display is detected at startup, messages are also sent to this display. Jumper wire is not needed for activation.
 
-Station Monitor
-Upon setup completion.  If the jumper wire is in place then the Station Monitor will run instead of the main work loop.  The station monitor will display various sensor values. Updating every second. A good way to check rain gauge tips and wind direction.
+### [Station Monitor](docs/StationMonitor.md)
+Upon setup completion.  If the jumper wire is in place then the Station Monitor will run instead of the main work loop.  
 
-R:00,S:00,D:NF  3F041
-BMX:NF
-H:24.40T22.12 C64.99
-V262,267,0 B3,94.61
+### [Boron Board Support](docs/Argon.md)
+Particle Cellular Board Support.
 
-The station monitor will run for 10 minutes. After which, the main work loop will be started. This is to safeguard against the jump wire being left connected on a deployment in the field.
+### [Argon Board Support](docs/Argon.md)
+Particle WiFi Board Support.
 
-Caveat: If you reapply the jumper after removing, the station monitor will restart and run for the remaining time left of the 10 minutes allotted.
+### [Muon Board Support](docs/Muon.md)
+Particle Muon Board Support.
 
-### 3rd Party SIM Support
+### [Particle Console Do Action Functions](docs/DoAction.md)
+From Particle Consolde send commands to boards.
 
-On the underside of the Particle Boron board is a slot for a SIM card. This SIM slot can be used instead of the built-in SIM. Particle's software stores the state of what SIM is being used and cell provider information in nvram. The state is either set INTERNAL or EXTERNAL. We can control this state by the existence of the SD file SIM.TXT.  The user needs to create file SIM.TXT and place it at the top directory on the SD card.
-
-If the SIM.TXT file contains the below and it passes syntax checks. Then at boot software sets the SIM to use to EXTERNAL and the file is then renamed to SIMOLD.TXT, so we don't do this on the next boot. Below shows options for the SIM.TXT. What is used will depend on what is needed by the SIM. Select one of the 3 options below.
-
-Option 1: Connect to a cellular network using APN, USERNAME and PASSWORD
-
->AUP epc.tmobile.com username passwd
-
-Option 2: Connect to a cellular network using USERNAME and PASSWORD
-
->UP username password
-
-Option 3: Connect to a cellular network using only APN
-
->APN apn
-
-Below shows an example of what was needed for the T-Mobile SIM.
-
->APN epc.tmobile.com
-
-If the SIM.TXT file contains the below and it passes syntax checks. Then at boot software sets the SIM to use to INTERNAL and the file is then renamed to SIMOLD.TXT, so we don't do this on the next boot.
-
->INTERNAL
-
-If you have the serial console enabled, you will see messages related to the above actions. Upon SIM setup completion, the board led will flash forever. Indicating a reboot is needed.
-
-SEE: <https://docs.particle.io/troubleshooting/guides/connectivity-troubleshooting/using-3rd-party-sim-cards/>
-
-### Argon WiFi Board Support
-
-When setting up an Argon for the first time you use the Particle phone app and pair with the Argon board. This process includes configuring the WiFi settings.  These settings are saved in nonvolatile memory.  At this point you are done. But, if you want to change WiFi settings stored in nonvolatile memory you can: Use the app on your phone or create a file on the SD card with the WiFi credentials.
-
-WiFi credentials file  
-At the top level of the SD card, create a file called WIFI.TXT. This file has one line with 3 comma separated items. Example:
-
->AuthType,ssid,password
-
-Where AuthType is one of these keywords  
->UNSEC  
-WEP  
-WPA  
-WPA2  
-WPA_ENTERPRISE  
-WPA2_ENTERPRISE  
-
-When WiFi Information is successfully read and parsed from the file at startup, the below will display on Serial Console:
-WIFI:Open
-WIFI:ATYPE[WPA2]
-WIFI:SSID[NotMySSID]
-WIFI:PW[NotMyPassword]
-WIFI:Credentials Cleared
-WIFI:Credentials Set [One of the above AuthTypes]
-
-If WiFi file not found the below will display on Serial Console:  
->WIFI:NOFILE USING NVAUTH
-
-Note: If something went wrong obtaining WiFi credentials the credentials in non volatile memory are used.
-
-### DoAction Functions on Particle Cloud Console
-
-On the view device screen on the Particle Console there is a FUNCTIONS area at the lower right. This is used to send commands to the online device.
-
->REBOOT - Reboot device. Toggle pin A0. If no relay/watchdog is connected to A0, then a soft boot on the Particle board is performed.
-
->SEND - Send queued observations.
-
->INFO - Trigger station to send station information. Event type "INFO".
-
->CRT - Clear rain totals that are stored in nvram.
-
->A4RAIN - Configures pin A4 to be a 2nd rain gauge. Creates file A4RAIN.TXT. Reboot necessary.
-
->A4RAW - Configures pin A4 for raw readings (Average of 5 samples 10ms apart). Creates A4RAW.TXT. Reports as a4r to Particle.
-
->A4DIST - Configures pin A4 to be a distance gauge. Create file A4DIST.TXT. Reboot necessary. Default sensor is 10m where pin A4 is multiplied by 2.5mm
-
->5MDIST - Configure 5m Sensor. Creates file 5MDIST.TXT. Value read from pin A4 is multiplied by 1.25mm.
-
->A4CLR - Unassigns pin A4. Removes files A4RAIN.TXT, A4DIST.TXT, 5MDIST.TXT, A4RAW.TXT if they exist
-
->A5RAW - Configures pin A5 for raw readings (Average of 5 samples 10ms apart). Creates A5RAW.TXT. Reports as a5r to Particle.
-
->A5CLR - Unassigns pin A5. Removes files A5RAW.TXT if it exist
-
->TXI5M - Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes TXI10M.TXT file.
-
->TXI10M - Set Transmit Interval to 10 minutes. Creates file TXI10M.TXT. Removes TXI5M.TXT file.
-
->TXI15M - Set Transmit Interval to 15 minutes (Default). Removes TXI5M.TXT and TXI10M.TXT files.
 
 ### SD card Information
 
@@ -549,6 +333,10 @@ A loop counter is maintained and set so around every 22 hours the system reboots
 
 Particle Boron Power Down when no USB power and LiPo at 10%
 Random board shut offs could cause SD corruption when in the middle of writing to the SD card. To prevent this, when the Boron board has no USB power and the LiPo battery is at or below 10 percent, the board is powered off.  The board will start back up again when USB power returns.
+
+
+INFO is sent at boot. When we are going to power down do to low power,  And when we request it from particle console.  So the daily reboot will cause a INFO to be sent.
+
 
 Pins Assignments as of release FSAC-240223
 See the releases code and Fritzing Wiring Drawings current information
