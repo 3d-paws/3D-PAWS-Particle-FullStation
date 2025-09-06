@@ -1238,7 +1238,13 @@ void pm25aqi_TakeReading_AQS() {
     
     for (int i=0; i<11; i++) {
       delay(800); // sensor takes reading every 1s, so wait for the next
-      pm25aqi_TakeReading();
+      pmaq.read(&aqid);
+      pm25aqi_obs.max_s10  += aqid.pm10_standard;
+      pm25aqi_obs.max_s25  += aqid.pm25_standard;
+      pm25aqi_obs.max_s100 += aqid.pm100_standard;
+      pm25aqi_obs.max_e10  += aqid.pm10_env;
+      pm25aqi_obs.max_e25  += aqid.pm25_env;
+      pm25aqi_obs.max_e100 += aqid.pm100_env;
     }
     Output("AQS:SLEEP");
     digitalWrite(OP2_PIN, LOW); // Put to Sleep Air Quality Sensor

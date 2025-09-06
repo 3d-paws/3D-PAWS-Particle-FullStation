@@ -230,6 +230,7 @@ PRODUCT_VERSION(1);
  *          2025-09-02  RJB Fixed issues with MUX and TSM.
  *          2025-09-05  RJB FS air quality now does a 1 minute average.
  *                          Added OPTAQS and OPTFS Particle Do Actions
+ *          2025-09-06  RJB Bug fix Missed compile flags around the pin used for wind speed
  *                         
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM

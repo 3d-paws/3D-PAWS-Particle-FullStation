@@ -90,7 +90,7 @@ AES aes;
  *  LoRa Connected Rain Gauges and Soil Moisture
  * ======================================================================================================================
  */
-#define LORA_RELAY_MSGCNT     64  // Set to the number of LoRa RS devices this station will be supporting
+#define LORA_RELAY_MSGCNT     64  // Set to the number of LoRa Remote Messages we can buffer
 #define LORA_RELAY_MSG_LENGTH 256
 const char *relay_msgtypes[] = {"UNKN", "INFO", "LR"}; // Particle Message Types being received for relay
 typedef struct {

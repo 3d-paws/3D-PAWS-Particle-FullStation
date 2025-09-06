@@ -175,7 +175,7 @@ bool OBS_FS_Build_JSON(int i) {
  */
 int OBS_Relay_Build_JSON() {
   LORA_MSG_RELAY_STR *m;
-  int relay_type = 0;
+  int relay_type = 0; // Type 1 = INFO, 2 = LoRa Relay of Observation
 
   memset(msgbuf, 0, sizeof(msgbuf));
   JSONBufferWriter writer(msgbuf, sizeof(msgbuf)-1); // Is this really needed
