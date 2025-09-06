@@ -26,6 +26,6 @@ Argron and Boron Pins for OP1=A4, OP2=A5 and Muon Pins for OP1=A0, OP2=A2
 * OP2RAW - Configure for raw readings. Average of 5 samples 10ms apart (OP2RAW.TXT)
 * OP2CLR - Unassigns pin. Removes associated OP2 TXT files.
 
-Station Configuration
-* OPTAQS - Air Quality Station configuration (Requires REBOOT after setting)
-* OPTFS - Full Station configuration (Requires REBOOT after setting)
+Optional Station Configurations
+* OPTAQS - Air Quality Station configuration (OPTAQS.TXT) (Requires REBOOT after setting)
+* OPTFS - Full Station configuration (Removes OPTAQS.TXT) (Requires REBOOT after setting)

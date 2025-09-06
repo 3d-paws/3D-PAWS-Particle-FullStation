@@ -19,7 +19,7 @@
 | `/N2SOBS.TXT`     | "Need to Send" file storing unsent observations. Resets if larger than specified size.  |
 | `/SIM.TXT`        | Support file for third-party SIM configurations.                                         |
 | `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi boards.                            |
-| `/INFO.TXT`       | System info file. Overwritten with every INFO call.                                     |
+| `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                     |
 | `/TXI5M.TXT`      | Sets transmit interval to 5 minutes.                                                    |
 | `/TXI10M.TXT`     | Sets transmit interval to 10 minutes.                                                   |
 | *(no TXIxxM.TXT)* | Defaults transmit interval to 15 minutes.                                               |
