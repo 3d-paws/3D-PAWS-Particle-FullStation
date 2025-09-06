@@ -1,7 +1,7 @@
 PRODUCT_VERSION(1);
 //PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250903v40"
+#define VERSION_INFO "FS-250906v40"
 
 /*
  *======================================================================================================================
@@ -228,6 +228,8 @@ PRODUCT_VERSION(1);
  *                                      Files OP1DIST.TXT, OP1RAIN.TXT, OP1RAW.TXT, OP2RAW.TXT are ignored
  *          2025-08-29  RJB Added support to rename A4 and A5 files to OP1 and OP2 names
  *          2025-09-02  RJB Fixed issues with MUX and TSM.
+ *          2025-09-05  RJB FS air quality now does a 1 minute average.
+ *                          Added OPTAQS and OPTFS Particle Do Actions
  *                         
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -626,7 +628,7 @@ PRODUCT_VERSION(1);
 #include <Adafruit_LPS35HW.h>
 #if (PLATFORM_ID == PLATFORM_MSOM)
 #include <AB1805_RK.h>
-// #include <particle-som-gnss>     // particle-som-gnss library
+#include <location.h>     // from particle-som-gnss library
 #else
 #include <RTClib.h>
 #endif
@@ -1007,6 +1009,7 @@ void setup() {
   sprintf (msgbuf, "%sS", timestamp);
   Output(msgbuf);
 
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
   // System Power and Battery State
   sprintf (msgbuf, "PS:%d", System.powerSource());
   Output(msgbuf);
@@ -1015,6 +1018,7 @@ void setup() {
   float bpc = System.batteryCharge();
   sprintf (msgbuf, "BPC:%d.%02d", (int)bpc, (int)(bpc*100)%100);
   Output(msgbuf);
+#endif
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
   network_initialize();
@@ -1027,7 +1031,7 @@ void setup() {
   Location.begin(config);
 #endif
 
-#if PLATFORM_ID == PLATFORM_ARGON
+#if (PLATFORM_ID == PLATFORM_ARGON)
 	pinMode(PWR, INPUT);
 	pinMode(CHG, INPUT);
   //==================================================
@@ -1038,7 +1042,7 @@ void setup() {
   WiFiPrintCredentials();
 #endif
 
-#if PLATFORM_ID == PLATFORM_BORON
+#if (PLATFORM_ID == PLATFORM_BORON)
   //==================================================
   // Check if we need to program for Sim change
   //==================================================

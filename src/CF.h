@@ -23,7 +23,7 @@ aes_myiv=1234567
 # This unit's LoRa ID for Receiving and Sending Messages
 lora_unitid=1
 
-# You can set transmitter power from 5 to 23 dBm, default is 13
+# You can set transmitter power from 5 to 23 dBm
 lora_txpower=5
 
 # Valid entries are 433, 866, 915
@@ -38,6 +38,6 @@ lora_freq=915
  */
 char *cf_aes_pkey=NULL;
 long cf_aes_myiv=0;
-int cf_lora_unitid=1;
-int cf_lora_txpower=13;
-int cf_lora_freq=915;
+int cf_lora_unitid=0;
+int cf_lora_txpower=0;
+int cf_lora_freq=0;

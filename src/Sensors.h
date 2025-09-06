@@ -194,9 +194,20 @@ bool BLX_exists = false;
  * We sample the sensor every second keeping highest 1 second returned values for the observation interval. 
  * ======================================================================================================================
  */
+#define PM25AQI_1M_BUCKETS  60
 typedef struct {
   int32_t max_s10, max_s25, max_s100; 
   int32_t max_e10, max_e25, max_e100;
+} PM25AQI_OBS;
+PM25AQI_OBS pm25aqi_1m_obs[PM25AQI_1M_BUCKETS];
+int pm25aqi_1m_bucket = 0;
+
+
+typedef struct {
+  int32_t max_s10, max_s25, max_s100; 
+  int32_t max_e10, max_e25, max_e100;
+  int count=0;
+  int fail_count=0;
 } PM25AQI_OBS_STR;
 PM25AQI_OBS_STR pm25aqi_obs;
 
@@ -1092,6 +1103,22 @@ float blx_takereading() {
 
 /* 
  *=======================================================================================================================
+ * pm25aqi_1m_clear() - clear 1m circular observation buffer
+ *=======================================================================================================================
+ */
+void pm25aqi_1m_clear() {
+  for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
+    pm25aqi_1m_obs[i].max_s10 = 0;
+    pm25aqi_1m_obs[i].max_s25 = 0;
+    pm25aqi_1m_obs[i].max_s100 = 0;
+    pm25aqi_1m_obs[i].max_e10 = 0;
+    pm25aqi_1m_obs[i].max_e25 = 0;
+    pm25aqi_1m_obs[i].max_e100 = 0;
+  }
+}
+
+/* 
+ *=======================================================================================================================
  * pm25aqi_clear() - clear observation
  *=======================================================================================================================
  */
@@ -1102,6 +1129,8 @@ void pm25aqi_clear() {
   pm25aqi_obs.max_e10 = 0;
   pm25aqi_obs.max_e25 = 0;
   pm25aqi_obs.max_e100 = 0;
+  pm25aqi_obs.count = 0;
+  pm25aqi_obs.fail_count = 0;
 }
 
 /* 
@@ -1125,7 +1154,9 @@ void pm25aqi_initialize() {
     else {
       msgp = (char *) "PM:OK";
       PM25AQI_exists = true;
+      
       pm25aqi_clear();
+      pm25aqi_1m_clear();
     }
   }
   Output (msgp);
@@ -1133,26 +1164,47 @@ void pm25aqi_initialize() {
 
 /* 
  *=======================================================================================================================
- * pm25aqi_TakeReading() - take air quality reading - keep the larger value
+ * pm25aqi_1m_SumReadings() - Sum samples for reporting
+ *=======================================================================================================================
+ */
+void pm25aqi_1m_SumReadings() {
+  if (PM25AQI_exists) {
+    pm25aqi_clear();
+    for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
+      pm25aqi_obs.max_s10  += pm25aqi_1m_obs[i].max_s10;
+      pm25aqi_obs.max_s25  += pm25aqi_1m_obs[i].max_s25;
+      pm25aqi_obs.max_s100 += pm25aqi_1m_obs[i].max_s100;
+      pm25aqi_obs.max_e10  += pm25aqi_1m_obs[i].max_e10;
+      pm25aqi_obs.max_e25  += pm25aqi_1m_obs[i].max_e25;
+      pm25aqi_obs.max_e100 += pm25aqi_1m_obs[i].max_e100;
+    }
+    // Do average
+    pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / PM25AQI_1M_BUCKETS); 
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * pm25aqi_TakeReading() - Take a reading and sum it for later average when reporting
  *=======================================================================================================================
  */
 void pm25aqi_TakeReading() {
   if (PM25AQI_exists) {
     PM25_AQI_Data aqid;
-
+  
     if (pmaq.read(&aqid)) {
-      if (aqid.pm10_standard  > pm25aqi_obs.max_s10)  { pm25aqi_obs.max_s10  = aqid.pm10_standard;  }
-      if (aqid.pm25_standard  > pm25aqi_obs.max_s25)  { pm25aqi_obs.max_s25  = aqid.pm25_standard;  }
-      if (aqid.pm100_standard > pm25aqi_obs.max_s100) { pm25aqi_obs.max_s100 = aqid.pm100_standard; }
-
-      if (aqid.pm10_env  > pm25aqi_obs.max_e10)  { pm25aqi_obs.max_e10  = aqid.pm10_env;  }
-      if (aqid.pm25_env  > pm25aqi_obs.max_e25)  { pm25aqi_obs.max_e25  = aqid.pm25_env;  }
-      if (aqid.pm100_env > pm25aqi_obs.max_e100) { pm25aqi_obs.max_e100 = aqid.pm100_env; }
-    }
-    else {
-      SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
-      PM25AQI_exists = false;
-      Output ("PM OFFLINE");
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s10  = aqid.pm10_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s25  = aqid.pm25_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s100 = aqid.pm100_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e10  = aqid.pm10_env;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e25  = aqid.pm25_env;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e100 = aqid.pm100_env;
+      pm25aqi_1m_bucket = (pm25aqi_1m_bucket+1) % PM25AQI_1M_BUCKETS; // Advance bucket index for next reading
     }
   }
 }
@@ -1184,25 +1236,14 @@ void pm25aqi_TakeReading_AQS() {
     
     pmaq.read(&aqid); // Toss 1st reading after wakeup
     
-    int count=0;
-    int fail_count=0;
     for (int i=0; i<11; i++) {
       delay(800); // sensor takes reading every 1s, so wait for the next
-      if (pmaq.read(&aqid)) {
-        pm25aqi_obs.max_s10  += aqid.pm10_standard;
-        pm25aqi_obs.max_s25  += aqid.pm25_standard;
-        pm25aqi_obs.max_s100 += aqid.pm100_standard;
-        pm25aqi_obs.max_e10  += aqid.pm10_env;
-        pm25aqi_obs.max_e25  += aqid.pm25_env;
-        pm25aqi_obs.max_e100 += aqid.pm100_env;
-        count++;
-      }
-      else {
-        fail_count++;
-      }
+      pm25aqi_TakeReading();
     }
+    Output("AQS:SLEEP");
+    digitalWrite(OP2_PIN, LOW); // Put to Sleep Air Quality Sensor
 
-    if (fail_count > 6) {
+    if (pm25aqi_obs.fail_count > pm25aqi_obs.count) {
       // Fail if half our sample reads failed. - I think this is reasonable - rjb
       Output("AQS:FAIL");
       pm25aqi_obs.max_s10 = -999;
@@ -1215,15 +1256,13 @@ void pm25aqi_TakeReading_AQS() {
     else {
       // Do average
       Output("AQS:OK");
-      pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10 / count);
-      pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25 / count);
-      pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / count);
-      pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10 / count);
-      pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25 / count);
-      pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / count); 
+      pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10 / pm25aqi_obs.count);
+      pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25 / pm25aqi_obs.count);
+      pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / pm25aqi_obs.count);
+      pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10 / pm25aqi_obs.count);
+      pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25 / pm25aqi_obs.count);
+      pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / pm25aqi_obs.count); 
     }
-    Output("AQS:SLEEP");
-    digitalWrite(OP2_PIN, LOW); // Put to Sleep Air Quality Sensor
   }
 }
 

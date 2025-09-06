@@ -409,6 +409,7 @@ bool INFO_Do() {
       fp.println(msgbuf);
       fp.close();
       SystemStatusBits &= ~SSB_SD;  // Turn Off Bit
+      Output ("INFO->SD OK");
       // Output ("INFO Logged to SD");
     }
     else {

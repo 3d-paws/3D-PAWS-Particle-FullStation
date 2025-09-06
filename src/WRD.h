@@ -124,7 +124,11 @@ uint64_t anemometer_interrupt_stime;
  *  anemometer_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#define ANEMOMETER_IRQ_PIN  D5
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#define ANEMOMETER_IRQ_PIN D5
+#else
+#define ANEMOMETER_IRQ_PIN A2
+#endif
 void anemometer_interrupt_handler()
 {
   anemometer_interrupt_count++;
@@ -574,7 +578,7 @@ void Wind_TakeReading() {
  *=======================================================================================================================
  */
 void Wind_Distance_Air_Initialize() {
-  Output ("WindDist Init()");
+  Output ("WindDistAQ Init()");
 
   // Clear windspeed counter  
   anemometer_interrupt_count = 0;

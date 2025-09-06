@@ -33,7 +33,7 @@ void StationMonitor() {
   Serial_writeln (timestamp);
 
   // =================================================================
-  // Line 1 of OLED
+  // Line 1 of OLED Wind Direction and Speed
   // =================================================================
   memset(msgbuf, 0, sizeof(msgbuf));
   if (!AQS_Enabled) {

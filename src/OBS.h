@@ -456,7 +456,7 @@ void OBS_Do() {
       obs[oidx].ts = Time.now(); // Get time after the above wakeup and reading of sensor.
     }
     else {
-      pm25aqi_TakeReading(); // If we call list multiple time the highest values will be returned.
+      pm25aqi_1m_SumReadings();
     }
 
     // Standard Particle PM1.0 concentration unit µg 𝑚3

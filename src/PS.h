@@ -724,6 +724,55 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+  else if (s.equals("OPTAQS")) { // Enable Air Quality Station
+    Output("DoAction:OPTAQS");
+    if (SD_exists) {
+      if (SD.exists(SD_OPTAQS_FILE)) {
+        Output ("OPTAQS, ALREADY SET");  
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_OPTAQS_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("OPTAQS SET");
+        }
+        else {
+          Output ("OPTAQS OPEN ERR");
+          return(-2);
+        }
+      }
+    }
+    else {
+      Output("OPTAQS, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
+  else if (s.equals("OPTFS")) { // Enable Air Quality Station
+    Output("DoAction:OPTFS");
+    if (SD_exists) {
+      if (SD.exists(SD_OPTAQS_FILE)) {
+        SD_RemoveFile (SD_OPTAQS_FILE);
+
+        // Switching to Full Station Clear Rain Totals from EEPROM
+        time32_t current_time = Time.now();
+        EEPROM_ClearRainTotals(current_time);
+
+        Output ("OPTFS SET");
+      }
+      else {
+        Output ("OPTFS, ALREADY SET");  
+      }
+    }
+    else {
+      Output("OPTAQS, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
+
   else {
     Output("DoAction:UKN"); 
     return(-1);
@@ -1329,6 +1378,11 @@ void OBI_AQS_Initialize() {
   if (SD_exists) {
     if (SD.exists(SD_OPTAQS_FILE)) {
       Output ("OPTAQI Enabled");
+
+      // Ware are a Air Quality Station so Clear Rain Totals from EEPROM
+      time32_t current_time = Time.now();
+      EEPROM_ClearRainTotals(current_time);
+
       pinMode (OP2_PIN, OUTPUT);
       digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
       AQS_Enabled = true;
@@ -1386,7 +1440,7 @@ void OBI_TXI_Initialize() {
     }
   }
 
-  // Do a check and make sure OBS and Transmit is at 5m or greater
+  // Do a check and make sure OBS and Transmit is at least 5m or greater when AQS is enabled
   if (AQS_Enabled) {
     if (obs_interval<5) {
       Output ("OBI Corrected 5M");
