@@ -12,7 +12,7 @@ On the view device screen on the Particle Console there is a FUNCTIONS area at t
 Observation Timing and Reporting
 * TXI5M - Set 1 Minute Observations, Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes other files.
 * TXI10M - Set 1 Minute Observations, Set Transmit Interval to 10 minutes. Creates file TXI10M.TXT. Removes other files.
-* TXI15M - Set 1 Minute Observations, Set Transmit Interval to 15 minutes (Default). Removes other files.
+* TXI15M - Set 1 Minute Observations, Set Transmit Interval to 15 minutes. Removes other files. <B>(Default)</B>
 * OBI5M - Set 5 Minute Observations, Transmit Interval to 5 Minutes (OBI5M.TXT). Removes other files.
 * OBI10M - Set 10 Minute Observations, Transmit Interval to 10 Minutes (OBI10M.TXT). Removes other files.
 * OBI15M - Set 15 Minute Observations, Transmit Interval to 15 Minutes (OBI15M.TXT). Removes other files.
