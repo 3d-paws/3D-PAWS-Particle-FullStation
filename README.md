@@ -37,7 +37,7 @@ Receive LoRa messages for LoRa Remote devices. Transmit the message to Particle 
 ### [Sensor Information](docs/Sensors.md)
 Information about supported Sensors
 
-### [Station Information](docs/INFO.md)
+### [Station Information (INFO)](docs/INFO.md)
 Information about Particle message type INFO and INFO.TXT file.
 
 ### [Air Quality Station Option and Operation](docs/AirQualityStation.md)
