@@ -36,7 +36,7 @@ Many of the below bits will be set at initialization. Then cleared after the fir
 </pre>
 </div>
 
-Future direction for this feature will be to just include the below with transmitted observations
+Future direction for this feature will be to just include the below with transmitted observations. The INFO feature provides more information about station configure in a more readable format. 
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
 <pre>
 #define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
