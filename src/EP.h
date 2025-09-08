@@ -50,14 +50,23 @@ void EEPROM_ChecksumUpdate() {
 
 /* 
  *=======================================================================================================================
- * EEPROM_ChecksumValid()
+ * EEPROM_Valid()
  *=======================================================================================================================
  */
-bool EEPROM_ChecksumValid() {
+bool EEPROM_Valid() {
   unsigned long checksum = EEPROM_ChecksumCompute();
 
   if (checksum == eeprom.checksum) {
-    return (true);
+    if ((eeprom.rgt1 < 0.0) ||
+        (eeprom.rgp1 < 0.0) ||
+        (eeprom.rgt2 < 0.0) ||
+        (eeprom.rgp2 < 0.0) ||
+        (eeprom.n2sfp > (SD_n2s_max_filesz + 1000) )) {
+      return (false);    
+    }
+    else {
+      return (true);
+    }
   }
   else {
     return (false);
@@ -133,7 +142,7 @@ void EEPROM_Initialize() {
 
     EEPROM.get(eeprom_address, eeprom);
 
-    if (!EEPROM_ChecksumValid()) {
+    if (!EEPROM_Valid()) {
       EEPROM_ClearRainTotals(current_time);
     }
     else {

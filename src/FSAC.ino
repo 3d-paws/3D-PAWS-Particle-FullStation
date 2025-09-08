@@ -1,7 +1,7 @@
-PRODUCT_VERSION(1);
-//PRODUCT_VERSION(40);
+//PRODUCT_VERSION(1);
+PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250906v40"
+#define VERSION_INFO "FS-250908v40"
 
 /*
  *======================================================================================================================
@@ -231,7 +231,8 @@ PRODUCT_VERSION(1);
  *          2025-09-05  RJB FS air quality now does a 1 minute average.
  *                          Added OPTAQS and OPTFS Particle Do Actions
  *          2025-09-06  RJB Bug fix Missed compile flags around the pin used for wind speed
- *                         
+ *          2025-09-07  RJB Improved EEPROM Valid check 
+ *          2025-09-08  RJB Bug Fix in AQS taking a reading         
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h

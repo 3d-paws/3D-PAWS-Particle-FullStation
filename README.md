@@ -40,10 +40,13 @@ Information about supported Sensors
 ### [Station Information](docs/INFO.md)
 Information about Particle message type INFO and INFO.TXT file.
 
+### [Air Quality Station Option and Operation](docs/AirQualityStation.md)
+Information about operation as a Air Quality Station (No wind, Rain) and sampling air quality differently.
+
 ### [Code Operation Notes](docs/CodeOperation.md)
 Information on how the station operates at a code level.
 
-
+### WatchDog Board
  
 
 ### Battery Charger Status (bcs)
