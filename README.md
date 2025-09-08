@@ -46,6 +46,9 @@ Information about operation as a Air Quality Station (No wind, Rain) and samplin
 ### [Code Operation Notes](docs/CodeOperation.md)
 Information on how the station operates at a code level.
 
+### [System Health Bits (hth)](docs/SystemHealthBits.md)
+A health bit register. Where each bit corresponds to a system state or sensor.
+
 ### WatchDog Board
  
 
@@ -62,55 +65,6 @@ Information on how the station operates at a code level.
 
 Battery Percent Charge (bpc)
 Cell Signal Strength (css)
-</pre>
-</div>
-
-### Transmitted Health Information (hth)
-Many of the below bits will be set at initialization. Then cleared after the first observation is made after startup. If a sensor existed then disappeared, a bit will be set until the sensor returns or a reboot occurs.
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
-<pre>
-Health bits (hth)
-AREA         BIT       COMMENT
-OKAY         0x0       Normal Operation
-PWRON        0x1       Set at power on, but cleared after first observation
-SD           0x2       Set if SD missing at boot or other SD related issues
-RTC          0x4       Set if RTC missing at boot
-OLED         0x8       Set if OLED missing at boot, but cleared after first observation
-N2S          0x10      Set when Need to Send observations exist
-FROM_N2S     0x20      Set in transmitted N2S observation when finally transmitted
-AS5600       0x40      Set if wind direction sensor AS5600 has issues
-BMX_1        0x80      Set if Barometric Pressure & Altitude Sensor missing
-BMX_2        0x100     Set if Barometric Pressure & Altitude Sensor missing
-HTU21DF      0x200     Set if Humidity & Temp Sensor missing
-SI1145       0x400     Set if UV index & IR & Visible Sensor missing
-MCP_1        0x800     Set if Precision I2C Temperature Sensor missing
-MCP_2        0x1000    Set if Precision I2C Temperature Sensor missing
-MCP_3        0x2000    Set if Precision I2C Temperature Sensor missing
-LORA         0x4000    Set if LoRa Radio missing at startup
-SHT_1        0x8000    Set if SHTX1 Sensor missing
-SHT_2        0x10000   Set if SHTX2 Sensor missing
-HIH8         0x20000   Set if HIH8000 Sensor missing
-VLX          0x40000   Set if VEML7700 Sensor missing
-PM25AQI      0x80000   Set if PM25AQI Sensor missing
-HDC_1        0x100000  Set if HDC302x Sensor missing
-HDC_2        0x200000  Set if HDC302x Sensor missing
-BLX          0x400000  Set if BLUX30 I2C Sensor missing
-LPS_1        0x800000  Set if LPS35HW I2C Sensor missing
-LPS_2        0x1000000 Set if LPS35HW I2C Sensor missing
-SSB_TLW      0x2000000 Set if Tinovi Leaf Wetness I2C Sensor missing
-SSB_TSM      0x4000000 Set if Tinovi Soil Moisture I2C Sensor missing
-SSB_TMSM     0x8000000 Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
-</pre>
-</div>
-Interpreting health bits in relation to Need to Send observations.
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 100px; border: 1px solid black; padding: 10px;">
-<pre>
- 0 = All is well, no data needing to be sent, this observation is not from the N2S file
-16 = There is N2S data, This observation is not from the N2S file
-32 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file
-        did not exist. So it is the first observation from the file.
-48 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file
-        existed and this observation was appended.
 </pre>
 </div>
 

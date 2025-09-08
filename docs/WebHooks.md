@@ -1,5 +1,5 @@
 # Particle Web Hooks
-[← Back to Top](../README.md)
+[← Back to Top](../README.md)<BR>
 [← Particle Console](ParticleConsole.md)
 
 ---
@@ -7,14 +7,6 @@
 
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
 <pre>
-
-Observation Time (at)
-Chords ID (id)
-Battery Voltage bv
-Health (hth)
-Rain Gauge (rg)
-Soil Temperature and Moisture (st1, sm1, st1, sm1)
-BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
 
 {
  "name": "station-01 -> FS for chordsrt.com",
@@ -26,7 +18,7 @@ BMX Sensor Readings (p1, t1, h1, p2, t2, h2)
  "rejectUnauthorized": false,
  "query": {
      "key": "Place Chords Token ID Here",
-     "instrument_id": "53",
+     "instrument_id": "Place Chords Station ID Here",
      "at": "{{at}}",
      "hth": "{{hth}}",
      "bcs": "{{bcs}}",
