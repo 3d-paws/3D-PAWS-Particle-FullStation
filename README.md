@@ -28,6 +28,9 @@ Particle Muon Board Support.
 ### [Particle Console](docs/ParticleConsole.md)
 Features and Setup of the Particle Web Console
 
+### [Particle DoAction](docs/DoAction.md)
+Send commands to Particle device form Particle Web Console
+
 ### [SD Card Information](docs/SD.md)
 Information on what is stored on the SD card.
 
