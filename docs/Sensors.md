@@ -107,11 +107,12 @@ Where the .0 is the first occurance of a discovered sensor on this channel.  In 
 
 ### Derived Sensor Observations
 #### Heat Index Temperature
-    Heat Index (hi) is reported if sensor SHT_1 exists.
+- Heat Index (hi) is reported if sensor SHT_1 exists.
+- heat_index = hi_calculate(sht1_temp, sht1_humid);
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 600px; border: 1px solid black; padding: 10px;">
 
-    heat_index = hi_calculate(sht1_temp, sht1_humid);
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
+```C
+/* 
  *=======================================================================================================================
  * hi_calculate() - Compute Heat Index Temperature Returns Celsius
  * 
@@ -126,29 +127,124 @@ Where the .0 is the first occurance of a discovered sensor on this channel.  In 
  * is applied to calculate values consistent with Steadman's results:
  * HI = 0.5 * {T + 61.0 + [(T-68.0)*1.2] + (RH*0.094)} 
  *=======================================================================================================================
- </pre>
+ */
+float hi_calculate(float T, float RH) {
+  float HI;
+  float HI_f;
+
+  if ((T == -999.9) || (RH == -999.9)) {
+    return (-999.9);
+  }
+
+  // Convert temperature from Celsius to Fahrenheit
+  float T_f = T * 9.0 / 5.0 + 32.0;
+
+  // Steadman's equation
+  HI_f = 0.5 * (T_f + 61.0 + ((T_f - 68.0)*1.2) + (RH * 0.094));
+
+  // Compute the average of the simple HI with the actual temperature [deg F]
+  HI_f = (HI_f + T_f) / 2;
+
+  if (HI_f >= 80.0) { 
+    // Use Rothfusz's equation
+    
+    // Constants for the Heat Index formula
+    float c1 = -42.379;
+    float c2 = 2.04901523;
+    float c3 = 10.14333127;
+    float c4 = -0.22475541;
+    float c5 = -0.00683783;
+    float c6 = -0.05481717;
+    float c7 = 0.00122874;
+    float c8 = 0.00085282;
+    float c9 = -0.00000199;
+    
+    // Heat Index calculation
+    HI_f = c1 + (c2 * T_f) + (c3 * RH) + (c4 * T_f * RH) +
+                (c5 * T_f * T_f) + (c6 * RH * RH) + 
+                (c7 * T_f * T_f * RH) + (c8 * T_f * RH * RH) +
+                (c9 * T_f * T_f * RH * RH);
+
+    if ((RH < 13.0) && ((T_f > 80.0) && (T_f < 112.0)) ) {
+      // If the RH is less than 13% and the temperature is between 80 and 112 degrees F, 
+      // then the following adjustment is subtracted from HI: 
+      // ADJUSTMENT = [(13-RH)/4]*SQRT{[17-ABS(T-95.)]/17}
+
+      float Adjustment = ( (13 - RH) / 4 ) * sqrt( (17 - abs(T_f - 95.0) ) / 17 );
+
+      HI_f = HI_f - Adjustment;
+
+    }
+    else if ((RH > 85.0) && ((T_f > 80.0) && (T_f < 87.0)) ) {
+      // If the RH is greater than 85% and the temperature is between 80 and 87 degrees F, 
+      // then the following adjustment is added to HI: 
+      // ADJUSTMENT = [(RH-85)/10] * [(87-T)/5]
+
+      float Adjustment = ( (RH - 85) / 10 ) * ( (87.0 - T_f) / 5 );
+
+      HI_f = HI_f + Adjustment;
+    }
+  }
+
+  // Convert Heat Index from Fahrenheit to Celsius
+  HI = (HI_f - 32.0) * 5.0 / 9.0;
+
+  // Quality Control Check
+  HI = (isnan(HI) || (HI < QC_MIN_HI)  || (HI >QC_MAX_HI))  ? QC_ERR_HI  : HI;
+
+  return (HI);
+}
+```
  </div>
 
 #### Wet Bulb Temperature
 - Wet Bulb Temperature (wbt) is reported if sensors - MCP_1 and SHT_1 exists.
 - wetbulb_temp = wbt_calculate(sht1_temp, sht1_humid);
 
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
-<pre>
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 500px; border: 1px solid black; padding: 10px;">
+
+```C
+/* 
  *=======================================================================================================================
  * wbt_calculate() - Compute Web Bulb Temperature
- *
+ * 
  * By definition, wet-bulb temperature is the lowest temperature a portion of air can acquire by evaporative 
  * cooling only. When air is at its maximum (100 %) humidity, the wet-bulb temperature is equal to the normal 
  * air temperature (dry-bulb temperature). As the humidity decreases, the wet-bulb temperature becomes lower 
  * than the normal air temperature. Forecasters use wet-bulb temperature to predict rain, snow, or freezing rain.
- *
+ * 
  * SEE https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
  * SEE https://www.omnicalculator.com/physics/wet-bulb
- *
+ * 
  * Tw = T * atan[0.151977(RH + 8.3,3659)^1/2] + atan(T + RH%) - atan(RH - 1.676311)  + 0.00391838(RH)^3/2 * atan(0.023101 * RH%) - 4.686035
+ * 
+ * [ ] square bracket denote grouping for order of operations. 
+ *     In Arduino code, square brackets are not used for mathematical operations. Instead, parentheses ( ).
+ * sqrt(x) computes the square root of x, which is x to the 1/2.
+ * pow(RH, 1.5) calculates RH to the 3/2, which is the relative humidity raised to the power of 1.5.
  *=======================================================================================================================
-</pre>
+ */
+double wbt_calculate(double T, double RH) {
+  if ((T == -999.9) || (RH == -999.9)) {
+    return (-999.9);
+  }
+
+  // Output("WBT:CALC");
+
+  // Equation components
+  double term1 = T * atan(0.151977 * sqrt(RH + 8.313659));
+  double term2 = atan(T + RH);
+  double term3 = atan(RH - 1.676311);
+  double term4 = 0.00391838 * pow(RH, 1.5) * atan(0.023101 * RH);
+  double constant = 4.686035;
+
+  // Wet bulb temperature calculation
+  double Tw = term1 + term2 - term3 + term4 - constant;
+
+  Tw = (isnan(Tw) || (Tw < QC_MIN_T)  || (Tw >QC_MAX_T))  ? QC_ERR_T  : Tw;
+  return (Tw);
+}
+```
 </div>
 
 
