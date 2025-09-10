@@ -104,14 +104,14 @@ bool HIH8_exists = false;
 
 /*
  * ======================================================================================================================
- *  Wet Bulb Temperature - Derived from Temperature and Humidity Sensonrs
+ *  Wet Bulb Temperature - Derived from Temperature and Humidity Sensors
  * ======================================================================================================================
  */
 bool WBT_exists = false;
 
 /*
  * ======================================================================================================================
- *  Heat Index Temperature - Derived from Temperature and Humidity Sensonrs
+ *  Heat Index Temperature - Derived from Temperature and Humidity Sensors
  * ======================================================================================================================
  */
 bool HI_exists = false;
@@ -880,7 +880,7 @@ float hi_calculate(float T, float RH) {
  */
 void wbgt_initialize() {
   Output("WBGT:INIT");
-  if (MCP_1_exists && SHT_1_exists) {
+  if (SHT_1_exists) {
     WBGT_exists = true;
     if (MCP_3_exists) {
       Output ("WBGT:OK w/Globe");

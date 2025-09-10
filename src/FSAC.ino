@@ -232,7 +232,8 @@ PRODUCT_VERSION(40);
  *                          Added OPTAQS and OPTFS Particle Do Actions
  *          2025-09-06  RJB Bug fix Missed compile flags around the pin used for wind speed
  *          2025-09-07  RJB Improved EEPROM Valid check 
- *          2025-09-08  RJB Bug Fix in AQS taking a reading         
+ *          2025-09-08  RJB Bug Fix in AQS taking a reading
+ *                          Chhanged WBGT_exists is determined in Sensors.h and OBS.h
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h

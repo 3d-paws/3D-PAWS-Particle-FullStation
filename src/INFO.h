@@ -58,7 +58,7 @@ bool INFO_Do() {
 
   // Reboot/Reset Reason and data
   sprintf (Buffer32Bytes,"%d-%d", (int) System.resetReason(), (int) System.resetReasonData());
-  writer.name("rr").value(Buffer32Bytes);;
+  writer.name("rr").value(Buffer32Bytes);
 
   sprintf (Buffer32Bytes,"%dm", (int) obs_interval);
   writer.name("obsi").value(Buffer32Bytes);

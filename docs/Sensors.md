@@ -84,6 +84,7 @@ Scale factor: (Vcc / 10240) per 1 mm
 
 ### I2C Mux and Multiple Tinovi Soil Moisture/Temp Sensors
 
+<pre>
 MUX:INIT
 MUX OK
 MUX:SCAN
@@ -102,6 +103,114 @@ Where the .0 is the first occurance of a discovered sensor on this channel.  In 
  *  tsme25-[1-8]  Tinovi Soil Moisture e25
  *  tsmec-[1-8]   Tinovi Soil Moisture ec
  *  tsmvwc-[1-8]  Tinovi Soil Moisture vwc
+</pre>
+
+### Derived Sensor Observations
+- Heat Index Temperature \
+  HI_exists (hi) - if (SHT_1_exists) \
+  heat_index = hi_calculate(sht1_temp, sht1_humid);
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+ /* 
+ *=======================================================================================================================
+ * hi_calculate() - Compute Heat Index Temperature Returns Celsius
+ * 
+ * SEE https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+ * 
+ * The regression equation of Rothfusz is:
+ * HI = -42.379 + 2.04901523*T + 10.14333127*RH - .22475541*T*RH - .00683783*T*T - .05481717*RH*RH + .00122874*T*T*RH + 
+ *      .00085282*T*RH*RH - .00000199*T*T*RH*RH
+ * 
+ * The Rothfusz regression is not appropriate when conditions of temperature and humidity 
+ * warrant a heat index value below about 80 degrees F. In those cases, a simpler formula 
+ * is applied to calculate values consistent with Steadman's results:
+ * HI = 0.5 * {T + 61.0 + [(T-68.0)*1.2] + (RH*0.094)} 
+ *=======================================================================================================================
+ */
+ </pre>
+ </div>
+
+- Wet Bulb Temperature \
+  WBT_exists (wbt) - if (MCP_1_exists && SHT_1_exists) \
+  wetbulb_temp = wbt_calculate(sht1_temp, sht1_humid);
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+/* 
+ *=======================================================================================================================
+ * wbt_calculate() - Compute Web Bulb Temperature
+ * 
+ * By definition, wet-bulb temperature is the lowest temperature a portion of air can acquire by evaporative 
+ * cooling only. When air is at its maximum (100 %) humidity, the wet-bulb temperature is equal to the normal 
+ * air temperature (dry-bulb temperature). As the humidity decreases, the wet-bulb temperature becomes lower 
+ * than the normal air temperature. Forecasters use wet-bulb temperature to predict rain, snow, or freezing rain.
+ * 
+ * SEE https://journals.ametsoc.org/view/journals/apme/50/11/jamc-d-11-0143.1.xml
+ * SEE https://www.omnicalculator.com/physics/wet-bulb
+ * 
+ * Tw = T * atan[0.151977(RH + 8.3,3659)^1/2] + atan(T + RH%) - atan(RH - 1.676311)  + 0.00391838(RH)^3/2 * atan(0.023101 * RH%) - 4.686035
+ * 
+ * [ ] square bracket denote grouping for order of operations. 
+ *     In Arduino code, square brackets are not used for mathematical operations. Instead, parentheses ( ).
+ * sqrt(x) computes the square root of x, which is x to the 1/2.
+ * pow(RH, 1.5) calculates RH to the 3/2, which is the relative humidity raised to the power of 1.5.
+ *=======================================================================================================================
+ */
+</pre>
+</div>
+- Wet Bulb Globe Temperature \
+  WBGT_exists (wbgt) - if (SHT_1_exists) \
+  Method
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+    if (MCP_3_exists) { \
+      Output ("WBGT:OK w/Globe"); \
+      wbgt = wbgt_using_wbt(sht1_temp, mcp3_temp, wetbulb_temp); // TempAir, TempGlobe, TempWetBulb \
+    } \
+    else { \
+      Output ("WBGT:OK wo/Globe"); \
+      wbgt = wbgt_using_hi(heat_index); - requires SHT_1_exists
+    } \
+</pre>
+</div>
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
+<pre>
+/* 
+ *=======================================================================================================================
+ * wbgt_using_wbt() - Compute Web Bulb Globe Temperature using web bulb temperature
+ *=======================================================================================================================
+ */
+double wbgt_using_wbt(double Ta, double Tg, double Tw) {
+  // Ta = mcp1 temp
+  // Tg = mcp3 temp
+  // Tw = wbt_calculate(Ta, RH)
+
+  double wbgt = (0.7 * Tw) + (0.2 * Tg) + (0.1 * Ta);  // This will be Celsius
+
+  wbgt = (isnan(wbgt) || (wbgt < QC_MIN_T)  || (wbgt >QC_MAX_T))  ? QC_ERR_T  : wbgt;
+
+  return (wbgt);
+}
+/* 
+ *=======================================================================================================================
+ * wbgt_using_hi() - Compute Web Bulb Globe Temperature using Heat Index
+ *=======================================================================================================================
+ */
+double wbgt_using_hi(double HIc) {
+
+  if (HIc == -999.9) {
+    return (-999.9);
+  }
+
+  double HIf = HIc * 9.0 / 5.0 + 32.0;
+
+  // Below produces Wet Bulb Globe Temperature in Celsius
+  double TWc = -0.0034 * pow(HIf, 2) + 0.96 * HIf - 34;
+
+  TWc = (isnan(TWc) || (TWc < QC_MIN_T)  || (TWc >QC_MAX_T))  ? QC_ERR_T  : TWc;
+  return (TWc);
+}
+</pre>
+</div>
 
 
 

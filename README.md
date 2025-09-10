@@ -52,20 +52,4 @@ A health bit register. Where each bit corresponds to a system state or sensor.
 ### WatchDog Board
  
 
-### Battery Charger Status (bcs)
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 140px; border: 1px solid black; padding: 10px;">
-<pre>
-0 = BATTERY_STATE_UNKNOWN
-1 = BATTERY_STATE_NOT_CHARGING
-2 = BATTERY_STATE_CHARGING
-3 = BATTERY_STATE_CHARGED
-4 = BATTERY_STATE_DISCHARGING
-5 = BATTERY_STATE_FAULT
-6 = BATTERY_STATE_DISCONNECTED
-
-Battery Percent Charge (bpc)
-Cell Signal Strength (css)
-</pre>
-</div>
-
 
