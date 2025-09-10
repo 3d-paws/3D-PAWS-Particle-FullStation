@@ -49,7 +49,8 @@ Information on how the station operates at a code level.
 ### [System Health Bits (hth)](docs/SystemHealthBits.md)
 A health bit register. Where each bit corresponds to a system state or sensor.
 
-### WatchDog Board
- 
+### [WatchDog Board](docs/WatchDog.md)
+The WatchDog is a external device that can turn off power to your weather station microcontroller and sensors. 
 
-
+### [Daily Reboot](DailyReboot.md)
+The weather station will perform a daily reboot to clear any issues with the station.
