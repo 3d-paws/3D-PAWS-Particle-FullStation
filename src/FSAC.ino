@@ -1,7 +1,7 @@
 //PRODUCT_VERSION(1);
 PRODUCT_VERSION(40);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250908v40"
+#define VERSION_INFO "FS-250911v40"
 
 /*
  *======================================================================================================================
@@ -234,6 +234,8 @@ PRODUCT_VERSION(40);
  *          2025-09-07  RJB Improved EEPROM Valid check 
  *          2025-09-08  RJB Bug Fix in AQS taking a reading
  *                          Chhanged WBGT_exists is determined in Sensors.h and OBS.h
+ *          2025-09-11  RJB In OBS fixed casting bug on rain collection. Added (float)
+ *                          (rain > (((float)rgds / 60) * QC_MAX_RG))
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h

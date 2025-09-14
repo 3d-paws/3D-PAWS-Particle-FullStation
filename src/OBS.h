@@ -365,7 +365,7 @@ void OBS_Do() {
     // Rain Gauge - Each tip is 0.2mm of rain
     rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
     rain = raingauge1_interrupt_count * 0.2;
-    rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
+    rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > (((float)rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
     raingauge1_interrupt_count = 0;
     raingauge1_interrupt_stime = System.millis();
     raingauge1_interrupt_ltime = 0; // used to debounce the tip
@@ -373,7 +373,7 @@ void OBS_Do() {
     if (OP1_State == OP1_STATE_RAIN) {
       rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
       rain2 = raingauge2_interrupt_count * 0.2;
-      rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
+      rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > (((float)rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
       raingauge2_interrupt_count = 0;
       raingauge2_interrupt_stime = System.millis();
       raingauge2_interrupt_ltime = 0; // used to debounce the tip
