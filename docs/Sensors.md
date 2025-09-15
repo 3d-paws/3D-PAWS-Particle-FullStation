@@ -100,7 +100,7 @@ MUX:SCAN
   CH-6 TSM NF
   CH-7.0 TSM OK
 
-The .0 on the "CH-7.0" above is representing the first occurance of a discovered sensor on this channel. \
+The .0 on the "CH-7.0" above is representing the first occurance of a discovered sensor on this channel.
 In the future we may be supporting other sensors on the mux. 
 
  MUX sensors are reported bith the below tag names. 
