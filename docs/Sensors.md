@@ -83,7 +83,9 @@ Scale factor: (Vcc / 10240) per 1 mm
 - Feather (10-bit, 0–1023): Range 0–10239 mm, resolution 10 mm per unit  
 
 ### I2C Mux and Multiple Tinovi Soil Moisture/Temp Sensors
-
+- Tested with: [Adafruit PCA9548 8-Channel STEMMA QT / Qwiic I2C Multiplexer - TCA9548A](https://www.adafruit.com/product/5626) \
+This I2C Multiplexer is set to I2C address 0x70. It is TCA9548A compatible.
+- This [Grove - 8 Channel I2C Multiplexer/I2C Hub (TCA9548A)](https://www.seeedstudio.com/Grove-8-Channel-I2C-Hub-TCA9548A-p-4398.html) should also work.
 <pre>
 MUX:INIT
 MUX OK
@@ -96,7 +98,8 @@ MUX:SCAN
   CH-5 TSM NF
   CH-6 TSM NF
   CH-7.0 TSM OK
-Where the .0 is the first occurance of a discovered sensor on this channel.  In the future we ma be supporting other sensors on the mux
+Where the .0 is the first occurance of a discovered sensor on this channel. \
+In the future we may be supporting other sensors on the mux
 
  *  MUX sensors where [1-8] is the MUX channel
  *  tsmt-[1-8]    Tinovi Soil Moisture temperature

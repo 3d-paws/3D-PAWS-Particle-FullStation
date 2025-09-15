@@ -6,35 +6,35 @@ INFO event message from a Boron
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 625px; border: 1px solid black; padding: 10px;">
 <pre>
 {
-"devid":"e00fce68bde8f63590a3b118"
+"devid":"e00fce000006ea1d26f84df1"
 "devos":"6.3.3"
-"freemem":19312
-"uptime":10079
+"freemem":18872
+"uptime":68
 "type":"boron"
 "mode":"FS"
-"at":"2025-09-06T18:47:56"
-"ver":"FS-250903v40"
-"hth":64
-"rr":"140-0"
+"at":"2025-09-15T19:04:19"
+"ver":"FS-250911v40"
+"hth":0
+"rr":"70-0"
 "obsi":"1m"
 "obsti":"15m"
-"t2nt":"810s"
-"drct":69771
+"t2nt":"898s"
+"drct":79199
 "n2s":"NF"
-"ps":"USB_HOST"
-"bcs": "CHARGED"
-"bpc": 100
-"css":54.9996
-"csq":33.3333
+"ps":"VIN"
+"bcs":"CHARGED"
+"bpc":93.7
+"css":24.9989
+"csq":37.499
 "imsi":""
 "actsim":"INTERNAL"
 "op1":"DIST 5M"
 "op2":"NS"
-"sensors":"TSM1(7.0),PM25AQ,RG(A3),BMX1(BMP390),MCP1,SHT1,HIH8,SI,AS5600,HI,WBT,WBGT WO/GLOB"
+"sensors":"BMX1(BMP390),MCP1,SHT1,AS5600,HI,WBT,WBGT WO/GLOBE,RG(A3)"
 "lora":"NF"
 "oled":"NF"
 "scepin(D8)":"DISABLED"
-"sce":"TRUE"
+"sce":"FALSE"
 }
 
 ps = power source
