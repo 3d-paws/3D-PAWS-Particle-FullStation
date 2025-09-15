@@ -87,6 +87,7 @@ Scale factor: (Vcc / 10240) per 1 mm
 This I2C Multiplexer is set to I2C address 0x70. It is TCA9548A compatible.
 - This [Grove - 8 Channel I2C Multiplexer/I2C Hub (TCA9548A)](https://www.seeedstudio.com/Grove-8-Channel-I2C-Hub-TCA9548A-p-4398.html) should also work.
 <pre>
+Below is output from the serial console at boot.
 MUX:INIT
 MUX OK
 MUX:SCAN
@@ -98,14 +99,16 @@ MUX:SCAN
   CH-5 TSM NF
   CH-6 TSM NF
   CH-7.0 TSM OK
-Where the .0 is the first occurance of a discovered sensor on this channel. \
-In the future we may be supporting other sensors on the mux
 
- *  MUX sensors where [1-8] is the MUX channel
- *  tsmt-[1-8]    Tinovi Soil Moisture temperature
- *  tsme25-[1-8]  Tinovi Soil Moisture e25
- *  tsmec-[1-8]   Tinovi Soil Moisture ec
- *  tsmvwc-[1-8]  Tinovi Soil Moisture vwc
+The .0 on the "CH-7.0" above is representing the first occurance of a discovered sensor on this channel. \
+In the future we may be supporting other sensors on the mux. 
+
+ MUX sensors are reported bith the below tag names. 
+ [1-8] is the MUX channel the sensor was found on.
+   tsmt-[1-8]    Tinovi Soil Moisture temperature
+   tsme25-[1-8]  Tinovi Soil Moisture e25
+   tsmec-[1-8]   Tinovi Soil Moisture ec
+   tsmvwc-[1-8]  Tinovi Soil Moisture vwc
 </pre>
 
 ### Derived Sensor Observations
