@@ -12,17 +12,21 @@
 
 ## File and Directory Overview
 
-| File/Directory    | Purpose                                                                                  |
-|-------------------|------------------------------------------------------------------------------------------|
+| File/Directory    | Purpose                                                                                 |
+|-------------------|-----------------------------------------------------------------------------------------|
 | `/OBS/`           | Directory containing observation files.                                                 |
-| `/OBS/20231024.LOG` | Daily observation file in JSON format (one file per day).                               |
+| `/OBS/20231024.LOG` | Daily observation file in JSON format (one file per day).                             |
 | `/N2SOBS.TXT`     | "Need to Send" file storing unsent observations. Resets if larger than specified size.  |
-| `/SIM.TXT`        | Support file for third-party SIM configurations.                                         |
+| `/SIM.TXT`        | Support file for third-party SIM configurations.                                        |
 | `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi boards.                            |
-| `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                     |
-| `/TXI5M.TXT`      | Sets transmit interval to 5 minutes.                                                    |
-| `/TXI10M.TXT`     | Sets transmit interval to 10 minutes.                                                   |
-| *(no TXIxxM.TXT)* | Defaults transmit interval to 15 minutes.                                               |
+| `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                    |
+|||
+| *(no of the below)* | Sets transmit interval to 15 minutes with 1 Minute Observations *(DEFAULT)*           |
+| `/TXI5M.TXT`      | Sets transmit interval to 5 minutes with 1 Minute Observations                          |
+| `/TXI10M.TXT`     | Sets transmit interval to 10 minutes with 1 Minute Observations                         |
+| `/OBI5M.TXT`      | Sets 5 Minute Observations, Transmit Interval to 5 Minutes                              |
+| `/OBI10M.TXT`     | Sets 10 Minute Observations, Transmit Interval to 10 Minutes                            |
+| `/OBI15M.TXT`     | Sets 15 Minute Observations, Transmit Interval to 15 Minutes                            |
 
 ---
 
