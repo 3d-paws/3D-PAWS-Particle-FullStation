@@ -18,7 +18,7 @@
 | `/OBS/20231024.LOG` | Daily observation file in JSON format (one file per day).                             |
 | `/N2SOBS.TXT`     | "Need to Send" file storing unsent observations. Resets if larger than specified size.  |
 | `/SIM.TXT`        | Support file for third-party SIM configurations.                                        |
-| `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi boards.                            |
+| `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi and Muon boards.                            |
 | `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                    |
 |||
 | *(no of the below)* | Sets transmit interval to 15 minutes with 1 Minute Observations *(DEFAULT)*           |
