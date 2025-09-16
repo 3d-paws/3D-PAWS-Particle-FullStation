@@ -1,6 +1,6 @@
 # Station Information - (Particle Message type "INFO")
 [←Top](../README.md)<BR>
-At boot the station will send a event message of type "INFO" to Particle. This message contains configuration and status information. You can also request an INFO event message to be sent from the device via DoAction Function on the Particle Console. Use keyword "INFO". Every INFO execution will create/rewrite file INFO.TXT with INFO information. The information reported will vary based on the board type (Boron, Argon, Muon). Below are examples. Check your board for what is actually presented.
+At boot the station will send a event message of type "INFO" to Particle. This message contains configuration and status information. You can also request an INFO event message to be sent from the device via DoAction Function on the Particle Console. Use keyword "INFO". Every INFO execution will create/rewrite file INFO.TXT with INFO information. The information reported will vary based on the board type (Boron, Argon, Muon). Below are examples.
 
 INFO event message from a Boron
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 625px; border: 1px solid black; padding: 10px;">
