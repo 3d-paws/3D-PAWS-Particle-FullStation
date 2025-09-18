@@ -89,6 +89,14 @@ Sensors
 | wbgt     |             |
 | tlww     |             |
 | tlwt     |             |
+| tsmt     | Tinovi Soil Moisture temperature |
+| tsme25   | Tinovi Soil Moisture e25 |
+| tsmec    | Tinovi Soil Moisture ec |
+| tsmvwc   | Tinovi Soil Moisture vwc |
+| tsmt-[1-8] | MUX Tinovi Soil Moisture temperature |
+| tsme25-[1-8] | MUX Tinovi Soil Moisture e25 |
+| tsmec-[1-8] | MUX Tinovi Soil Moisture ec |
+| tsmvwc-[1-8] | MUX Tinovi Soil Moisture vwc |
 | tmsms1   |             |
 | tmsms2   |             |
 | tmsms3   |             |
@@ -97,6 +105,7 @@ Sensors
 | tmsmt1   |             |
 | tmsmt2   |             |
 | pmts     |             |
+
 
 
 ### Wind
