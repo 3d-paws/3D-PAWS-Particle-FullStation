@@ -66,6 +66,12 @@
      "sg1p2": "{{sg1p2}}",
      "sg1t2": "{{sg1t2}}",
      "sg1h2": "{{sg1h2}}",
+     "pm1s10": "{{pm1s10}}",
+     "pm1s25": "{{pm1s25}}",
+     "pm1s100": "{{pm1s100}}",
+     "pm1e10": "{{pm1e10}}",
+     "pm1e25": "{{pm1e25}}",
+     "pm1e100": "{{pm1e100}}",
      "tlww": "{{tlww}}",
      "tlwt": "{{tlwt}}",       // Below are MUX connected Soil Moisture Possibilities
      "tsme25": "{{tsme25}}",   // tsme25-[1-8]

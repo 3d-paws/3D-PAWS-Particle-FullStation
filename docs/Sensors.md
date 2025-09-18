@@ -27,6 +27,78 @@ Sensors
 | TMP112A                       | Temperature             | Precision digital temp sensor, on-board Particle Muon.                                                   | [TMP112A Sensor](https://www.ti.com/product/TMP112A)        |
 
 ---
+### Tags Names sent to Particle
+| Tag Name | Description |
+|----------|-------------|
+| bcs      |             |
+| bpc      |             |
+| cfr      |             |
+| rg       |             |
+| rgs      |             |
+| rgt      |             |
+| rgp      |             |
+| ws       |             |
+| wd       |             |
+| wg       |             |
+| wgd      |             |
+| pm1s10   |             |
+| pm1s25   |             |
+| pm1s100  |             |
+| pm1e10   |             |
+| pm1e25   |             |
+| pm1e100  |             |
+| bp1      |             |
+| bt1      |             |
+| bh1      |             |
+| bp2      |             |
+| bt2      |             |
+| bh2      |             |
+| hh1      |             |
+| ht1      |             |
+| st1      |             |
+| sh1      |             |
+| st2      |             |
+| sh2      |             |
+| hdt1     |             |
+| hdh1     |             |
+| hdt2     |             |
+| hdh2     |             |
+| lpt1     |             |
+| lpp1     |             |
+| lpt2     |             |
+| lpp2     |             |
+| ht2      |             |
+| hh2      |             |
+| sv1      |             |
+| si1      |             |
+| su1      |             |
+| mt1      |             |
+| mt2      |             |
+| gt1      |             |
+| gt2      |             |
+| vlx      |             |
+| blx      |             |
+| sg       |             |
+| op1r     |             |
+| rg2      |             |
+| rgt2     |             |
+| rgp2     |             |
+| op2r     |             |
+| hi       |             |
+| wbt      |             |
+| wbgt     |             |
+| tlww     |             |
+| tlwt     |             |
+| tmsms1   |             |
+| tmsms2   |             |
+| tmsms3   |             |
+| tmsms4   |             |
+| tmsms5   |             |
+| tmsmt1   |             |
+| tmsmt2   |             |
+| pmts     |             |
+
+
 ### Wind
 #### Collecting Wind Data
 - **Wind_SampleSpeed()** – Returns the wind speed based on interrupt counts and the duration between calls.  
@@ -301,6 +373,8 @@ double wbgt_using_hi(double HIc) {
 }
 ```
 </div>
+
+
 
 
 
