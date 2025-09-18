@@ -66,10 +66,10 @@
      "sg1h2": "{{sg1h2}}",
      "tlww": "{{tlww}}",
      "tlwt": "{{tlwt}}",       // Below are MUX connected Soil Moisture Possibilities
-     "tsme25": "{{tsme25}}",   // tsme25-[1..8]
-     "tsmeec": "{{tsmeec}}"    // tsmeec-[1..8]
-     "tsmvwc": "{{tsmvwc}}",   // tsmvwc-[1..8]
-     "tsmt": "{{tsmt}}",       // tsmt-[1..8]
+     "tsme25": "{{tsme25}}",   // tsme25-[1-8]
+     "tsmeec": "{{tsmeec}}"    // tsmeec-[1-8]
+     "tsmvwc": "{{tsmvwc}}",   // tsmvwc-[1-8]
+     "tsmt": "{{tsmt}}",       // tsmt-[1-8]
      "tmsms1": "{{tmsms1}}",
      "tmsms2": "{{tmsms2}}",
      "tmsms3": "{{tmsms3}}",
