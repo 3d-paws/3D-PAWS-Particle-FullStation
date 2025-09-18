@@ -98,27 +98,22 @@ If you define the below with no "deviceID". The webhook can be used by multiple 
      "at": "{{at}}",
      "rg": "{{rg}}",
      "sg": "{{sg}}",
-
      "st1": "{{st1}}",
      "sm1": "{{sm1}}",
      "st2": "{{st2}}",
      "sm2": "{{sm2}}",
-
      "bp1": "{{bp1}}",
      "bt1": "{{bt1}}",
      "bh1": "{{bh1}}",
      "bp2": "{{bp2}}",
      "bt2": "{{bt2}}",
      "bh2": "{{bh2}}",
-
      "st1": "{{st1}}",
      "sh1": "{{sh1}}",
      "st2": "{{st2}}",
      "sh2": "{{sh2}}",
-
      "mt1": "{{mt1}}",
      "mt2": "{{mt2}}",
-
      "bv": "{{bv}}",
      "hth": "{{hth}}"
   }
