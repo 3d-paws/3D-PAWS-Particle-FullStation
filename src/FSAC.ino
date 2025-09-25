@@ -1,7 +1,7 @@
 //PRODUCT_VERSION(1);
-PRODUCT_VERSION(41);
+PRODUCT_VERSION(42);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250925v40"
+#define VERSION_INFO "FS-250925v42"
 
 /*
  *======================================================================================================================
