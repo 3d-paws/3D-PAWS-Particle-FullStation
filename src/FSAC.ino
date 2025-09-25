@@ -1,7 +1,7 @@
 //PRODUCT_VERSION(1);
-PRODUCT_VERSION(40);
+PRODUCT_VERSION(41);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250911v40"
+#define VERSION_INFO "FS-250925v40"
 
 /*
  *======================================================================================================================
@@ -194,7 +194,7 @@ PRODUCT_VERSION(40);
  *          2025-01-23 RJB Added support for Tinovi moisture sensors (Leaf, Soil, Multi Level Soil) 
  *          2025-03-17 RJB Switched Heat Index Temp, Wet Bulb Temp, Wet Bulb calcs to use sht1 temp from mcp1 temp
  *     
- *          Version 40 Released on 2025-??-??
+ *          Version 40 Released on 2025-09-11
  *          2025-04-08 RJB Removed the check for serial console in SimChangeCheck()
  *          2025-04-13 RJB Reworked the handling of pin names. New function in PS.h called GetPinName()
  *                         INFO will report "lora:NF" when LoRa is not found
@@ -236,6 +236,9 @@ PRODUCT_VERSION(40);
  *                          Chhanged WBGT_exists is determined in Sensors.h and OBS.h
  *          2025-09-11  RJB In OBS fixed casting bug on rain collection. Added (float)
  *                          (rain > (((float)rgds / 60) * QC_MAX_RG))
+ * 
+ *          Version 41 Released on 2025-09-25
+ *          2025-09-25  RJB Bug fix. Had obs tag names of length 6 bumped to 12.
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
@@ -632,7 +635,7 @@ PRODUCT_VERSION(40);
 #include <Adafruit_HDC302x.h>
 #include <Adafruit_LPS35HW.h>
 #if (PLATFORM_ID == PLATFORM_MSOM)
-#include <AB1805_RK.h>
+#include <AB1805_RK.h>    // On board WatchDog Power Management
 #include <location.h>     // from particle-som-gnss library
 #else
 #include <RTClib.h>

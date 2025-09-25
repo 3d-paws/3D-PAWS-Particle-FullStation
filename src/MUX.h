@@ -80,29 +80,27 @@ void mux_obs_do(int &oidx, int &sidx) {
           if (mux[c].sensor[s].type == m_tsm) {
             tsm.newReading();
             delay(100);
-            float e25 = tsm.getE25();
-            float ec = tsm.getEC();
-            float vwc = tsm.getVWC();
-            float t = tsm.getTemp();
-            t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
 
             sprintf (Buffer32Bytes, "tsme25-%d", mux[c].sensor[s].id);
             strcpy (obs[oidx].sensor[sidx].id, Buffer32Bytes);
             obs[oidx].sensor[sidx].type = F_OBS;
-            obs[oidx].sensor[sidx].f_obs = (float) e25;
+            obs[oidx].sensor[sidx].f_obs = (float) tsm.getE25();
             obs[oidx].sensor[sidx++].inuse = true;
 
             sprintf (Buffer32Bytes, "tsmec-%d", mux[c].sensor[s].id);
             strcpy (obs[oidx].sensor[sidx].id, Buffer32Bytes);
             obs[oidx].sensor[sidx].type = F_OBS;
-            obs[oidx].sensor[sidx].f_obs = (float) ec;
+            obs[oidx].sensor[sidx].f_obs = (float) tsm.getEC();
             obs[oidx].sensor[sidx++].inuse = true;
 
             sprintf (Buffer32Bytes, "tsmvwc-%d", mux[c].sensor[s].id);
             strcpy (obs[oidx].sensor[sidx].id, Buffer32Bytes);
             obs[oidx].sensor[sidx].type = F_OBS;
-            obs[oidx].sensor[sidx].f_obs = (float) vwc;
+            obs[oidx].sensor[sidx].f_obs = (float) tsm.getVWC();
             obs[oidx].sensor[sidx++].inuse = true; 
+
+            float t = tsm.getTemp();
+            t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
 
             sprintf (Buffer32Bytes, "tsmt-%d", mux[c].sensor[s].id);
             strcpy (obs[oidx].sensor[sidx].id, Buffer32Bytes);

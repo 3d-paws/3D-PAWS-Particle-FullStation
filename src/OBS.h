@@ -21,8 +21,9 @@ typedef enum {
   U_OBS
 } OBS_TYPE;
 
+#define TAGSZ 11
 typedef struct {
-  char          id[6];       // Suport 4 character length observation names
+  char          id[TAGSZ+1];       // Suport 11 character length observation names
   int           type;
   float         f_obs;
   int           i_obs;
@@ -974,13 +975,13 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = rain2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge 2 Total - Not Implemented
+    // Rain Gauge 2 Total
     strcpy (obs[oidx].sensor[sidx].id, "rgt2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
     obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge 2 Prior Day - Not Implemented
+    // Rain Gauge 2 Prior Day
     strcpy (obs[oidx].sensor[sidx].id, "rgp2");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
