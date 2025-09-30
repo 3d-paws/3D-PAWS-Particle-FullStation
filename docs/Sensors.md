@@ -25,87 +25,88 @@ Sensors
 | SS451A (Rain Gauge)           | Hall Effect Switch      | Digital magnetic field sensor, rugged, used as rain gauge switch.                                        | [SS451A Datasheet](https://sensing.honeywell.com)           |
 | SS451A (Anemometer)           | Hall Effect Switch      | Used as wind anemometer sensor (rotation detection).                                                     | [SS451A Datasheet](https://sensing.honeywell.com)           |
 | TMP112A                       | Temperature             | Precision digital temp sensor, on-board Particle Muon.                                                   | [TMP112A Sensor](https://www.ti.com/product/TMP112A)        |
+| MB7360, MB7369, MB7380, MB7389| 5m Distance             | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
+| MB7363, MB7366, MB7383, MB7386| 10m Distance            | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
 
 ---
 ### Tags Names sent to Particle
 | Tag Name | Description |
 |----------|-------------|
-| bcs      |             |
-| bpc      |             |
-| cfr      |             |
-| rg       |             |
-| rgs      |             |
-| rgt      |             |
-| rgp      |             |
-| ws       |             |
-| wd       |             |
-| wg       |             |
-| wgd      |             |
-| pm1s10   |             |
-| pm1s25   |             |
-| pm1s100  |             |
-| pm1e10   |             |
-| pm1e25   |             |
-| pm1e100  |             |
-| bp1      |             |
-| bt1      |             |
-| bh1      |             |
-| bp2      |             |
-| bt2      |             |
-| bh2      |             |
-| hh1      |             |
-| ht1      |             |
-| st1      |             |
-| sh1      |             |
-| st2      |             |
-| sh2      |             |
-| hdt1     |             |
-| hdh1     |             |
-| hdt2     |             |
-| hdh2     |             |
-| lpt1     |             |
-| lpp1     |             |
-| lpt2     |             |
-| lpp2     |             |
-| ht2      |             |
-| hh2      |             |
-| sv1      |             |
-| si1      |             |
-| su1      |             |
-| mt1      |             |
-| mt2      |             |
-| gt1      |             |
-| gt2      |             |
-| vlx      |             |
-| blx      |             |
-| sg       |             |
-| op1r     |             |
-| rg2      |             |
-| rgt2     |             |
-| rgp2     |             |
-| op2r     |             |
-| hi       |             |
-| wbt      |             |
-| wbgt     |             |
-| tlww     |             |
-| tlwt     |             |
-| tsmt     | Tinovi Soil Moisture temperature |
+| bcs      | Battery Charger Status            |
+| bpc      | Battery Percent Charge            |
+| cfr      | Charger Fault Register            |
+| rg       | Rain Gauge            |
+| rgs      | Rain Gauge Seconds          |
+| rgt      | Rain Gauge Total            |
+| rgp      | Rain Gauge Total Prior          |
+| ws       | Wind Speed            |
+| wd       | Wind Direction            |
+| wg       | Wind Gust            |
+| wgd      | Wind Gust Direction            |
+| pm1s10   | PM25AQI Standard PM1.0 (µg/m³)           |
+| pm1s25   | PM25AQI Standard PM2.5 (µg/m³)           |
+| pm1s100  | PM25AQI Standard PM10.0 (µg/m³)           |
+| pm1e10   | PM25AQI Environmental PM1.0 (µg/m³)           |
+| pm1e25   | PM25AQI Environmental PM2.5 (µg/m³)           |
+| pm1e100  | PM25AQI Environmental PM10.0 (µg/m³)           |
+| bp1      | BME280,BMP280,BMP3XX Pressure           |
+| bt1      | BME280,BMP280,BMP3XX Temperature           |
+| bh1      | BME280,BMP280,BMP3XX Humidity           |
+| bp2      | BME280,BMP280,BMP3XX Pressure           |
+| bt2      | BME280,BMP280,BMP3XX Temperature           |
+| bh2      | BME280,BMP280,BMP3XX Humidity           |
+| hh1      | HIH8000 Humidity           |
+| ht1      | HIH8000 Temperature           |
+| hh2      | HIH8000 Humidity           |
+| ht2      | HIH8000 Temperature           |
+| st1      | SHT31 Temperature           |
+| sh1      | SHT31 Humidity          |
+| st2      | SHT31 Temperature           |
+| sh2      | SHT31 Humidity           |
+| hdt1     | HDC302x Temperature           |
+| hdh1     | HDC302x Humidity           |
+| hdt2     | HDC302x Temperature           |
+| hdh2     | HDC302x Humidity           |
+| lpt1     | LPS35HW Temperature           |
+| lpp1     | LPS35HW Pressure           |
+| lpt2     | LPS35HW Temperature           |
+| lpp2     | LPS35HW Pressure           |
+| sv1      | SI1145 VIS           |
+| si1      | SI1145 IR           |
+| su1      | SI1145 UV          |
+| mt1      | MCP9808 Temperature           |
+| mt2      | MCP9808 Temperature           |
+| gt1      | MCP9808 Globe Temperature            |
+| gt2      | MCP9808 Globe Temperature            |
+| vlx      | VEML7700 LUX           |
+| blx      | DFRobot_B_LUX_V30B            |
+| sg       | Option 1 Maxbotix Distance Guage snow or stream            |
+| op1r     | Option 1 analog pin raw reading           |
+| rg2      | Option 1 2nd rain gauge            |
+| rgt2     | Option 1 2nd rain total            |
+| rgp2     | Option 1 2nd rain total prior            |
+| op2r     | Option 2 analog pin raw reading            |
+| hi       | SHT31 Heat Index Temperature            |
+| wbt      | MCP9808 & SHT31 Wet Bulb Temperature|
+| wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature            |
+| tlww     | Tinovi LeafSens Wetness           |
+| tlwt     | Tinovi LeafSens Temp            |
+| tsmt     | Tinovi Soil Moisture Temperature |
 | tsme25   | Tinovi Soil Moisture e25 |
 | tsmec    | Tinovi Soil Moisture ec |
 | tsmvwc   | Tinovi Soil Moisture vwc |
-| tsmt-[1-8] | MUX Tinovi Soil Moisture temperature |
+| tsmt-[1-8] | MUX Tinovi Soil Moisture Temperature |
 | tsme25-[1-8] | MUX Tinovi Soil Moisture e25 |
 | tsmec-[1-8] | MUX Tinovi Soil Moisture ec |
 | tsmvwc-[1-8] | MUX Tinovi Soil Moisture vwc |
-| tmsms1   |             |
-| tmsms2   |             |
-| tmsms3   |             |
-| tmsms4   |             |
-| tmsms5   |             |
-| tmsmt1   |             |
-| tmsmt2   |             |
-| pmts     |             |
-
+| tmsms1   | Tinovi i2cMultiSm Soil Moisture 1           |
+| tmsms2   | Tinovi i2cMultiSm Soil Moisture 2           |
+| tmsms3   | Tinovi i2cMultiSm Soil Moisture 3           |
+| tmsms4   | Tinovi i2cMultiSm Soil Moisture 4           |
+| tmsms5   | Tinovi i2cMultiSm Soil Moisture 5           |
+| tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature          |
+| tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature            |
+| pmts     | TMP112A Particle Muon on board temperature sensor|
 
 
 ### Wind

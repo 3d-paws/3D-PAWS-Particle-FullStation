@@ -9,6 +9,8 @@ For information on LoRa Remote stations see [3D-PAWS-Feather-LoRaRemoteM0](https
 - "INFO" : Sent at boot providing station configuration information
 - "LR" : LoRa Relay message containing observation information.
 
+These type are sent to Particle as event types "INFO" and "LR". Where Particle Integrations (Webhooks) take over the processsing.
+
 ### Tibits of Information:
 - LoRa messages are AES 128 bit encrypted.
 - LoRa messages are in JSON format
