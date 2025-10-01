@@ -602,4 +602,16 @@ void SD_ReadConfigFile() {
 
   cf_lora_freq   = SD_findInt(F("lora_freq"));
   sprintf(msgbuf, "CF:lora_freq=[%d]", cf_lora_freq); Output (msgbuf);
+
+#if PLATFORM_ID != PLATFORM_MSOM
+  cf_sr_cal   = SD_findFloat(F("sr_cal"));
+  sprintf(msgbuf, "CF:sr_cal=[%d.%02d]", 
+    (int)cf_sr_cal, (int)(cf_sr_cal*100)%100); 
+  Output (msgbuf);
+
+  cf_sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
+  sprintf(msgbuf, "CF:sr_dark_offset=[%d.%02d]", 
+    (int) cf_sr_dark_offset, (int)(cf_sr_dark_offset*100)%100); 
+  Output (msgbuf);
+#endif
 }

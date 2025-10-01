@@ -309,6 +309,10 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sTLW", comma);
     comma=",";
   }
+  if (ADS_exists) {
+    sprintf (buf+strlen(buf), "%sSR", comma);
+    comma=",";
+  }
 #endif
   if (TSM_exists) {
     sprintf (buf+strlen(buf), "%sTSM", comma);

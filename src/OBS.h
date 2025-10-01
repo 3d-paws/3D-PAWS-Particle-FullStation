@@ -1121,6 +1121,14 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = (float) t;
     obs[oidx].sensor[sidx++].inuse = true;
   }
+#else
+  if (ADS_exists) {
+    float sr = ads_readIrradiance(); // sr = shortwave radiation (what the pyranometer is detecting)
+    strcpy (obs[oidx].sensor[sidx].id, "sr");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) sr;
+    obs[oidx].sensor[sidx++].inuse = true;    
+  }
 #endif
 
   // Tinovi Soil Moisture

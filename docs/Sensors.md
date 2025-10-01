@@ -27,6 +27,7 @@ Sensors
 | TMP112A                       | Temperature             | Precision digital temp sensor, on-board Particle Muon.                                                   | [TMP112A Sensor](https://www.ti.com/product/TMP112A)        |
 | MB7360, MB7369, MB7380, MB7389| 5m Distance             | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
 | MB7363, MB7366, MB7383, MB7386| 10m Distance            | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
+| SP Lite2 Pyranometer          | Shortwave Radiation     | SP Lite2 Pyranometer from Kipp & Zonen                                                                   | [SP Lite2 Pyranometer](https://www.kippzonen.com/Product/9/SP-Lite2-Pyranometer)        |
 
 ---
 ### Tags Names sent to Particle
@@ -107,6 +108,7 @@ Sensors
 | tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature          |
 | tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature            |
 | pmts     | TMP112A Particle Muon on board temperature sensor|
+| sr       | SP Lite2 Pyranometer from Kipp & Zonen|
 
 
 ### Wind
@@ -192,6 +194,31 @@ In the future we may be supporting other sensors on the mux.
    tsmec-[1-8]   Tinovi Soil Moisture ec
    tsmvwc-[1-8]  Tinovi Soil Moisture vwc
 </pre>
+
+### SP Lite2 Pyranometer
+This sensor requires a higher resolution A/D converter. A [ADS1115 16-Bit ADC - 4 Channel with Programmable 
+Gain Amplifier](https://www.adafruit.com/product/1085) from Adafruit is used. When software discovers this 
+I2C ADC, it assumes a SP Lite2 Pyranometer is attached. Sensor reading is reported as "sr" shortwave radiation.
+There are 2 configuration file variables that need to be set. 
+```C
+# Replace with your sensor's calibration constant (µV per W/m² from the label/certificate)
+# Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
+sr_cal=75.0 
+
+# With the sensor covered, log the raw readings, set that as dark offset.
+sr_dark_offset=0.0
+```  
+The SP Lite2 pyranometer is passive — it generates a very small analog voltage when light hits it. Output 
+is typically tens of millivolts (0–120 mV max under full sun).
+
+#### Wiring connections
+Pyranometer → ADS1115 -  By wiring red/blue across A0/A1, we measure the voltage difference directly.
+- SP Lite2 Red → ADS1115 A0 \
+  This is the “+” side of the tiny voltage the sensor produces.
+- SP Lite2 Blue → ADS1115 A1 \
+  This is the “–” side of the voltage.
+- SP Lite2 Shield (black) → ADS1115 GND \
+  This shield is tied to ground to suppress electrical noise.
 
 ### Derived Sensor Observations
 #### Heat Index Temperature

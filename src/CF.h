@@ -28,6 +28,13 @@ lora_txpower=5
 
 # Valid entries are 433, 866, 915
 lora_freq=915
+
+# Replace with your sensor's calibration constant (µV per W/m² from the label/certificate)
+# Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
+sr_cal=75.0 
+
+# With the sensor covered, log the raw readings, set that as dark offset.
+sr_dark_offset=0.0
 * ======================================================================================================================
 */
 
@@ -41,3 +48,5 @@ long cf_aes_myiv=0;
 int cf_lora_unitid=0;
 int cf_lora_txpower=0;
 int cf_lora_freq=0;
+float cf_sr_cal=0.0;
+float cf_sr_dark_offset=0.0;

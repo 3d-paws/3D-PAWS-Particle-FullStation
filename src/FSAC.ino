@@ -1,7 +1,6 @@
-//PRODUCT_VERSION(1);
-PRODUCT_VERSION(42);
+PRODUCT_VERSION(43);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250925v42"
+#define VERSION_INFO "FS-250925v43"
 
 /*
  *======================================================================================================================
@@ -237,8 +236,13 @@ PRODUCT_VERSION(42);
  *          2025-09-11  RJB In OBS fixed casting bug on rain collection. Added (float)
  *                          (rain > (((float)rgds / 60) * QC_MAX_RG))
  * 
- *          Version 41 Released on 2025-09-25
+ *          Version 42 Released on 2025-09-25
  *          2025-09-25  RJB Bug fix. Had obs tag names of length 6 bumped to 12.
+ * 
+ *          Version 43
+ *          2025-09-30  RJB Added support for ADS1115 (16bit ADC) i2c 0x48 and SP Lite2 Pyranometer from Kipp & Zonen
+ *                          If we see the ADS1115 then we assume the Pyranometer is on adc0 
+ * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
@@ -311,8 +315,12 @@ PRODUCT_VERSION(42);
  *  Adafruit_PM25AQI        https://github.com/adafruit/Adafruit_PM25AQI - 1.0.6 I2C ADDRESS 0x12 - Modified to Compile, Adafruit_PM25AQI.cpp" line 104
  *  Adafruit_HDC302x        https://github.com/adafruit/Adafruit_HDC302x - 1.0.2 I2C ADDRESS 0x46 and 0x47 ( SHT uses 0x44 and x045)
  *  Adafruit_LPS35HW        https://github.com/adafruit/Adafruit_LPS35HW - 1.0.6 I2C ADDRESS 0x5D and 0x5C
+ *  Adafruit_ADS1X15.h      https://www.adafruit.com/product/1085 - I2C ADDRESS 0x48 conflict with Muon TMP112A on board sensor
+ *                          https://github.com/adafruit/Adafruit_ADS1X15
+ * 
  *  DFRobot_B_LUX_V30B      https://github.com/DFRobot/DFRobot_B_LUX_V30B - 1.0.1 I2C ADDRESS 0x4A (Not Used Reference Only) SEN0390
  *                          https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390
+ * 
  *  RTCLibrary              https://github.com/adafruit/RTClib - 1.13.0
  *  SdFat                   https://github.com/greiman/SdFat.git - 1.0.16 by Bill Greiman 2.3.0
  *  RF9X-RK-SPI1            https://github.com/rickkas7/AdafruitDataLoggerRK - 0.2.0 - Modified RadioHead LoRa for SPI1
@@ -639,6 +647,7 @@ PRODUCT_VERSION(42);
 #include <location.h>     // from particle-som-gnss library
 #else
 #include <RTClib.h>
+#include <Adafruit_ADS1X15.h>
 #endif
 #include <SdFat.h>
 #include <RH_RF95.h>
@@ -1091,6 +1100,8 @@ void setup() {
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
+#else
+  ads_initialize();   // shortwave radiation from pyranometer via 16bit A/D
 #endif
 
   // Scan for i2c Devices and Sensors
@@ -1112,6 +1123,8 @@ void setup() {
   pm25aqi_initialize();
   hdc_initialize();
   lps_initialize();
+
+
 
   // Tinovi Mositure Sensors
 #if (PLATFORM_ID != PLATFORM_MSOM)
