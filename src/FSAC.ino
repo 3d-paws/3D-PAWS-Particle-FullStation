@@ -1,6 +1,6 @@
 PRODUCT_VERSION(43);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-250925v43"
+#define VERSION_INFO "FS-251001v43"
 
 /*
  *======================================================================================================================
@@ -239,7 +239,7 @@ PRODUCT_VERSION(43);
  *          Version 42 Released on 2025-09-25
  *          2025-09-25  RJB Bug fix. Had obs tag names of length 6 bumped to 12.
  * 
- *          Version 43
+ *          Version 43 Released on 2025-10-XX
  *          2025-09-30  RJB Added support for ADS1115 (16bit ADC) i2c 0x48 and SP Lite2 Pyranometer from Kipp & Zonen
  *                          If we see the ADS1115 then we assume the Pyranometer is on adc0 
  * 
