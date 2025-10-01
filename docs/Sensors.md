@@ -200,7 +200,7 @@ This sensor requires a higher resolution A/D converter. A [ADS1115 16-Bit ADC - 
 Gain Amplifier](https://www.adafruit.com/product/1085) from Adafruit is used. When software discovers this 
 I2C ADC, it assumes a SP Lite2 Pyranometer is attached. Sensor reading is reported as "sr" shortwave radiation.
 There are 2 configuration file variables that need to be set. 
-```C
+```
 # Replace with your sensor's calibration constant (µV per W/m² from the label/certificate)
 # Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
 sr_cal=75.0 

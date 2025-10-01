@@ -34,6 +34,9 @@ Send commands to Particle device form Particle Web Console
 ### [SD Card Information](docs/SD.md)
 Information on what is stored on the SD card.
 
+### [Configuration File Example](docs/ConfigFileExample.md)
+Example of CONFIG.TXT
+
 ### [LoRa Remote Relay](docs/LoRaRelay.md)
 Receive LoRa messages for LoRa Remote devices. Transmit the message to Particle next transmission period.
 
