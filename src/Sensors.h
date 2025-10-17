@@ -182,16 +182,6 @@ bool BLX_exists = false;
  *    pm1e10
  *    pm1e25
  *    pm1e100
- * 
- * How the sensor works internally
- * Mainly output is the quality and number of each particles with different size per unit volume, the unit volume of 
- * particle number is 0.1L and the unit of mass concentration is μg/m³
- * Internal sampling is divided into two sub modes: stable mode and fast mode. If the concentration change is small 
- * the sensor would run at stable mode with the real interval of 2.3s. And if the change is big the sensor would be 
- * changed to fast mode automatically with the interval of 200~800ms, the higher of the concentration, the shorter of
- * the interval. 
- * 
- * We sample the sensor every second keeping highest 1 second returned values for the observation interval. 
  * ======================================================================================================================
  */
 #define PM25AQI_1M_BUCKETS  60
