@@ -453,7 +453,7 @@ void OBS_Do() {
     
     // Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
     if (AQS_Enabled) {
-      pm25aqi_Produce_1m_Average(); // This does Over Sampling and sleep management
+      pm25aqi_TakeReading_AQS(); // This does Over Sampling and sleep management
       obs[oidx].ts = Time.now(); // Get time after the above wakeup and reading of sensor.
     }
     else {
