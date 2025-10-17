@@ -453,47 +453,47 @@ void OBS_Do() {
     
     // Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
     if (AQS_Enabled) {
-      pm25aqi_TakeReading_AQS(); // This does Over Sampling and sleep management
+      pm25aqi_Produce_1m_Average(); // This does Over Sampling and sleep management
       obs[oidx].ts = Time.now(); // Get time after the above wakeup and reading of sensor.
     }
     else {
-      pm25aqi_1m_SumReadings();
+      pm25aqi_Produce_1m_Average();
     }
 
     // Standard Particle PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s10;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s10;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Standard Particle PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s25;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s25;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Standard Particle PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_s100;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s100;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e10;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.e10;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e25");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e25;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.e25;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e100");
     obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.max_e100;
+    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.e100;
     obs[oidx].sensor[sidx++].inuse = true;
 
     // Clear readings

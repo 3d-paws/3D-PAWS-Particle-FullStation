@@ -242,6 +242,7 @@ PRODUCT_VERSION(43);
  *          Version 43 Released on 2025-10-XX
  *          2025-09-30  RJB Added support for ADS1115 (16bit ADC) i2c 0x48 and SP Lite2 Pyranometer from Kipp & Zonen
  *                          If we see the ADS1115 then we assume the Pyranometer is on adc0 
+ *          2025-10-17  RJB AQS variable and function name clean
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM

@@ -196,16 +196,16 @@ bool BLX_exists = false;
  */
 #define PM25AQI_1M_BUCKETS  60
 typedef struct {
-  int32_t max_s10, max_s25, max_s100; 
-  int32_t max_e10, max_e25, max_e100;
+  int32_t s10, s25, s100; 
+  int32_t e10, e25, e100;
 } PM25AQI_OBS;
 PM25AQI_OBS pm25aqi_1m_obs[PM25AQI_1M_BUCKETS];
 int pm25aqi_1m_bucket = 0;
 
 
 typedef struct {
-  int32_t max_s10, max_s25, max_s100; 
-  int32_t max_e10, max_e25, max_e100;
+  int32_t s10, s25, s100; 
+  int32_t e10, e25, e100;
   int count=0;
   int fail_count=0;
 } PM25AQI_OBS_STR;
@@ -1142,12 +1142,12 @@ float blx_takereading() {
  */
 void pm25aqi_1m_clear() {
   for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
-    pm25aqi_1m_obs[i].max_s10 = 0;
-    pm25aqi_1m_obs[i].max_s25 = 0;
-    pm25aqi_1m_obs[i].max_s100 = 0;
-    pm25aqi_1m_obs[i].max_e10 = 0;
-    pm25aqi_1m_obs[i].max_e25 = 0;
-    pm25aqi_1m_obs[i].max_e100 = 0;
+    pm25aqi_1m_obs[i].s10 = 0;
+    pm25aqi_1m_obs[i].s25 = 0;
+    pm25aqi_1m_obs[i].s100 = 0;
+    pm25aqi_1m_obs[i].e10 = 0;
+    pm25aqi_1m_obs[i].e25 = 0;
+    pm25aqi_1m_obs[i].e100 = 0;
   }
 }
 
@@ -1157,12 +1157,12 @@ void pm25aqi_1m_clear() {
  *=======================================================================================================================
  */
 void pm25aqi_clear() {
-  pm25aqi_obs.max_s10 = 0;
-  pm25aqi_obs.max_s25 = 0;
-  pm25aqi_obs.max_s100 = 0;
-  pm25aqi_obs.max_e10 = 0;
-  pm25aqi_obs.max_e25 = 0;
-  pm25aqi_obs.max_e100 = 0;
+  pm25aqi_obs.s10 = 0;
+  pm25aqi_obs.s25 = 0;
+  pm25aqi_obs.s100 = 0;
+  pm25aqi_obs.e10 = 0;
+  pm25aqi_obs.e25 = 0;
+  pm25aqi_obs.e100 = 0;
   pm25aqi_obs.count = 0;
   pm25aqi_obs.fail_count = 0;
 }
@@ -1198,27 +1198,27 @@ void pm25aqi_initialize() {
 
 /* 
  *=======================================================================================================================
- * pm25aqi_1m_SumReadings() - Sum samples for reporting
+ * pm25aqi_Produce_1m_Average() - Sum samples and provide and average for reporting
  *=======================================================================================================================
  */
-void pm25aqi_1m_SumReadings() {
+void pm25aqi_Produce_1m_Average() {
   if (PM25AQI_exists) {
     pm25aqi_clear();
     for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
-      pm25aqi_obs.max_s10  += pm25aqi_1m_obs[i].max_s10;
-      pm25aqi_obs.max_s25  += pm25aqi_1m_obs[i].max_s25;
-      pm25aqi_obs.max_s100 += pm25aqi_1m_obs[i].max_s100;
-      pm25aqi_obs.max_e10  += pm25aqi_1m_obs[i].max_e10;
-      pm25aqi_obs.max_e25  += pm25aqi_1m_obs[i].max_e25;
-      pm25aqi_obs.max_e100 += pm25aqi_1m_obs[i].max_e100;
+      pm25aqi_obs.s10  += pm25aqi_1m_obs[i].s10;
+      pm25aqi_obs.s25  += pm25aqi_1m_obs[i].s25;
+      pm25aqi_obs.s100 += pm25aqi_1m_obs[i].s100;
+      pm25aqi_obs.e10  += pm25aqi_1m_obs[i].e10;
+      pm25aqi_obs.e25  += pm25aqi_1m_obs[i].e25;
+      pm25aqi_obs.e100 += pm25aqi_1m_obs[i].e100;
     }
     // Do average
-    pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / PM25AQI_1M_BUCKETS); 
+    pm25aqi_obs.s10  = (pm25aqi_obs.s10  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.s25  = (pm25aqi_obs.s25  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.s100 = (pm25aqi_obs.s100 / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.e10  = (pm25aqi_obs.e10  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.e25  = (pm25aqi_obs.e25  / PM25AQI_1M_BUCKETS);
+    pm25aqi_obs.e100 = (pm25aqi_obs.e100 / PM25AQI_1M_BUCKETS); 
   }
 }
 
@@ -1232,12 +1232,12 @@ void pm25aqi_TakeReading() {
     PM25_AQI_Data aqid;
   
     if (pmaq.read(&aqid)) {
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s10  = aqid.pm10_standard;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s25  = aqid.pm25_standard;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_s100 = aqid.pm100_standard;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e10  = aqid.pm10_env;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e25  = aqid.pm25_env;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].max_e100 = aqid.pm100_env;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].s10  = aqid.pm10_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].s25  = aqid.pm25_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].s100 = aqid.pm100_standard;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].e10  = aqid.pm10_env;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].e25  = aqid.pm25_env;
+      pm25aqi_1m_obs[pm25aqi_1m_bucket].e100 = aqid.pm100_env;
       pm25aqi_1m_bucket = (pm25aqi_1m_bucket+1) % PM25AQI_1M_BUCKETS; // Advance bucket index for next reading
     }
   }
@@ -1245,7 +1245,7 @@ void pm25aqi_TakeReading() {
 
 /* 
  *=======================================================================================================================
- * pm25aqi_TakeReading_AQS() - Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
+ * pm25aqi_TakeReading_AQS() - Air Quality station, wake up sensor, wait 30s, skip 1st reading, take sample, put sensor to sleep
  *=======================================================================================================================
  */
 void pm25aqi_TakeReading_AQS() {
@@ -1274,12 +1274,12 @@ void pm25aqi_TakeReading_AQS() {
       delay(800); // sensor takes reading every 1s, so wait for the next
       if (pmaq.read(&aqid)) {
         pm25aqi_obs.count++;
-        pm25aqi_obs.max_s10  += aqid.pm10_standard;
-        pm25aqi_obs.max_s25  += aqid.pm25_standard;
-        pm25aqi_obs.max_s100 += aqid.pm100_standard;
-        pm25aqi_obs.max_e10  += aqid.pm10_env;
-        pm25aqi_obs.max_e25  += aqid.pm25_env;
-        pm25aqi_obs.max_e100 += aqid.pm100_env;
+        pm25aqi_obs.s10  += aqid.pm10_standard;
+        pm25aqi_obs.s25  += aqid.pm25_standard;
+        pm25aqi_obs.s100 += aqid.pm100_standard;
+        pm25aqi_obs.e10  += aqid.pm10_env;
+        pm25aqi_obs.e25  += aqid.pm25_env;
+        pm25aqi_obs.e100 += aqid.pm100_env;
       }
       else {
         pm25aqi_obs.fail_count++;
@@ -1291,22 +1291,22 @@ void pm25aqi_TakeReading_AQS() {
     if (pm25aqi_obs.fail_count > pm25aqi_obs.count) {
       // Fail if half our sample reads failed. - I think this is reasonable - rjb
       Output("AQS:FAIL");
-      pm25aqi_obs.max_s10 = -999;
-      pm25aqi_obs.max_s25 = -999;
-      pm25aqi_obs.max_s100 = -999;
-      pm25aqi_obs.max_e10 = -999;
-      pm25aqi_obs.max_e25 = -999;
-      pm25aqi_obs.max_e100 = -999;
+      pm25aqi_obs.s10 = -999;
+      pm25aqi_obs.s25 = -999;
+      pm25aqi_obs.s100 = -999;
+      pm25aqi_obs.e10 = -999;
+      pm25aqi_obs.e25 = -999;
+      pm25aqi_obs.e100 = -999;
     }
     else {
       // Do average
       Output("AQS:OK");
-      pm25aqi_obs.max_s10  = (pm25aqi_obs.max_s10 / pm25aqi_obs.count);
-      pm25aqi_obs.max_s25  = (pm25aqi_obs.max_s25 / pm25aqi_obs.count);
-      pm25aqi_obs.max_s100 = (pm25aqi_obs.max_s100 / pm25aqi_obs.count);
-      pm25aqi_obs.max_e10  = (pm25aqi_obs.max_e10 / pm25aqi_obs.count);
-      pm25aqi_obs.max_e25  = (pm25aqi_obs.max_e25 / pm25aqi_obs.count);
-      pm25aqi_obs.max_e100 = (pm25aqi_obs.max_e100 / pm25aqi_obs.count); 
+      pm25aqi_obs.s10  = (pm25aqi_obs.s10 / pm25aqi_obs.count);
+      pm25aqi_obs.s25  = (pm25aqi_obs.s25 / pm25aqi_obs.count);
+      pm25aqi_obs.s100 = (pm25aqi_obs.s100 / pm25aqi_obs.count);
+      pm25aqi_obs.e10  = (pm25aqi_obs.e10 / pm25aqi_obs.count);
+      pm25aqi_obs.e25  = (pm25aqi_obs.e25 / pm25aqi_obs.count);
+      pm25aqi_obs.e100 = (pm25aqi_obs.e100 / pm25aqi_obs.count); 
     }
   }
 }
