@@ -1,50 +1,24 @@
 /*
  * ======================================================================================================================
- *  WRD.h - Wind Rain Distance Functions
+ *  wrda.cpp - Wind Rain Distance Air Functions
  * ======================================================================================================================
  */
+#include "include/ssbits.h"
+#include "include/cf.h"
+#include "include/output.h"
+#include "include/support.h"
+#include "include/sdcard.h"
+#include "include/lora.h"
+#include "include/sensors.h"
+#include "include/main.h"
+#include "include/wrda.h"
+
 
 /*
  * ======================================================================================================================
- *  Wind Related Setup
- * 
- *  NOTE: With interrupts tied to the anemometer rotation we are essentually sampling all the time.  
- *        We record the interrupt count, ms duration and wind direction every second.
- *        One revolution of the anemometer results in 2 interrupts. There are 2 magnets on the anemometer.
- * 
- *        Station observations are logged every minute
- *        Wind and Direction are sampled every second producing 60 samples 
- *        The one second wind speed sample are produced from the interrupt count and ms duration.
- *        Wind Observations a 
- *        Reported Observations
- *          Wind Speed = Average of the 60 samples.
- *          Wind Direction = Average of the 60 vectors from Direction and Speed.
- *          Wind Gust = Highest 3 consecutive samples from the 60 samples. The 3 samples are then averaged.
- *          Wind Gust Direction = Average of the 3 Vectors from the Wind Gust samples.
- * 
- * Distance Sensors
- * The 5-meter sensors (MB7360, MB7369, MB7380, and MB7389) use a scale factor of (Vcc/5120) per 1-mm.
- * Particle 12bit resolution (0-4095),  Sensor has a resolution of 0 - 5119mm,  Each unit of the 0-4095 resolution is 1.25mm
- * Feather has 10bit resolution (0-1023), Sensor has a resolution of 0 - 5119mm, Each unit of the 0-1023 resolution is 5mm
- * 
- * The 10-meter sensors (MB7363, MB7366, MB7383, and MB7386) use a scale factor of (Vcc/10240) per 1-mm.
- * Particle 12bit resolution (0-4095), Sensor has a resolution of 0 - 10239mm, Each unit of the 0-4095 resolution is 2.5mm
- * Feather has 10bit resolution (0-1023), Sensor has a resolution of 0 - 10239mm, Each unit of the 0-1023 resolution is 10mm
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
-#define WIND_READINGS       60       // One minute of 1s Samples
-
-typedef struct {
-  int direction;
-  float speed;
-} WIND_BUCKETS_STR;
-
-typedef struct {
-  WIND_BUCKETS_STR bucket[WIND_READINGS];
-  int bucket_idx;
-  float gust;
-  int gust_direction;
-} WIND_STR;
 WIND_STR wind;
 
 /*
@@ -76,13 +50,6 @@ bool ws_refresh = false;           // Set to true when we have delayed too long 
  *  Pin OP1 State Setup
  * ======================================================================================================================
  */
-#define OP1_STATE_NULL       0
-#define OP1_STATE_DISTANCE   1
-#define OP1_STATE_RAIN       2
-#define OP1_STATE_RAW        3
-char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";         // File used to set pin as a Distance Gauge
-char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";         // File used to set pin as a 2nd Rain Gauge
-char SD_OP1_RAW_FILE[]  = "OP1RAW.TXT";          // File used to set pin as generic analog device connected
 int OP1_State = OP1_STATE_NULL;                  // Default is not used
 
 /*
@@ -90,9 +57,6 @@ int OP1_State = OP1_STATE_NULL;                  // Default is not used
  *  Pin OP2 State Setup
  * ======================================================================================================================
  */
-#define OP2_STATE_NULL       0
-#define OP2_STATE_RAW        1
-char SD_OP2_RAW_FILE[]  = "OP2RAW.TXT";          // File used to set pin as generic analog device connected
 int OP2_State = OP2_STATE_NULL;                  // Default is not used
 
 /*
@@ -100,9 +64,7 @@ int OP2_State = OP2_STATE_NULL;                  // Default is not used
  *  Distance Gauge - Can be Distance or Stream
  * =======================================================================================================================
  */
-#define DISTANCE_GAUGE_PIN  OP1_PIN
-#define DG_BUCKETS          60
-char SD_OP1_D5M_FILE[] = "OP1D5M.TXT";        // Multiply by 1.25 for 5m Distance Gauge
+
 unsigned int dg_bucket = 0;
 float dg_adjustment = 2.5;                    // Default sensor is 10m
 unsigned int dg_buckets[DG_BUCKETS];
@@ -124,11 +86,6 @@ uint64_t anemometer_interrupt_stime;
  *  anemometer_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#if (PLATFORM_ID == PLATFORM_MSOM)
-#define ANEMOMETER_IRQ_PIN D5
-#else
-#define ANEMOMETER_IRQ_PIN A2
-#endif
 void anemometer_interrupt_handler()
 {
   anemometer_interrupt_count++;
@@ -149,13 +106,7 @@ uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
  *  raingauge1_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#if (PLATFORM_ID == PLATFORM_MSOM)
-#define RAINGAUGE1_IRQ_PIN D4
-#else
-#define RAINGAUGE1_IRQ_PIN A3
-#endif
-void raingauge1_interrupt_handler()
-{
+void raingauge1_interrupt_handler() {
   if ((System.millis() - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
     raingauge1_interrupt_ltime = System.millis();
     raingauge1_interrupt_count++;
@@ -179,9 +130,7 @@ uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
  *  raingauge2_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
  * ======================================================================================================================
  */
-#define RAINGAUGE2_IRQ_PIN OP1_PIN
-void raingauge2_interrupt_handler()
-{
+void raingauge2_interrupt_handler() {
   if ((System.millis() - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
     raingauge2_interrupt_ltime = System.millis();
     raingauge2_interrupt_count++;
@@ -613,230 +562,4 @@ void Wind_Distance_Air_Initialize() {
   if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
 
   ws_refresh = false; // Set to false since we have just initialized wind speed data.
-}
-
-/*
- * ======================================================================================================================
- * I2C_Check_Sensors() - See if each I2C sensor responds on the bus and take action accordingly             
- * ======================================================================================================================
- */
-void I2C_Check_Sensors() {
-
-  // BMX_1 Barometric Pressure 
-  if (I2C_Device_Exist (BMX_ADDRESS_1)) {
-    // Sensor online but our state had it offline
-    if (BMX_1_exists == false) {
-      if (BMX_1_chip_id == BMP280_CHIP_ID) {
-        if (bmp1.begin(BMX_ADDRESS_1)) { 
-          BMX_1_exists = true;
-          Output ("BMP1 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-        } 
-      }
-      else if (BMX_1_chip_id == BME280_BMP390_CHIP_ID) {
-        if (BMX_1_type == BMX_TYPE_BME280) {
-          if (bme1.begin(BMX_ADDRESS_1)) { 
-            BMX_1_exists = true;
-            Output ("BME1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-          } 
-        }
-        if (BMX_1_type == BMX_TYPE_BMP390) {
-          if (bm31.begin_I2C(BMX_ADDRESS_1)) {
-            BMX_1_exists = true;
-            Output ("BMP390_1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-          }
-        }        
-      }
-      else {
-        if (bm31.begin_I2C(BMX_ADDRESS_1)) { 
-          BMX_1_exists = true;
-          Output ("BM31 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-        }                  
-      }      
-    }
-  }
-  else {
-    // Sensor offline but our state has it online
-    if (BMX_1_exists == true) {
-      BMX_1_exists = false;
-      Output ("BMX1 OFFLINE");
-      SystemStatusBits |= SSB_BMX_1;  // Turn On Bit 
-    }    
-  }
-
-  // BMX_2 Barometric Pressure 
-  if (I2C_Device_Exist (BMX_ADDRESS_2)) {
-    // Sensor online but our state had it offline
-    if (BMX_2_exists == false) {
-      if (BMX_2_chip_id == BMP280_CHIP_ID) {
-        if (bmp2.begin(BMX_ADDRESS_2)) { 
-          BMX_2_exists = true;
-          Output ("BMP2 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-        } 
-      }
-      else if (BMX_2_chip_id == BME280_BMP390_CHIP_ID) {
-        if (BMX_2_type == BMX_TYPE_BME280) {
-          if (bme1.begin(BMX_ADDRESS_2)) { 
-            BMX_2_exists = true;
-            Output ("BME2 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-          } 
-        }
-        if (BMX_2_type == BMX_TYPE_BMP390) {
-          if (bm31.begin_I2C(BMX_ADDRESS_2)) {
-            BMX_1_exists = true;
-            Output ("BMP390_1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-          }
-        }        
-      }
-      else {
-         if (bm32.begin_I2C(BMX_ADDRESS_2)) { 
-          BMX_2_exists = true;
-          Output ("BM32 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-        }                         
-      }     
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (BMX_2_exists == true) {
-      BMX_2_exists = false;
-      Output ("BMX2 OFFLINE");
-      SystemStatusBits |= SSB_BMX_2;  // Turn On Bit 
-    }    
-  }
-
-  // HTU21DF Humidity & Temp Sensor
-  if (I2C_Device_Exist (HTU21DF_I2CADDR)) {
-    // Sensor online but our state had it offline
-    if (HTU21DF_exists == false) {
-      // See if we can bring sensor online
-      if (htu.begin()) {
-        HTU21DF_exists = true;
-        Output ("HTU ONLINE");
-        SystemStatusBits &= ~SSB_HTU21DF; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (HTU21DF_exists == true) {
-      HTU21DF_exists = false;
-      Output ("HTU OFFLINE");
-      SystemStatusBits |= SSB_HTU21DF;  // Turn On Bit
-    }   
-  }
-
-#ifdef NOWAY    // MCP9808 Sensors fails to update temperature if this code is enabled
-  // MCP9808 Precision I2C Temperature Sensor
-  if (I2C_Device_Exist (MCP_ADDRESS_1)) {
-    // Sensor online but our state had it offline
-    if (MCP_1_exists == false) {
-      // See if we can bring sensor online
-      if (mcp1.begin(MCP_ADDRESS_1)) {
-        MCP_1_exists = true;
-        Output ("MCP ONLINE");
-        SystemStatusBits &= ~SSB_MCP_1; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (MCP_1_exists == true) {
-      MCP_1_exists = false;
-      Output ("MCP OFFLINE");
-      SystemStatusBits |= SSB_MCP_1;  // Turn On Bit
-    }   
-  }
-#endif
-
-  // SI1145 UV index & IR & Visible Sensor
-  if (I2C_Device_Exist (SI1145_ADDR)) {
-    // Sensor online but our state had it offline
-    if (SI1145_exists == false) {
-      // See if we can bring sensore online
-      if (uv.begin()) {
-        SI1145_exists = true;
-        Output ("SI ONLINE");
-        SystemStatusBits &= ~SSB_SI1145; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (SI1145_exists == true) {
-      SI1145_exists = false;
-      Output ("SI OFFLINE");
-      SystemStatusBits |= SSB_SI1145;  // Turn On Bit
-    }   
-  }
-
-  // AS5600 Wind Direction
-  if (I2C_Device_Exist (AS5600_ADR)) {
-    // Sensor online but our state had it offline
-    if (AS5600_exists == false) {
-      AS5600_exists = true;
-      Output ("WD ONLINE");
-      SystemStatusBits &= ~SSB_AS5600; // Turn Off Bit
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (AS5600_exists == true) {
-      AS5600_exists = false;
-      Output ("WD OFFLINE");
-      SystemStatusBits |= SSB_AS5600;  // Turn On Bit
-    }   
-  }
-
-  // VEML7700 Lux 
-  if (I2C_Device_Exist (VEML7700_ADDRESS)) {
-    // Sensor online but our state had it offline
-    if (VEML7700_exists == false) {
-      // See if we can bring sensor online
-      if (veml.begin()) {
-        VEML7700_exists = true;
-        Output ("VLX ONLINE");
-        SystemStatusBits &= ~SSB_VLX; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (VEML7700_exists == true) {
-      VEML7700_exists = false;
-      Output ("VLX OFFLINE");
-      SystemStatusBits |= SSB_VLX;  // Turn On Bit
-    }   
-  }
-
-  // PM25AQI
-  if (!AQS_Enabled) { //  When AQS is enabled the sensor powers down
-    if (I2C_Device_Exist (PM25AQI_ADDRESS)) {
-      // Sensor online but our state had it offline
-      if (PM25AQI_exists == false) {
-        // See if we can bring sensor online
-        if (pmaq.begin_I2C()) {
-          PM25AQI_exists = true;
-          Output ("PM ONLINE");
-          SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
-          pm25aqi_clear();
-        }
-      }
-    }
-    else {
-      // Sensor offline but we our state has it online
-      if (PM25AQI_exists == true) {
-        PM25AQI_exists = false;
-        Output ("PM OFFLINE");
-        SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
-      }   
-    }
-  }
 }

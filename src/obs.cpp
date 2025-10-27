@@ -3,43 +3,42 @@
  *  OBS.h - Observation Handeling
  * ======================================================================================================================
  */
+#include <Particle.h>
+#include <SdFat.h>
 
-void mux_obs_do(int &oidx, int &sidx); // Prototype this function to aviod compile function unknown issue.
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#else
+#include <RTClib.h>
+#endif
+
+#include "include/qc.h"
+#include "include/ssbits.h"
+#include "include/mux.h"
+#include "include/sensors.h"
+#include "include/eeprom.h"
+#include "include/wrda.h"
+#include "include/cf.h"
+#include "include/sdcard.h"
+#include "include/output.h"
+#include "include/lora.h"
+#include "include/support.h"
+#include "include/time.h"
+#include "include/main.h"
+#include "include/obs.h"
 
 /*
  * ======================================================================================================================
- *  Observation storage
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
-#define MAX_SENSORS         96
-#define MAX_ONE_MINUTE_OBS  17 // Want more OBS space than our OBSERVATION_TRANSMIT_INTERVAL (For 15m interval use 17)
-                              // This prevents OBS from filling and being written to N2S file while we are Connecting
-
-typedef enum {
-  F_OBS, 
-  I_OBS, 
-  U_OBS
-} OBS_TYPE;
-
-#define TAGSZ 11
-typedef struct {
-  char          id[TAGSZ+1];       // Suport 11 character length observation names
-  int           type;
-  float         f_obs;
-  int           i_obs;
-  unsigned long u_obs;
-  bool          inuse;
-} SENSOR;
-
-typedef struct {
-  bool            inuse;                // Set to true when an observation is stored here         
-  time_t          ts;                   // TimeStamp
-  float           css;                  // Cell Signal Strength
-  unsigned long   hth;                  // System Status Bits
-  SENSOR          sensor[MAX_SENSORS];
-} OBSERVATION_STR;
 OBSERVATION_STR obs[MAX_ONE_MINUTE_OBS];
 
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /*
  * ======================================================================================================================
@@ -1123,7 +1122,7 @@ void OBS_Do() {
   }
 #else
   if (ADS_exists) {
-    float sr = ads_readIrradiance(); // sr = shortwave radiation (what the pyranometer is detecting)
+    float sr = ads_readIrradiance(16); // sr = shortwave radiation (what the pyranometer is detecting)
     strcpy (obs[oidx].sensor[sidx].id, "sr");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) sr;

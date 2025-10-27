@@ -1,8 +1,17 @@
 /*
  * ======================================================================================================================
- * PS.h - Particle Support Funtions
+ * ps.cpp - Particle Support Funtions
  * ======================================================================================================================
  */
+#include <Particle.h>
+
+#include "include/sdcard.h"
+#include "include/eeprom.h"
+#include "include/support.h"
+#include "include/sensors.h"
+#include "include/wrda.h"
+#include "include/main.h"
+#include "include/output.h"
 
  /*
  * ======================================================================================================================
@@ -1345,6 +1354,9 @@ void SimChangeCheck() {
 #endif
 
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+
+char imsi[16] = "";  // International Mobile Subscriber Identity
+
 /*
  * ======================================================================================================================
  * callback_imsi() - Callback for International Mobile Subscriber Identity 

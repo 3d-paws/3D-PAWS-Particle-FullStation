@@ -1,40 +1,28 @@
 /*
  * ======================================================================================================================
- *  Sensors.h
+ *  sensors.cpp - I2C based sensors
  * ======================================================================================================================
+ */
+#include "include/qc.h"
+#include "include/ssbits.h"
+#include "include/output.h"
+#include "include/support.h"
+#include "include/main.h"
+#include "include/wrda.h"
+#include "include/cf.h"
+#include "include/sensors.h"
+
+/*
+ * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
 
 /*
  * ======================================================================================================================
  *  BMX280 humidity - I2C - Temperature, pressure sensor & altitude - Support 2 of any combination
- * 
- *  https://www.asknumbers.com/PressureConversion.aspx
- *  Pressure is returned in the SI units of Pascals. 100 Pascals = 1 hPa = 1 millibar. 
- *  Often times barometric pressure is reported in millibar or inches-mercury. 
- *  For future reference 1 pascal = 0.000295333727 inches of mercury, or 1 inch Hg = 3386.39 Pascal. 
- *
- *  Looks like you divide by 100 and you get millibars which matches NWS page
- * 
- *  Surface Observations and Station Elevation 
- *  https://forecast.weather.gov/product.php?issuedby=BOU&product=OSO&site=bou 
- * 
- * The Bosch BMPXXX sensors all have this issue of saving the last reading. 
- * The recommended solution is to always throw away the first reading after any long 
- * period of inactivity (sleep or power on).
- * SEE https://forums.adafruit.com/viewtopic.php?t=209906
  * ======================================================================================================================
  */
-// #define BMX_STATION_ELEVATION 1017.272  // default 1013.25
-#define BMX_ADDRESS_1         0x77      // BMP Default Address - Connecting SDO to GND will change BMP to 0x76
-#define BMX_ADDRESS_2         0x76      // BME Default Address - Connecting SDO to GND will change BME to 0x77
-#define BMP280_CHIP_ID        0x58
-#define BME280_BMP390_CHIP_ID 0x60
-#define BMP388_CHIP_ID        0x50
-#define BMX_TYPE_UNKNOWN      0
-#define BMX_TYPE_BMP280       1
-#define BMX_TYPE_BME280       2
-#define BMX_TYPE_BMP388       3
-#define BMX_TYPE_BMP390       4
 Adafruit_BMP280 bmp1;
 Adafruit_BMP280 bmp2;
 Adafruit_BME280 bme1;
@@ -60,19 +48,8 @@ bool HTU21DF_exists = false;
 /*
  * ======================================================================================================================
  *  MCP9808 - I2C - Temperature sensor
- * 
- * I2C Address is:  0011,A2,A1,A0
- *                  0011000 = 0x18  where A2,1,0 = 0 MCP9808_I2CADDR_DEFAULT  
- *                  0011001 = 0x19  where A0 = 1
- *                  0011001 = 0x1A  where A1 = 1
- *                  0011011 = 0x1B  where A0 & A1 = 1
  * ======================================================================================================================
  */
-#define MCP_ADDRESS_1     0x18        // Default
-#define MCP_ADDRESS_2     0x19        // A0 set high, VDD
-#define MCP_ADDRESS_3     0x1A        // A1 set high, VDD
-#define MCP_ADDRESS_4     0x1B        // A0 & A1 set high, VDD
-
 Adafruit_MCP9808 mcp1;
 Adafruit_MCP9808 mcp2;
 Adafruit_MCP9808 mcp3;
@@ -87,8 +64,6 @@ bool MCP_4_exists = false;
  *  SHTX - I2C - Temperature & Humidity sensor (SHT31)  - Note the SHT40, SHT45 use same i2c address
  * ======================================================================================================================
  */
-#define SHT_ADDRESS_1     0x44
-#define SHT_ADDRESS_2     0x45        // ADR pin set high, VDD
 Adafruit_SHT31 sht1;
 Adafruit_SHT31 sht2;
 bool SHT_1_exists = false;
@@ -99,7 +74,6 @@ bool SHT_2_exists = false;
  *  HIH8 - I2C - Temperature & Humidity sensor (HIH8000)  - 
  * ======================================================================================================================
  */
-#define HIH8000_ADDRESS   0x27
 bool HIH8_exists = false;
 
 /*
@@ -126,13 +100,10 @@ bool WBGT_exists = false;
 /*
  * ======================================================================================================================
  *  Si1145 - I2C - UV/IR/Visible Light Sensor
- *  The SI1145 has a fixed I2C address (0x60), you can only connect one sensor per microcontroller!
  * ======================================================================================================================
  */
 Adafruit_SI1145 uv = Adafruit_SI1145();
 bool SI1145_exists = false;
-// When we do a read of all three and we get zeros. If these last readings are not zero, we will reinitialize the
-// chip. When does a reset on it and then read again.
 float si_last_vis = 0.0;
 float si_last_ir = 0.0;
 float si_last_uv = 0.0;
@@ -142,7 +113,6 @@ float si_last_uv = 0.0;
  *  VEML7700 - I2C - Lux Sensor
  * ======================================================================================================================
  */
-#define VEML7700_ADDRESS   0x10
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 bool VEML7700_exists = false;
 
@@ -151,72 +121,25 @@ bool VEML7700_exists = false;
  *  B_LUX_V30B - I2C - Lux Sensor
  * ======================================================================================================================
  */
-#define BLX_ADDRESS   0x4A
 bool BLX_exists = false;
 
 /*
  * ======================================================================================================================
  *  PM25AQI - I2C - Air Quality Sensor
- * 
- *  PM25_AQI_Data variables returned are unsigned integers
- *    pm10_standard     < Standard Particle PM1.0 concentration unit µg 𝑚3
- *    pm25_standard     < Standard Particle PM2.5 concentration unit µg 𝑚3
- *    pm100_standard    < Standard Particle PM10.0 concentration unit µg 𝑚3
- *    pm10_env          < Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
- *    pm25_env          < Atmospheric Environmental PM2.5 concentration unit µg 𝑚3
- *    pm100_env         < Atmospheric Environmental PM10.0 concentration unit µg 𝑚3
- *    particles_03um    < Particles with diameter beyond 0.3 µ 𝑚 in 0.1L of air
- *    particles_05um    < Particles with diameter beyond 0.5 µ 𝑚 in 0.1L of air
- *    particles_10um    < Particles with diameter beyond 1.0 µ 𝑚 in 0.1L of air
- *    particles_25um    < Particles with diameter beyond 2.5 µ 𝑚 in 0.1L of air
- *    particles_50um    < Particles with diameter beyond 5.0 µ 𝑚 in 0.1L of air
- *    particles_100um   < Particles with diameter beyond 10.0 µ 𝑚 in 0.1L of air
- * 
- *  pms = Particulate Matter Standard
- *  pme = Particulate Matter Environmental
- * 
- *  Variable Tags for what we monitor and report on
- *    pm1s10
- *    pm1s25
- *    pm1s100
- *    pm1e10
- *    pm1e25
- *    pm1e100
  * ======================================================================================================================
  */
-#define PM25AQI_1M_BUCKETS  60
-typedef struct {
-  int32_t s10, s25, s100; 
-  int32_t e10, e25, e100;
-} PM25AQI_OBS;
 PM25AQI_OBS pm25aqi_1m_obs[PM25AQI_1M_BUCKETS];
 int pm25aqi_1m_bucket = 0;
 
-
-typedef struct {
-  int32_t s10, s25, s100; 
-  int32_t e10, e25, e100;
-  int count=0;
-  int fail_count=0;
-} PM25AQI_OBS_STR;
 PM25AQI_OBS_STR pm25aqi_obs;
-
-#define PM25AQI_ADDRESS   0x12
 Adafruit_PM25AQI pmaq = Adafruit_PM25AQI();
 bool PM25AQI_exists = false;
 
 /*
  * ======================================================================================================================
  *  HDC302x - I2C - Precision Temperature & Humidity Sensor
- *    Note HDC uses the same I2C Address as SHT. To avoid conflict we are using 0x46 as hdc1 and 0x47 and hdc2 
- *    manufacturerID = 0x3000  -- uint16_t Adafruit_HDC302x::readManufacturerID()
  * ======================================================================================================================
  */
-#define HDC_ADDRESS_1     0x46        // A1=1, A0=0  Need to solder jumper
-#define HDC_ADDRESS_2     0x47        // A1=1, A0=1  Need to solder jumper
-#define HDC_ADDRESS_3     0x44        // A1=0, A0=0  Not used, Default setting from vendor
-#define HDC_ADDRESS_4     0x45        // A1=0, A0=1  Not used
-
 Adafruit_HDC302x hdc1;
 Adafruit_HDC302x hdc2;
 bool HDC_1_exists = false;
@@ -225,15 +148,10 @@ bool HDC_2_exists = false;
 /*
  * ======================================================================================================================
  *  LPS35HW - I2C - Pressure and Temperature
- *    Chip ID = 0xB1,  Library init checks this.
  * ======================================================================================================================
  */
-#define LPS_ADDRESS_1     0x5D        // Default
-#define LPS_ADDRESS_2     0x5C        // With jumper
-
 Adafruit_LPS35HW lps1;
 Adafruit_LPS35HW lps2;
-
 bool LPS_1_exists = false;
 bool LPS_2_exists = false;
 
@@ -241,10 +159,8 @@ bool LPS_2_exists = false;
 /*
  * ======================================================================================================================
  *  Tinovi Leaf Wetness
- *    Chip ID = 0x61,  Library init checks this.
  * ======================================================================================================================
  */
-#define TLW_ADDRESS     0x61
 LeafSens tlw;
 bool TLW_exists = false;
 #endif
@@ -252,20 +168,16 @@ bool TLW_exists = false;
 /*
  * ======================================================================================================================
  *  Tinovi MultiLevel Soil Moisture (4 Soil and 2 Temperature)
- *    Chip ID = 0x63,  Library init checks this.
  * ======================================================================================================================
  */
-#define TSM_ADDRESS     0x63
 SVCS3 tsm;
 bool TSM_exists = false;
 
 /*
  * ======================================================================================================================
  *  Tinovi MultiLevel Soil Moisture (4 Soil and 2 Temperature)
- *    Chip ID = 0x63,  Library init checks this.
  * ======================================================================================================================
  */
-#define TMSM_ADDRESS    0x65
 SVMULTI tmsm;
 bool TMSM_exists = false;
 
@@ -275,44 +187,33 @@ bool TMSM_exists = false;
  * ======================================================================================================================
  */
 #if (PLATFORM_ID == PLATFORM_MSOM)
-#define PMTS_ADDRESS  0x48
 bool PMTS_exists = false;
 #endif
 
 /*
  * ======================================================================================================================
  *  Adafruit ADS1115 4-Channel ADC Breakout used with SP Lite2 Pyranometer from Kipp & Zonen
- * 
- *  Single-ended mode: Pin N vs GND
- *  readADC_SingleEnded(channel), passing 0–3 for the channel. This measures the voltage between the specified analog 
- *     input (A0–A3) and ground. The raw result is typically reported as an unsigned integer (0 to 65535 for 16-bits), 
- *     but only positive voltages are measured, effectively using 15 bits of meaningful range.
- * 
- *  Differential mode: Pin N vs Pin M
- *  readADC_Differential_0_1() or readADC_Differential_2_3() where the pair selects which pins to use (for example, 
- *     A0 minus A1, or A2 minus A3). Here, the full 16-bit signed range is used, so results can be negative 
- *     (−32768 to +32767) because the device measures the voltage difference between two pins.
- * 
- *   ads.computeVolts(adc0) function applies the necessary scale factor (based on the ADS1115 gain setting) to convert 
- *     the raw 16-bit integer into a voltage in volts.
- * 
- *   Gain Settings
- *   The ADC input range (or gain) can be changed via the following functions, but be careful never to exceed 
- *   VDD +0.3V max, or to exceed the upper and lower limits if you adjust the input range!
- *                                                                  ADS1015  ADS1115
- *                                                                  -------  -------
- *   ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
- *   ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
- *   ads.setGain(GAIN_TWO);        // 2x gain   +/- 2.048V  1 bit = 1mV      0.0625mV
- *   ads.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  1 bit = 0.5mV    0.03125mV
- *   ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
- *   ads.setGain(GAIN_SIXTEEN);    // 16x gain  +/- 0.256V  1 bit = 0.125mV  0.0078125mV
  * ======================================================================================================================
  */
 #if (PLATFORM_ID != PLATFORM_MSOM)
 Adafruit_ADS1115 ads;
 bool ADS_exists = false;
 #endif
+
+/*
+ * ======================================================================================================================
+ *  AQS
+ * ======================================================================================================================
+ */
+bool AQS_Enabled = false;               // if file found this is set
+int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
+int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /* 
  *=======================================================================================================================
@@ -1559,3 +1460,229 @@ void ads_initialize() {
   }
 }
 #endif
+
+/*
+ * ======================================================================================================================
+ * I2C_Check_Sensors() - See if each I2C sensor responds on the bus and take action accordingly             
+ * ======================================================================================================================
+ */
+void I2C_Check_Sensors() {
+
+  // BMX_1 Barometric Pressure 
+  if (I2C_Device_Exist (BMX_ADDRESS_1)) {
+    // Sensor online but our state had it offline
+    if (BMX_1_exists == false) {
+      if (BMX_1_chip_id == BMP280_CHIP_ID) {
+        if (bmp1.begin(BMX_ADDRESS_1)) { 
+          BMX_1_exists = true;
+          Output ("BMP1 ONLINE");
+          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
+        } 
+      }
+      else if (BMX_1_chip_id == BME280_BMP390_CHIP_ID) {
+        if (BMX_1_type == BMX_TYPE_BME280) {
+          if (bme1.begin(BMX_ADDRESS_1)) { 
+            BMX_1_exists = true;
+            Output ("BME1 ONLINE");
+            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
+          } 
+        }
+        if (BMX_1_type == BMX_TYPE_BMP390) {
+          if (bm31.begin_I2C(BMX_ADDRESS_1)) {
+            BMX_1_exists = true;
+            Output ("BMP390_1 ONLINE");
+            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
+          }
+        }        
+      }
+      else {
+        if (bm31.begin_I2C(BMX_ADDRESS_1)) { 
+          BMX_1_exists = true;
+          Output ("BM31 ONLINE");
+          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
+        }                  
+      }      
+    }
+  }
+  else {
+    // Sensor offline but our state has it online
+    if (BMX_1_exists == true) {
+      BMX_1_exists = false;
+      Output ("BMX1 OFFLINE");
+      SystemStatusBits |= SSB_BMX_1;  // Turn On Bit 
+    }    
+  }
+
+  // BMX_2 Barometric Pressure 
+  if (I2C_Device_Exist (BMX_ADDRESS_2)) {
+    // Sensor online but our state had it offline
+    if (BMX_2_exists == false) {
+      if (BMX_2_chip_id == BMP280_CHIP_ID) {
+        if (bmp2.begin(BMX_ADDRESS_2)) { 
+          BMX_2_exists = true;
+          Output ("BMP2 ONLINE");
+          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
+        } 
+      }
+      else if (BMX_2_chip_id == BME280_BMP390_CHIP_ID) {
+        if (BMX_2_type == BMX_TYPE_BME280) {
+          if (bme1.begin(BMX_ADDRESS_2)) { 
+            BMX_2_exists = true;
+            Output ("BME2 ONLINE");
+            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
+          } 
+        }
+        if (BMX_2_type == BMX_TYPE_BMP390) {
+          if (bm31.begin_I2C(BMX_ADDRESS_2)) {
+            BMX_1_exists = true;
+            Output ("BMP390_1 ONLINE");
+            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
+          }
+        }        
+      }
+      else {
+         if (bm32.begin_I2C(BMX_ADDRESS_2)) { 
+          BMX_2_exists = true;
+          Output ("BM32 ONLINE");
+          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
+        }                         
+      }     
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (BMX_2_exists == true) {
+      BMX_2_exists = false;
+      Output ("BMX2 OFFLINE");
+      SystemStatusBits |= SSB_BMX_2;  // Turn On Bit 
+    }    
+  }
+
+  // HTU21DF Humidity & Temp Sensor
+  if (I2C_Device_Exist (HTU21DF_I2CADDR)) {
+    // Sensor online but our state had it offline
+    if (HTU21DF_exists == false) {
+      // See if we can bring sensor online
+      if (htu.begin()) {
+        HTU21DF_exists = true;
+        Output ("HTU ONLINE");
+        SystemStatusBits &= ~SSB_HTU21DF; // Turn Off Bit
+      }
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (HTU21DF_exists == true) {
+      HTU21DF_exists = false;
+      Output ("HTU OFFLINE");
+      SystemStatusBits |= SSB_HTU21DF;  // Turn On Bit
+    }   
+  }
+
+#ifdef NOWAY    // MCP9808 Sensors fails to update temperature if this code is enabled
+  // MCP9808 Precision I2C Temperature Sensor
+  if (I2C_Device_Exist (MCP_ADDRESS_1)) {
+    // Sensor online but our state had it offline
+    if (MCP_1_exists == false) {
+      // See if we can bring sensor online
+      if (mcp1.begin(MCP_ADDRESS_1)) {
+        MCP_1_exists = true;
+        Output ("MCP ONLINE");
+        SystemStatusBits &= ~SSB_MCP_1; // Turn Off Bit
+      }
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (MCP_1_exists == true) {
+      MCP_1_exists = false;
+      Output ("MCP OFFLINE");
+      SystemStatusBits |= SSB_MCP_1;  // Turn On Bit
+    }   
+  }
+#endif
+
+  // SI1145 UV index & IR & Visible Sensor
+  if (I2C_Device_Exist (SI1145_ADDR)) {
+    // Sensor online but our state had it offline
+    if (SI1145_exists == false) {
+      // See if we can bring sensore online
+      if (uv.begin()) {
+        SI1145_exists = true;
+        Output ("SI ONLINE");
+        SystemStatusBits &= ~SSB_SI1145; // Turn Off Bit
+      }
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (SI1145_exists == true) {
+      SI1145_exists = false;
+      Output ("SI OFFLINE");
+      SystemStatusBits |= SSB_SI1145;  // Turn On Bit
+    }   
+  }
+
+  // AS5600 Wind Direction
+  if (I2C_Device_Exist (AS5600_ADR)) {
+    // Sensor online but our state had it offline
+    if (AS5600_exists == false) {
+      AS5600_exists = true;
+      Output ("WD ONLINE");
+      SystemStatusBits &= ~SSB_AS5600; // Turn Off Bit
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (AS5600_exists == true) {
+      AS5600_exists = false;
+      Output ("WD OFFLINE");
+      SystemStatusBits |= SSB_AS5600;  // Turn On Bit
+    }   
+  }
+
+  // VEML7700 Lux 
+  if (I2C_Device_Exist (VEML7700_ADDRESS)) {
+    // Sensor online but our state had it offline
+    if (VEML7700_exists == false) {
+      // See if we can bring sensor online
+      if (veml.begin()) {
+        VEML7700_exists = true;
+        Output ("VLX ONLINE");
+        SystemStatusBits &= ~SSB_VLX; // Turn Off Bit
+      }
+    }
+  }
+  else {
+    // Sensor offline but we our state has it online
+    if (VEML7700_exists == true) {
+      VEML7700_exists = false;
+      Output ("VLX OFFLINE");
+      SystemStatusBits |= SSB_VLX;  // Turn On Bit
+    }   
+  }
+
+  // PM25AQI
+  if (!AQS_Enabled) { //  When AQS is enabled the sensor powers down
+    if (I2C_Device_Exist (PM25AQI_ADDRESS)) {
+      // Sensor online but our state had it offline
+      if (PM25AQI_exists == false) {
+        // See if we can bring sensor online
+        if (pmaq.begin_I2C()) {
+          PM25AQI_exists = true;
+          Output ("PM ONLINE");
+          SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
+          pm25aqi_clear();
+        }
+      }
+    }
+    else {
+      // Sensor offline but we our state has it online
+      if (PM25AQI_exists == true) {
+        PM25AQI_exists = false;
+        Output ("PM OFFLINE");
+        SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
+      }   
+    }
+  }
+}

@@ -1,66 +1,32 @@
 /*
  * ======================================================================================================================
- *  LoRa.h - LoRa Functions
+ *  lora.cpp - LoRa Functions
  * ======================================================================================================================
  */
 
-// Prototyping functions to aviod compile function unknown issue.
-void SD_NeedToSend_Add(char *observation);
- 
- /*
- * ======================================================================================================================
- *  Define who we are on LoRa network and who we are seding as 
- * ======================================================================================================================
+/*
+  The recommended antenna wire lengths for Adafruit LoRa Feather boards are frequency-dependent quarter-wave whip antennas:
+    For 433 MHz, the antenna length should be 6.5 inches (16.5 cm).
+    For 868 MHz, the antenna length should be 3.25 inches (8.2 cm).
+    For 915 MHz, the antenna length should be 3 inches (7.8 cm).
  */
-// #define LORA_RECEIVING_STATION_ID  1   // This unit's LoRa ID for Receiving Messages
+
+#include <RH_RF95.h>
+#include <AES.h>
+
+#include "include/ssbits.h"
+
+#include "include/cf.h"
+#include "include/main.h"
+#include "include/sdcard.h"
+#include "include/output.h"
+#include "include/lora.h"
 
 /*
  * ======================================================================================================================
- *  Singleton instance of the radio driver
- *
- *  The RH_RF95 driver uses interrupts to react to events in the RFM module,
- *  such as the reception of a new packet, or the completion of transmission
- *  of a packet.  The RH_RF95 driver interrupt service routine reads status from
- *  and writes data to the the RFM module via the SPI interface. It is very
- *  important therefore, that if you are using the RH_RF95 driver with another
- *  SPI based deviced, that you disable interrupts while you transfer data to
- *  and from that other device.  Use cli() to disable interrupts and sei() to
- *  reenable them.
- * 
- *  Note: We are dedicating SPI1 to the RH_RF95 driver. No need to mask interrupts.
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
-#if (PLATFORM_ID == PLATFORM_MSOM)
-/*
-  #  Muon             LoRa Module
-  8  MOSI to D9  SPI1 MOSI (Master Out Slave In)
-  10 MISO to D10 SPI1 MISO (Master In Slave Out)
-  11 SCK  to D2  SPI1 SCK
-  36 CS   to D3  SPI1 ChipSel
-  38 RST  to D21      Reset
-  40 G0   to D20      DIO/IRQ
-*/
-#define LORA_IRQ_PIN  D20    // G0 on LoRa board
-#define LORA_SS       D3     // Slave Select Pin aka CS
-#define LORA_RESET    D21    // Used by lora_initialize()
-#else
-/*
-  Boron            LoRa Module
-  MISO to D4  SPI1 MISO
-  MOSI to D3  SPI1 MOSI
-  SCK  to D2  SPI1 SCK
-  CS   to D9       ChipSel
-  RST  to D10      Reset
-  G0   to D6       DIO/IRQ
-*/
-#define LORA_IRQ_PIN  D6    // G0 on LoRa board
-#define LORA_SS       D10   // Slave Select Pin
-#define LORA_RESET    D9    // Used by lora_initialize()
-#endif
-#define LORA_RESET_NOACTIVITY 30 // 30 minutes
-RH_RF95 rf95(LORA_SS, LORA_IRQ_PIN, hardware_spi); // SPI1
-bool LORA_exists = false;
-uint64_t lora_alarm_timer;   // Must get a LoRa mesage by the time set here, else we call lora_initialize()
 
 /*
  * =======================================================================================================================
@@ -85,19 +51,38 @@ unsigned long long int AES_MYIV;
  */
 AES aes;
 
+
 /*
  * ======================================================================================================================
- *  LoRa Connected Rain Gauges and Soil Moisture
+ *  Singleton instance of the radio driver
+ *
+ *  The RH_RF95 driver uses interrupts to react to events in the RFM module,
+ *  such as the reception of a new packet, or the completion of transmission
+ *  of a packet.  The RH_RF95 driver interrupt service routine reads status from
+ *  and writes data to the the RFM module via the SPI interface. It is very
+ *  important therefore, that if you are using the RH_RF95 driver with another
+ *  SPI based deviced, that you disable interrupts while you transfer data to
+ *  and from that other device.  Use cli() to disable interrupts and sei() to
+ *  reenable them.
+ * 
+ *  Note: We are dedicating SPI1 to the RH_RF95 driver. No need to mask interrupts.
  * ======================================================================================================================
  */
-#define LORA_RELAY_MSGCNT     64  // Set to the number of LoRa Remote Messages we can buffer
-#define LORA_RELAY_MSG_LENGTH 256
+
+RH_RF95 rf95(LORA_SS, LORA_IRQ_PIN, hardware_spi); // SPI1
+
+bool LORA_exists = false;
+uint64_t lora_alarm_timer;   // Must get a LoRa mesage by the time set here, else we call lora_initialize()
+
+
+/*
+ * ======================================================================================================================
+ *  LoRa Relay Buffer
+ * ======================================================================================================================
+ */
+
 const char *relay_msgtypes[] = {"UNKN", "INFO", "LR"}; // Particle Message Types being received for relay
-typedef struct {
-  bool          need2log;
-  int           message_type;
-  char          message[LORA_RELAY_MSG_LENGTH];
-} LORA_MSG_RELAY_STR;
+
 LORA_MSG_RELAY_STR lora_msg_relay[LORA_RELAY_MSGCNT];
 
 

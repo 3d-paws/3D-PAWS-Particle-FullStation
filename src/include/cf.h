@@ -1,6 +1,6 @@
 /*
  * ======================================================================================================================
- *  CF.h - Configuration File - CONFIG.TXT
+ *  cf.cpp - Configuration File Functions
  * ======================================================================================================================
  */
 
@@ -43,10 +43,19 @@ sr_dark_offset=0.0
  *  Define Global Configuration File Variables
  * ======================================================================================================================
  */
-char *cf_aes_pkey=NULL;
-long cf_aes_myiv=0;
-int cf_lora_unitid=0;
-int cf_lora_txpower=0;
-int cf_lora_freq=0;
-float cf_sr_cal=0.0;
-float cf_sr_dark_offset=0.0;
+#define CF_NAME           "CONFIG.TXT"
+#define KEY_MAX_LENGTH    30                // Config File Key Length
+#define VALUE_MAX_LENGTH  30                // Config File Value Length
+#define LINE_MAX_LENGTH   VALUE_MAX_LENGTH+KEY_MAX_LENGTH+3   // =, CR, LF 
+
+// Extern variables
+extern char *cf_aes_pkey;
+extern long cf_aes_myiv;
+extern int cf_lora_unitid;
+extern int cf_lora_txpower;
+extern int cf_lora_freq;
+extern float cf_sr_cal;
+extern float cf_sr_dark_offset;
+
+// Function prototypes
+void SD_ReadConfigFile();

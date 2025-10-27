@@ -1,26 +1,37 @@
 /*
  * ======================================================================================================================
- *  EP.h - EEPROM Functions
+ *  eeprom.cpp - EEPROM Functions
  * ======================================================================================================================
  */
+#include <Particle.h>
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#else
+#include <RTClib.h>
+#endif
+
+#include "include/qc.h"
+#include "include/sdcard.h"
+#include "include/main.h"
+#include "include/output.h"
+#include "include/wrda.h"
+#include "include/eeprom.h"
 
 /*
  * ======================================================================================================================
- *  EEPROM NonVolitileMemory - stores rain totals in persistant memory
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
-typedef struct {
-    float    rgt1;       // rain gauge total today
-    float    rgp1;       // rain gauge total prior
-    float    rgt2;       // rain gauge 2 total today
-    float    rgp2;       // rain gauge 2 total prior
-    time32_t rgts;       // rain gauge timestamp of last modification
-    unsigned long n2sfp; // sd need 2 send file position
-    unsigned long checksum;
-} EEPROM_NVM;
 EEPROM_NVM eeprom;
 int eeprom_address = 0;
 bool eeprom_valid = false;
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /* 
  *=======================================================================================================================

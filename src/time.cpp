@@ -3,25 +3,42 @@
  *  TM.h - Time Management
  * ====================================================================================================================== 
  */
+#include <Particle.h>
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#else
+#include <RTClib.h>
+#endif
+
+#include "include/ssbits.h"
+#include "include/output.h"
+#include "include/support.h"
+#include "include/sensors.h"
+#include "include/main.h"
+#include "include/time.h"
 
 /*
  * ======================================================================================================================
- *  RTC Setup
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
 #if (PLATFORM_ID == PLATFORM_MSOM)
-
-#define AB1805_ADDRESS 0x69  // AM1805 RTC/Watchdog
 AB1805 ab1805(Wire);
 struct tm now;
 #else
-RTC_PCF8523 rtc;              // RTC_PCF8523 rtc;
+RTC_PCF8523 rtc;
 DateTime now;
 #endif
 
 char timestamp[128];
 bool RTC_valid = false;
 bool RTC_exists = false;
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /* 
  *=======================================================================================================================

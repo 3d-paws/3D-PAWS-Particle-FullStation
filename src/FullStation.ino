@@ -1,6 +1,6 @@
-PRODUCT_VERSION(43);
+PRODUCT_VERSION (43);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-251001v43"
+#define VERSION_INFO "FS-251027v43"
 
 /*
  *======================================================================================================================
@@ -242,8 +242,9 @@ PRODUCT_VERSION(43);
  *          Version 43 Released on 2025-10-XX
  *          2025-09-30  RJB Added support for ADS1115 (16bit ADC) i2c 0x48 and SP Lite2 Pyranometer from Kipp & Zonen
  *                          If we see the ADS1115 then we assume the Pyranometer is on adc0 
- *          2025-10-17  RJB AQS variable and function name clean
- *                          Bug fix on MUX TSM initization of tsm_id.
+ *          2025-10-17  RJB AQS variable and function name cleanup
+ *                          Bug fix on MUX TSM initialization of tsm_id.
+ *          2025-10-27  RJB Code Cleanup
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -629,9 +630,10 @@ PRODUCT_VERSION(43);
  * Files needed CONFIG.TXT OBI5M.TXT OPTAQS.TXT
  * ======================================================================================================================
  */
-
+// #include <Particle.h>
 #include <SPI.h>
 #include <Wire.h>
+
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_BME280.h>
@@ -661,79 +663,38 @@ PRODUCT_VERSION(43);
 #include <i2cMultiSm.h>
 #include <i2cArduino.h>
 
-/*
- * ======================================================================================================================
- *  Loop Timers
- * ======================================================================================================================
+/* 
+ *=======================================================================================================================
+ * Local Includes
+ *=======================================================================================================================
  */
-#define DELAY_NO_RTC               60000    // Loop delay when we have no valided RTC
-#define DEFAULT_OBS_INTERVAL           1    // 1 minute
-#define DEFAULT_OBS_TRANSMIT_INTERVAL 15    // Transmit observations every N minutes Set to 15 for 15min Transmits
+#include "include/ssbits.h"
+#include "include/qc.h"             // Quality Control Min and Max Sensor Values on Surface of the Earth
+#include "include/support.h"        // Support Functions
+#include "include/sdcard.h"         // SD Card Functions
+#include "include/cf.h"             // Configuration File Variables
+#include "include/eeprom.h"         // EEPROM Functions
+#include "include/lora.h"           // LoRa Functions    
+#include "include/output.h"         // Serial and OLED Output Functions  
+#include "include/wrda.h"           // Wind Rain Distance Air Functions
+#include "include/mux.h"            // Mux Functions for mux connected sensors
+#include "include/time.h"           // Time Management Functions
+#include "include/ps.h"             // Particle Support Functions
+#include "include/sensors.h"        // I2C Based Sensor Functions
+#include "include/info.h"           // Station Information Functions
+#include "include/statmon.h"        // Station Monitor Functions
+#include "include/obs.h"            // Observation Functions
+#include "include/main.h"
+
+
+
 
 /*
  * ======================================================================================================================
- *  Relay Power Control Pin
- * ======================================================================================================================
+ * Variables and Data Structures 
+ * =======================================================================================================================
  */
-#if PLATFORM_ID == PLATFORM_MSOM
-#define REBOOT_PIN            D27  // Trigger Watchdog or external relay to cycle power
-#else
-#define REBOOT_PIN            A0  // Trigger Watchdog or external relay to cycle power
-#define HEARTBEAT_PIN         A1  // Watchdog Heartbeat Keep Alive
-#endif
-/*
- * ======================================================================================================================
- * System Status Bits used for report health of systems - 0 = OK
- * An unsigned long is 32 bits
- * 
- * OFF =   SSB &= ~SSB_PWRON
- * ON =    SSB |= SSB_PWROFF
- * ======================================================================================================================
- */
-#define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
-#define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues
-#define SSB_RTC             0x4       // Set if RTC missing at boot
-#define SSB_OLED            0x8       // Set if OLED missing at boot, but cleared after first observation
-#define SSB_N2S             0x10      // Set when Need to Send observations exist
-#define SSB_FROM_N2S        0x20      // Set in transmitted N2S observation when finally transmitted
-#define SSB_AS5600          0x40      // Set if wind direction sensor AS5600 has issues                                                        
-#define SSB_BMX_1           0x80      // Set if Barometric Pressure & Altitude Sensor missing
-#define SSB_BMX_2           0x100     // Set if Barometric Pressure & Altitude Sensor missing
-#define SSB_HTU21DF         0x200     // Set if Humidity & Temp Sensor missing
-#define SSB_SI1145          0x400     // Set if UV index & IR & Visible Sensor missing
-#define SSB_MCP_1           0x800     // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_MCP_2           0x1000    // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_MCP_3           0x2000    // Set if MCP9808 I2C Temperature Sensor missing
-#define SSB_LORA            0x4000    // Set if LoRa Radio missing at startup
-#define SSB_SHT_1           0x8000    // Set if SHTX1 Sensor missing
-#define SSB_SHT_2           0x10000   // Set if SHTX2 Sensor missing
-#define SSB_HIH8            0x20000   // Set if HIH8000 Sensor missing
-#define SSB_VLX             0x40000   // Set if VEML7700 Sensor missing
-#define SSB_PM25AQI         0x80000   // Set if PM25AQI Sensor missing
-#define SSB_HDC_1           0x100000  // Set if HDC302x I2C Temperature Sensor missing
-#define SSB_HDC_2           0x200000  // Set if HDC302x I2C Temperature Sensor missing
-#define SSB_BLX             0x400000  // Set if BLUX30 I2C Sensor missing
-#define SSB_LPS_1           0x800000  // Set if LPS35HW I2C Sensor missing
-#define SSB_LPS_2           0x1000000 // Set if LPS35HW I2C Sensor missing
-#define SSB_TLW             0x2000000 // Set if Tinovi Leaf Wetness I2C Sensor missing
-#define SSB_TSM             0x4000000 // Set if Tinovi Soil Moisture I2C Sensor missing
-#define SSB_TMSM            0x8000000 // Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
-
-/*
-  0  = All is well, no data needing to be sent, this observation is not from the N2S file
-  16 = There is N2S data, This observation is not from the N2S file
-  32 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file did not exist. So it is the first observation from the file.
-  48 = This observation is from the N2S file. And when it was saved to the N2S file, the N2S file existed and this observation was appended.
-*/ 
-
-#define MAX_MSGBUF_SIZE 1024
-
-/*
- * ======================================================================================================================
- *  Globals
- * ======================================================================================================================
- */
-
+char versioninfo[sizeof(VERSION_INFO)];  // allocate enough space including null terminator
 char msgbuf[MAX_MSGBUF_SIZE]; // Used to hold messages
 char *msgp;                   // Pointer to message text
 char Buffer32Bytes[32];       // General storage
@@ -744,7 +705,6 @@ bool MuonWifiEnabled = false;  // Set if we find a WIFI.TXT file
 int  LED_PIN = D7;            // Built in LED
 #endif
 bool TurnLedOff = false;      // Set true in rain gauge interrupt
-unsigned long SystemStatusBits = SSB_PWRON; // Set bit 1 to 1 for initial value power on. Is set to 0 after first obs
 bool JustPoweredOn = true;    // Used to clear SystemStatusBits set during power on device discovery
 bool SendSystemInformation = true; // Send System Information to Particle Cloud. True means we will send at boot.
 
@@ -762,95 +722,13 @@ int DailyRebootCountDownTimer;
 uint64_t obs_interval = DEFAULT_OBS_INTERVAL;  // Default OBS interval 1 Minute
 uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
 
-char imsi[16] = "";  // International Mobile Subscriber Identity
-
-/*
- * ======================================================================================================================
- *  SD Card Stuff
- * ======================================================================================================================
- */
-#if (PLATFORM_ID == PLATFORM_MSOM)
-#define SD_ChipSelect D29               // Pin 24 A6/D29
-#else
-#define SD_ChipSelect D5                // GPIO 10 is Pin 10 on Feather and D5 on Particle Boron Board
-#endif
-SdFat SD;                               // File system object.
-File SD_fp;
-char SD_obsdir[] = "/OBS";              // Store our observations in this directory. At Poewer on it is created if not exist
-bool SD_exists = false;                 // Set to true if SD card found at boot
-char SD_n2s_file[] = "N2SOBS.TXT";      // Need To Send Observation file
-uint32_t SD_n2s_max_filesz = 512 * 60 * 48;  // Keep a little over 2 days. When it fills, it is deleted and we start over.
-
-char SD_sim_file[] = "SIM.TXT";         // File used to set Ineternal or External sim configuration
-char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim configuration set
-
-char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
-
-                                        
-char SD_TX5M_FILE[]  = "TXI5M.TXT";     // Transmit Interval every 5 Minutes with 1 Minute Observations
-char SD_TX10M_FILE[] = "TXI10M.TXT";    // Transmit Interval every 10 Minutes with 1 Minute Observations
-                                        // Transmit Interval every 15 Minutes with 1 Minute Observations Default
-
-char SD_OB5M_FILE[]  = "OBI5M.TXT";     // Observation Interval every 5 Minutes
-char SD_OB10M_FILE[] = "OBI10M.TXT";    // Observation Interval every 10 Minutes
-char SD_OB15M_FILE[] = "OBI15M.TXT";    // Observation Interval every 15 Minutes
-
-char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
-
-char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
-bool AQS_Enabled = false;               // if file found this is set
-int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
-int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
-
-/*
- * ======================================================================================================================
- *  Option Pin Defination Setup
- * ======================================================================================================================
- */
-#if (PLATFORM_ID == PLATFORM_MSOM) 
-#define OP1_PIN  A0     // Grove D5, PIN 29 A0/D19
-#define OP2_PIN  A1     // Grove D5, PIN 31 A1/D18
-#else
-#define OP1_PIN  A4
-#define OP2_PIN  A5
-#endif
 
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
-/*
- * ======================================================================================================================
- *  Power Management IC (bq24195) I2C 0x6B
- * ======================================================================================================================
- */
-PMIC pmic;
-
-/*
- * ======================================================================================================================
- *  Fuel Gauge IC (MAX17043) I2C 0x36
- * ======================================================================================================================
- */
-// FuelGauge fuel;
+PMIC pmic; // Power Management IC (bq24195) I2C 0x6B
+#else
+// FuelGauge fuel;  // Fuel Gauge IC (MAX17043) I2C 0x36
 #endif
 
-/*
- * ======================================================================================================================
- *  Local Code Includes - Do not change the order of the below 
- * ======================================================================================================================
- */
-#include "QC.h"                   // Quality Control Min and Max Sensor Values on Surface of the Earth
-#include "SF.h"                   // Support Functions
-#include "OP.h"                   // OutPut support for OLED and Serial Console
-#include "CF.h"                   // Configuration File Variables
-#include "TM.h"                   // Time Management
-#include "LoRa.h"                 // LoRa
-#include "Sensors.h"              // I2C Based Sensors
-#include "WRD.h"                  // Wind Rain Distance
-#include "EP.h"                   // EEPROM
-#include "SDC.h"                  // SD Card
-#include "OBS.h"                  // Do Observation Processing
-#include "MUX.h"                  // PCA9548 I2C MUX
-#include "SM.h"                   // Station Monitor
-#include "PS.h"                   // Particle Support Functions
-#include "INFO.h"                 // Station Information
 
 /*
  * ======================================================================================================================
@@ -964,7 +842,8 @@ void setup() {
   delay(2000); // Prevents usb driver crash on startup, Arduino needed this so keeping for Particle
 
   Serial_write(COPYRIGHT);
-  Output (VERSION_INFO);
+  strcpy(versioninfo, VERSION_INFO);
+  Output (versioninfo);
 
   System.enableFeature(FEATURE_RESET_INFO); 
   OutputResetReason();

@@ -1,10 +1,37 @@
 /*
  * ======================================================================================================================
- * SM.h - Station Monitor - When Jumper set Display StationMonitor()
+ * statmon.cpp - Station Monitor - When Jumper Set Main Loop runs StationMonitor()
  * ======================================================================================================================
  */
+#include <Particle.h>
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#else
+#include <RTClib.h>
+#endif
 
-bool Particle_Publish(); // Prototype this function to aviod compile function unknown issue.
+#include "include/ssbits.h"
+#include "include/mux.h"
+#include "include/sensors.h"
+#include "include/wrda.h"
+#include "include/cf.h"
+#include "include/output.h"
+#include "include/support.h"
+#include "include/time.h"
+#include "include/main.h"
+#include "include/statmon.h"
+
+/*
+ * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
+ */
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /*
  * ======================================================================================================================

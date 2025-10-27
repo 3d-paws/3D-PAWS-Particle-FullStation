@@ -1,8 +1,32 @@
 /*
  * ======================================================================================================================
- *  INFO.h - Report Information about the station at boot and when requested by DoAction on Particle Console
+ *  info.cpp - Station Information Functions
  * ======================================================================================================================
  */
+#include <Particle.h>
+#include <SdFat.h>
+
+#if (PLATFORM_ID == PLATFORM_MSOM)
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#else
+#include <RTClib.h>
+#endif
+
+#include "include/ssbits.h"
+#include "include/mux.h"
+#include "include/eeprom.h"
+#include "include/cf.h"
+#include "include/sensors.h"
+#include "include/wrda.h"
+#include "include/sdcard.h"
+#include "include/output.h"
+#include "include/lora.h"
+#include "include/support.h"
+#include "include/time.h"
+#include "include/ps.h"
+#include "include/obs.h"
+#include "include/main.h"
+#include "include/info.h"
 
  /*
   * ======================================================================================================================
@@ -68,7 +92,7 @@ bool INFO_Do() {
     Time.hour(ts), Time.minute(ts), Time.second(ts));
   writer.name("at").value(Buffer32Bytes);
 
-  writer.name("ver").value(VERSION_INFO);
+  writer.name("ver").value(versioninfo);
   writer.name("hth").value((int) SystemStatusBits);
 
   // Reboot/Reset Reason and data

@@ -1,16 +1,17 @@
 /*
  * ======================================================================================================================
- *  Output.h - OLED and Serial Console Initialization
+ *  output.cpp - OLED and Serial Console Fuctions
  * ======================================================================================================================
  */
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include "include/ssbits.h"
+#include "include/support.h"
+#include "include/main.h"
+#include "include/output.h"
 
 /*
  * ======================================================================================================================
- *  Globals
- * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
  */
 
 /*
@@ -25,23 +26,17 @@ int SCE_PIN = D8;
 #endif
 bool SerialConsoleEnabled = false;  // Variable for serial monitor control
 
-/*
- * ======================================================================================================================
- *  OLED Display
- * ======================================================================================================================
- */
-#define SCREEN_WIDTH        128 // OLED display width, in pixels
-#define OLED32_I2C_ADDRESS  0x3C // 128x32 - https://www.adafruit.com/product/4440
-#define OLED64_I2C_ADDRESS  0x3D // 128x64 - https://www.adafruit.com/product/326
-#define OLED_RESET          -1 // -1 = Not in use
-#define OLED32              (oled_type == OLED32_I2C_ADDRESS)
-#define OLED64              (oled_type == OLED64_I2C_ADDRESS)
-
 bool DisplayEnabled = true;
 int  oled_type = 0;
 char oled_lines[8][23];
 Adafruit_SSD1306 display32(SCREEN_WIDTH, 32, &Wire, OLED_RESET);
 Adafruit_SSD1306 display64(SCREEN_WIDTH, 64, &Wire, OLED_RESET);
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
 
 /*
  * ======================================================================================================================
