@@ -1413,6 +1413,10 @@ double mslp_calculate(float Ts, float RH, float ps, int station_height) {
   double T, Tv, P0;
   double Td;
 
+  if ((Ts == QC_ERR_T) || (RH == QC_ERR_RH) || (ps == QC_ERR_P) || (station_height == QC_ERR_ELEV) ) {
+    return (QC_ERR_P);
+  }
+
   // Calculate dew point Td (deg C) from Ts and RH
   Td = Ts - ((100.0 - RH) / 5.0);
 
