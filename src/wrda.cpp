@@ -150,7 +150,6 @@ void as5600_initialize() {
   if (Wire.endTransmission()) {
     msgp = (char *) "WD:NF";
     AS5600_exists = false;
-    SystemStatusBits |= SSB_AS5600;  // Turn On Bit
   }
   else {
     msgp = (char *) "WD:OK";
@@ -328,7 +327,6 @@ int Wind_SampleDirection() {
         Output ("WD Online");
       }
       AS5600_exists = true;           // We made it 
-      SystemStatusBits &= ~SSB_AS5600; // Turn Off Bit
       
       AS5600_hi_raw = AS5600_hi_raw << 8; //shift raw angle hi 8 left
       AS5600_hi_raw = AS5600_hi_raw | AS5600_lo_raw; //AND high and low raw angle value
@@ -341,7 +339,6 @@ int Wind_SampleDirection() {
       }
     }
   }
-  SystemStatusBits |= SSB_AS5600;  // Turn On Bit
   return (-1); // Not the best value to return 
 }
 

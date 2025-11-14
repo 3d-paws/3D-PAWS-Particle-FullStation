@@ -12,11 +12,15 @@
 #include <Particle.h>
 #include <SdFat.h>
 
+#include "include/qc.h"
+#include "include/cf.h"
+#include "include/support.h"
 #include "include/ssbits.h"
 #include "include/main.h"
 #include "include/sdcard.h"
 #include "include/lora.h"
 #include "include/output.h"
+#include "include/evt.h"
 #include "include/cf.h"
 
 /*
@@ -29,8 +33,20 @@ long cf_aes_myiv=0;
 int cf_lora_unitid=0;
 int cf_lora_txpower=0;
 int cf_lora_freq=0;
+int cf_elevation=QC_ERR_ELEV;   // Supports MSLP and Evapotranspiration
+
+#ifdef ENABLE_Evapotranspiration
+// Used for Evapotranspiration
+float cf_lat_deg=0.0;
+float cf_lon_deg=0.0;
+float cf_albedo=0.0;
+float cf_crop_kc=0.0;
+
+// Used for Irradiance Calibration
 float cf_sr_cal=0.0;
 float cf_sr_dark_offset=0.0;
+#endif
+
 
 /*
  * ======================================================================================================================
@@ -235,32 +251,82 @@ long SD_findLong(const __FlashStringHelper * key) {
  * =======================================================================================================================
  */
 void SD_ReadConfigFile() {
-  cf_aes_pkey     = SD_findCharStr(F("aes_pkey"));
-  sprintf(msgbuf, "CF:aes_pkey=[%s]", cf_aes_pkey); Output (msgbuf);
 
-  cf_aes_myiv     = SD_findLong(F("aes_myiv"));
-  sprintf(msgbuf, "CF:aes_myiv=[%lu]", cf_aes_myiv);   Output (msgbuf);
+  if (SD_exists && SD.exists(CF_NAME)) {
 
-  cf_lora_unitid  = SD_findInt(F("lora_unitid"));
-  sprintf(msgbuf, "CF:lora_unitid=[%d]", cf_lora_unitid); Output (msgbuf);
+    cf_aes_pkey     = SD_findCharStr(F("aes_pkey"));
+    sprintf(msgbuf, "CF:aes_pkey=[%s]", cf_aes_pkey); Output (msgbuf);
 
-  cf_lora_txpower = SD_findInt(F("lora_txpower"));
-  sprintf(msgbuf, "CF:lora_txpower=[%d]", cf_lora_txpower); Output (msgbuf);
+    cf_aes_myiv     = SD_findLong(F("aes_myiv"));
+    sprintf(msgbuf, "CF:aes_myiv=[%lu]", cf_aes_myiv);   Output (msgbuf);
 
-  cf_lora_freq   = SD_findInt(F("lora_freq"));
-  sprintf(msgbuf, "CF:lora_freq=[%d]", cf_lora_freq); Output (msgbuf);
+    cf_lora_unitid  = SD_findInt(F("lora_unitid"));
+    sprintf(msgbuf, "CF:lora_unitid=[%d]", cf_lora_unitid); Output (msgbuf);
 
-#if PLATFORM_ID != PLATFORM_MSOM
-  cf_sr_cal   = SD_findFloat(F("sr_cal"));
-  sprintf(msgbuf, "CF:sr_cal=[%d.%02d]", 
-    (int)cf_sr_cal, (int)(cf_sr_cal*100)%100); 
-  Output (msgbuf);
+    cf_lora_txpower = SD_findInt(F("lora_txpower"));
+    sprintf(msgbuf, "CF:lora_txpower=[%d]", cf_lora_txpower); Output (msgbuf);
 
-  cf_sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
-  sprintf(msgbuf, "CF:sr_dark_offset=[%d.%02d]", 
-    (int) cf_sr_dark_offset, (int)(cf_sr_dark_offset*100)%100); 
-  Output (msgbuf);
+    cf_lora_freq   = SD_findInt(F("lora_freq"));
+    sprintf(msgbuf, "CF:lora_freq=[%d]", cf_lora_freq); Output (msgbuf);
+
+#ifdef ENABLE_Evapotranspiration
+    cf_sr_cal   = SD_findFloat(F("sr_cal"));
+    sprintf(msgbuf, "CF:sr_cal=[%d.%02d]", 
+      (int)cf_sr_cal, (int)(cf_sr_cal*100)%100); 
+    Output (msgbuf);
+
+    cf_sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
+    sprintf(msgbuf, "CF:sr_dark_offset=[%d.%02d]", 
+      (int) cf_sr_dark_offset, (int)(cf_sr_dark_offset*100)%100); 
+    Output (msgbuf);
 #endif
+  }
+  else {
+    sprintf(msgbuf, "CF:NO %s", CF_NAME); Output (msgbuf);
+    Output(msgbuf);
+  }
 }
 
+/* 
+ * =======================================================================================================================
+ * SD_ReadElevationFile()
+ * =======================================================================================================================
+ */
+void SD_ReadElevationFile() {
+  if (SD_exists && SD.exists(SD_ELEV_FILE)) {
+    File elevfile = SD.open(SD_ELEV_FILE, FILE_READ);
+    if (elevfile) {
+      char buf[16];  // Enough for an int including sign and null terminator
+      size_t idx = 0;
+      while (elevfile.available() && idx < sizeof(buf) - 1) {
+        char c = elevfile.read();
+        if (c == '\n' || c == '\r') {
+          break;
+        }
+        buf[idx++] = c;
+      }
+      buf[idx] = '\0';  // Null-terminate the string
+      elevfile.close();
 
+      if (isValidNumberString(buf)) {
+        int tmpElev = atoi(buf);  // convert to int
+
+        // Quality check
+        if (tmpElev >= QC_MIN_ELEV && tmpElev <= QC_MAX_ELEV) {
+          cf_elevation = tmpElev;
+        } else {
+          sprintf(msgbuf, "ELEV:QCERR %d", tmpElev);
+        }
+      }
+      else {
+        sprintf(msgbuf, "ELEV:!NUMERIC");
+      }
+    } else {
+      sprintf(msgbuf, "ELEV:OPENERR %s", SD_ELEV_FILE);
+    }
+  }
+  else {
+    sprintf(msgbuf, "ELEV:NO %s", SD_ELEV_FILE); Output (msgbuf);
+  }
+  Output(msgbuf);
+}

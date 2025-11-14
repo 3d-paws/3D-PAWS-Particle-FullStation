@@ -1,6 +1,6 @@
 PRODUCT_VERSION (43);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-251027v43"
+#define VERSION_INFO "FS-251110v43"
 
 /*
  *======================================================================================================================
@@ -239,12 +239,19 @@ PRODUCT_VERSION (43);
  *          Version 42 Released on 2025-09-25
  *          2025-09-25  RJB Bug fix. Had obs tag names of length 6 bumped to 12.
  * 
- *          Version 43 Released on 2025-10-XX
+ *          Version 43 Released on 2025-11-XX
  *          2025-09-30  RJB Added support for ADS1115 (16bit ADC) i2c 0x48 and SP Lite2 Pyranometer from Kipp & Zonen
  *                          If we see the ADS1115 then we assume the Pyranometer is on adc0 
  *          2025-10-17  RJB AQS variable and function name cleanup
  *                          Bug fix on MUX TSM initialization of tsm_id.
- *          2025-10-27  RJB Code Cleanup
+ *          2025-10-27  RJB Code Cleanup, Added MSLP, Added Elev ELEV.TXT SETELEV:xxxx
+ *          2025-11-10  RJB Added support for Evapotranspiration, Will report ET and ETc on the hour as Particle Event type ET
+ *                          Code can be compiled out by disabling Macro ENABLE_Evapotranspiration
+ *                          Corrected time reporting if AQS mode enabled but no sensor.
+ *                          Added RTC to INFO
+ *                          Removing sensors from system status bits. We have INFO.
+ *                          Removed the I2C_Check_Sensors()
+ *                          Distance Sensor raw reading "op1r" now has sensor type adjustment op1r = in_ReadAvg(OP1_PIN) * dg_adjustment;
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -630,38 +637,6 @@ PRODUCT_VERSION (43);
  * Files needed CONFIG.TXT OBI5M.TXT OPTAQS.TXT
  * ======================================================================================================================
  */
-// #include <Particle.h>
-#include <SPI.h>
-#include <Wire.h>
-
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BMP280.h>
-#include <Adafruit_BME280.h>
-#include <Adafruit_BMP3XX.h>
-#include <Adafruit_HTU21DF.h>
-#include <Adafruit_MCP9808.h>
-#include <Adafruit_SI1145.h>
-#include <Adafruit_SHT31.h>
-#include <Adafruit_VEML7700.h>
-#include <Adafruit_PM25AQI.h>
-#include <Adafruit_HDC302x.h>
-#include <Adafruit_LPS35HW.h>
-#if (PLATFORM_ID == PLATFORM_MSOM)
-#include <AB1805_RK.h>    // On board WatchDog Power Management
-#include <location.h>     // from particle-som-gnss library
-#else
-#include <RTClib.h>
-#include <Adafruit_ADS1X15.h>
-#endif
-#include <SdFat.h>
-#include <RH_RF95.h>
-#include <AES.h>
-
-#if (PLATFORM_ID != PLATFORM_MSOM)
-#include <LeafSens.h>
-#endif
-#include <i2cMultiSm.h>
-#include <i2cArduino.h>
 
 /* 
  *=======================================================================================================================
@@ -681,13 +656,11 @@ PRODUCT_VERSION (43);
 #include "include/time.h"           // Time Management Functions
 #include "include/ps.h"             // Particle Support Functions
 #include "include/sensors.h"        // I2C Based Sensor Functions
+#include "include/evt.h"           // Evapotranspiration Functions
 #include "include/info.h"           // Station Information Functions
 #include "include/statmon.h"        // Station Monitor Functions
 #include "include/obs.h"            // Observation Functions
 #include "include/main.h"
-
-
-
 
 /*
  * ======================================================================================================================
@@ -872,13 +845,11 @@ void setup() {
   // Remove function this when we determine all sites are at release 40 or greater
   SD_A4A5_Rename();
 
-  if (SD_exists && SD.exists(CF_NAME)) {
-    SD_ReadConfigFile();
-  }
-  else {
-    sprintf(msgbuf, "CF:NO %s", CF_NAME); Output (msgbuf);
-    Output(msgbuf);
-  }
+  // If config file exists it is opened and read
+  SD_ReadConfigFile();
+
+  // If elevation file exists it is opened, read and elevation set
+  SD_ReadElevationFile();
 
   // Display EEPROM Information 
   EEPROM_Dump();
@@ -981,9 +952,9 @@ void setup() {
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
-#else
-  ads_initialize();   // shortwave radiation from pyranometer via 16bit A/D
 #endif
+
+
 
   // Scan for i2c Devices and Sensors
   mux_initialize();
@@ -1005,8 +976,6 @@ void setup() {
   hdc_initialize();
   lps_initialize();
 
-
-
   // Tinovi Mositure Sensors
 #if (PLATFORM_ID != PLATFORM_MSOM)
   tlw_initialize();
@@ -1017,6 +986,12 @@ void setup() {
   wbt_initialize();
   hi_initialize();
   wbgt_initialize();
+  mslp_initialize();
+
+#ifdef ENABLE_Evapotranspiration
+  evt_initialize();   // checks for shortwave radiation from pyranometer via 16bit A/D
+                      // Requires SHT_1_exists & AS5600_exists to be true for Evapotranspiration to run 
+#endif
   
   // Initialize RH_RF95 LoRa Module
   lora_initialize();
@@ -1105,11 +1080,10 @@ void loop() {
 
       // Perform an Observation, save in OBS structure, Write to SD
       if ( (lastOBS == 0) || (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) ) {
-        I2C_Check_Sensors(); // Make sure Sensors are online
         OBS_Do();
       }
 
-      // Time to Enable Network and Send Observations we have collected
+      // Time to Send Observations we have collected
       if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > (obs_tx_interval * 60 * 1000)) ) {
         if (Particle.connected()) {
           Output ("Connected");
@@ -1139,6 +1113,11 @@ void loop() {
           JPO_ClearBits();
         }
       }
+
+#ifdef ENABLE_Evapotranspiration
+      // Samples once a minute and reports on the hour 
+      evt_do();
+#endif
 
 #if PLATFORM_ID == PLATFORM_ARGON
       // See if it's been an hour without a network connection and transmission of data

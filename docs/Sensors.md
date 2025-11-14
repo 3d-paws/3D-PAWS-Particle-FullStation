@@ -90,6 +90,7 @@ Sensors
 | hi       | SHT31 Heat Index Temperature            |
 | wbt      | MCP9808 & SHT31 Wet Bulb Temperature|
 | wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature            |
+| mlsp     | Mean Sea Level Pressure |
 | tlww     | Tinovi LeafSens Wetness           |
 | tlwt     | Tinovi LeafSens Temp            |
 | tsmt     | Tinovi Soil Moisture Temperature |
@@ -411,7 +412,53 @@ double wbgt_using_hi(double HIc) {
 ```
 </div>
 
+#### Mean Sea Level Pressure
+- Reported as "mslp" if station elevation is set "ELEV.TXT" and station is configured with a SHT and BMP sensors. 
 
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 600px; border: 1px solid black; padding: 10px;">
+
+```C
+/* 
+ *=======================================================================================================================
+ * mslp_caculate() - mean sea level pressure caculate
+ *  Inputs: 
+ *    Surface air temperature Ts (deg C)  sht1_temp       Ts
+ *    Relative humidity RH (%%)           sht1_humid      RH
+ *    Station pressure ps (hPa)           bmx_1_pressure  ps
+ *    Station height (m)                  cf_elevation    station_height
+ *=======================================================================================================================
+ */
+double mslp_calculate(float Ts, float RH, float ps, int station_height) {
+  double e, r, q;
+  double L = 0.0065;   // Lapse rate (K/m)
+  double T, Tv, P0;
+  double Td;
+
+  // Calculate dew point Td (deg C) from Ts and RH
+  Td = Ts - ((100.0 - RH) / 5.0);
+
+  // Step 1: Vapor pressure (hPa)
+  e = 6.112 * exp((17.67 * Td) / (Td + 243.5));
+
+  // Step 2: Mixing ratio r (kg/kg)
+  r = 0.622 * e / (ps - e);
+
+  // Step 3: Specific humidity q (kg/kg)
+  q = r / (1.0 + r);
+
+  // Mean temperature in Kelvin
+  T = (Ts + 273.15) + (L * station_height / 2.0);
+
+  // Virtual temperature (K)
+  Tv = T * (1.0 + 0.61 * q);
+
+  // Calculate mean sea level pressure (hPa) using the exponential formula
+  P0 = ps * exp((9.80665 * station_height) / (287.05 * Tv));
+
+  return (P0);
+}
+```
+</div>
 
 
 

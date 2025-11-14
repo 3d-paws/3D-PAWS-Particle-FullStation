@@ -56,13 +56,15 @@ char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. 
 
 char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
 
-char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";         // File used to set pin as a Distance Gauge
-char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";         // File used to set pin as a 2nd Rain Gauge
-char SD_OP1_RAW_FILE[]  = "OP1RAW.TXT";          // File used to set pin as generic analog device connected
+char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";// File used to set pin as a Distance Gauge
+char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";// File used to set pin as a 2nd Rain Gauge
+char SD_OP1_RAW_FILE[]  = "OP1RAW.TXT"; // File used to set pin as generic analog device connected
 
-char SD_OP2_RAW_FILE[]  = "OP2RAW.TXT";          // File used to set pin as generic analog device connected
+char SD_OP2_RAW_FILE[]  = "OP2RAW.TXT"; // File used to set pin as generic analog device connected
 
-char SD_OP1_D5M_FILE[] = "OP1D5M.TXT";        // Multiply by 1.25 for 5m Distance Gauge
+char SD_OP1_D5M_FILE[] = "OP1D5M.TXT";  // Multiply by 1.25 for 5m Distance Gauge
+
+char SD_ELEV_FILE[] = "ELEV.TXT";       // Set the station elevation for MSLP calculation            
 
 
 /*
@@ -394,7 +396,6 @@ void SD_N2S_Publish() {
                 break;
               }
               else {
-                I2C_Check_Sensors(); // Make sure Sensors are online
                 OBS_Do();                  
               }
             }
@@ -439,4 +440,27 @@ void SD_N2S_Publish() {
         Output ("N2S->OPEN:ERR");
     }
   }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_A4A5_Rename() - Rename A4 A5 files to OP1 and OP2 names
+ * 
+ *   A4DIST.TXT -> OP1DIST.TXT
+ *   A4RAIN.TXT -> OP1RAIN.TXT
+ *   A4RAW.TXT  -> OP1RAW.TXT
+ *   A5RAW.TXT  -> OP2RAW.TXT
+ *   5MDIST.TXT -> OP1D5M.TXT
+ *=======================================================================================================================
+ */
+void SD_A4A5_Rename() {
+  Output ("A4A5FU:START");
+  if (SD_exists) {
+    SD_RenameFile ((char*) "A4DIST.TXT", SD_OP1_DIST_FILE);
+    SD_RenameFile ((char*) "A4RAIN.TXT", SD_OP1_RAIN_FILE);
+    SD_RenameFile ((char*) "A4RAW.TXT",  SD_OP1_RAW_FILE);
+    SD_RenameFile ((char*) "A5RAW.TXT",  SD_OP2_RAW_FILE);
+    SD_RenameFile ((char*) "5MDIST.TXT", SD_OP1_D5M_FILE);
+  }
+  Output ("A4A5FU:END");
 }

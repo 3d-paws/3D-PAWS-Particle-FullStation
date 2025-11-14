@@ -37,4 +37,3 @@ int callback_imsi(int type, const char* buf, int len, char* cimi);
 
 void OBI_AQS_Initialize();
 void OBI_TXI_Initialize();
-void SD_A4A5_Rename();

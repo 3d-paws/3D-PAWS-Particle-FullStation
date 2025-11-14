@@ -3,10 +3,16 @@
  *  time.h - Time Management Definations
  * ======================================================================================================================
  */
-
 #if (PLATFORM_ID == PLATFORM_MSOM)
 #define AB1805_ADDRESS 0x69  // AM1805 RTC/Watchdog
+
+#include <AB1805_RK.h>    // On board WatchDog Power Management
+#include <location.h>     // from particle-som-gnss library
+#else
+#include <RTClib.h>
+#include <Adafruit_ADS1X15.h>
 #endif
+
 
 // Extern variables
 #if (PLATFORM_ID == PLATFORM_MSOM)

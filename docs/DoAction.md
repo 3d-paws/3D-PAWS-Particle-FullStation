@@ -8,6 +8,7 @@ On the view device screen on the Particle Console there is a FUNCTIONS area at t
 * SEND - Send queued observations.
 * INFO - Trigger station to send station information. Event type "INFO".
 * CRT - Clear rain totals that are stored in nvram.
+* SETELEV:xxxx - Set station elevation. Replace xxxx with elevation in meters. Creates file ELEV.TXT
 
 Observation Timing and Reporting
 * TXI5M - Set 1 Minute Observations, Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes other files.

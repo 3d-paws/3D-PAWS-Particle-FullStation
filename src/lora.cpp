@@ -264,8 +264,6 @@ void lora_initialize() {
       Output ("LORA OK");
     }
     else {
-      SystemStatusBits |= SSB_LORA;  // Turn On Bit
-    
       Output ("LORA NF");
     }
   }

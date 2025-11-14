@@ -28,6 +28,9 @@ At the **top level of the SD card**, create a file named `WIFI.TXT`.
 
     AuthType,ssid,password
 
+    WPA2,MyHomeWifi,Pa$$w0rD!
+
+
 #### AuthType Options
 - `UNSEC`  
 - `WEP`  

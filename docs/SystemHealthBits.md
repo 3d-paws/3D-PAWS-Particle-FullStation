@@ -2,7 +2,18 @@
 [←Top](../README.md)<BR>
 A register is maintained where its individual bits correspond to various state information and sensor state. This register is reported in each observation as a decimal number with tag id "hth".<BR>
 <BR>
-Many of the below bits will be set at initialization. Then cleared after the first observation is made after startup. On some sensors, if they existed then disappeared, a bit will be set until the sensor returns or a reboot occurs. 
+Many of the below bits will be set at initialization. Then cleared after the first observation is made after startup. 
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
+<pre>
+#define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
+#define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues
+#define SSB_N2S             0x4       // Set when Need to Send observations exist
+#define SSB_FROM_N2S        0x8       // Set in transmitted N2S observation when finally transmitted
+#define SSB_RTC             0x10      // Set if RTC missing at boot
+</pre>
+</div>
+
+Status bits for v42 and before releases
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
 <pre>
 #define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
@@ -33,16 +44,5 @@ Many of the below bits will be set at initialization. Then cleared after the fir
 #define SSB_TLW             0x2000000 // Set if Tinovi Leaf Wetness I2C Sensor missing
 #define SSB_TSM             0x4000000 // Set if Tinovi Soil Moisture I2C Sensor missing
 #define SSB_TMSM            0x8000000 // Set if Tinovi MultiLevel Soil Moisture I2C Sensor missing
-</pre>
-</div>
-
-Future direction for this feature will be to just include the below with transmitted observations. The INFO feature provides more information about station configure in a more readable format. 
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
-<pre>
-#define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
-#define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues
-#define SSB_RTC             0x4       // Set if RTC missing at boot
-#define SSB_N2S             0x10      // Set when Need to Send observations exist
-#define SSB_FROM_N2S        0x20      // Set in transmitted N2S observation when finally transmitted
 </pre>
 </div>

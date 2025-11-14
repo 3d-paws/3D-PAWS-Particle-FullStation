@@ -5,6 +5,8 @@
  */
 #include <Particle.h>
 
+#include "include/qc.h"
+#include "include/cf.h"
 #include "include/sdcard.h"
 #include "include/eeprom.h"
 #include "include/support.h"
@@ -782,6 +784,40 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+  else if (s.indexOf("SETELEV:" == 0)) { // Pattern start of string aka 0 offset
+    Output("DoAction:SETELEV");
+    String rest = s.substring(8);   // get part after "SETELEV:", 8 = length of 
+    long elevation = rest.toInt();  // convert to integer
+    if ((String(elevation) == rest) && (elevation >= QC_MIN_ELEV) && (elevation <= QC_MAX_ELEV)) {
+      if (SD_exists) {
+        if (SD.exists(SD_ELEV_FILE)) { 
+          SD_RemoveFile (SD_ELEV_FILE);
+        }
+        File file = SD.open(SD_ELEV_FILE, FILE_WRITE);
+        if (file) {
+          file.print(elevation);  // write the elevation to the file
+          file.close();           // save and close the file
+          sprintf (Buffer32Bytes, "SETELEV:%ld OK", elevation);
+
+          cf_elevation = elevation; // Set running value of elevation
+        } 
+        else {
+          sprintf (Buffer32Bytes, "SETELEV:%ld FAIL", elevation); 
+        }
+        Output (Buffer32Bytes);
+      }
+      else {
+        Output("SETELEV, SD NF"); 
+        return(-1);      
+      }
+    }
+    else {
+      Output("SETELEV, INVALID ELEV#"); 
+      return(-2);           
+    }
+    return(0);
+  }
+
   else {
     Output("DoAction:UKN"); 
     return(-1);
@@ -1397,6 +1433,8 @@ void OBI_AQS_Initialize() {
 
       pinMode (OP2_PIN, OUTPUT);
       digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
+
+      // We will only go in AQS mode if the sensor is truely there
       AQS_Enabled = true;
       AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
                                                      // to account for the AQS warmup time and 10s for sampling
@@ -1468,25 +1506,4 @@ void OBI_TXI_Initialize() {
   Output(msgbuf);  
 }
 
-/* 
- *=======================================================================================================================
- * SD_A4A5_Rename() - Rename A4 A5 files to OP1 and OP2 names
- * 
- *   A4DIST.TXT -> OP1DIST.TXT
- *   A4RAIN.TXT -> OP1RAIN.TXT
- *   A4RAW.TXT  -> OP1RAW.TXT
- *   A5RAW.TXT  -> OP2RAW.TXT
- *   5MDIST.TXT -> OP1D5M.TXT
- *=======================================================================================================================
- */
-void SD_A4A5_Rename() {
-  Output ("A4A5FU:START");
-  if (SD_exists) {
-    SD_RenameFile ((char*) "A4DIST.TXT", SD_OP1_DIST_FILE);
-    SD_RenameFile ((char*) "A4RAIN.TXT", SD_OP1_RAIN_FILE);
-    SD_RenameFile ((char*) "A4RAW.TXT",  SD_OP1_RAW_FILE);
-    SD_RenameFile ((char*) "A5RAW.TXT",  SD_OP2_RAW_FILE);
-    SD_RenameFile ((char*) "5MDIST.TXT", SD_OP1_D5M_FILE);
-  }
-  Output ("A4A5FU:END");
-}
+

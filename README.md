@@ -1,10 +1,10 @@
 # 3D-PAWS Particle Full Station
 
-Last Updated: 2025-09-01
+Last Updated: 2025-10-08
 
 ## Description
 
-This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and aftere. See [README_v39.md](docs/README_v39.md) for prior releases.
+This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and after. See [README_v39.md](docs/README_v39.md) for prior releases.
 ## Features
 
 ### [Serial Monitor](docs/SerialMonitor.md)
@@ -42,6 +42,9 @@ Receive LoRa messages for LoRa Remote devices. Transmit the message to Particle 
 
 ### [Sensor Information](docs/Sensors.md)
 Information about supported Sensors
+
+### [Evapotranspiration Information](docs/EVT.md)
+Information about Evapotranspiration
 
 ### [Station Information (INFO)](docs/INFO.md)
 Information about Particle message type INFO and INFO.TXT file.

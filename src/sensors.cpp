@@ -192,22 +192,19 @@ bool PMTS_exists = false;
 
 /*
  * ======================================================================================================================
- *  Adafruit ADS1115 4-Channel ADC Breakout used with SP Lite2 Pyranometer from Kipp & Zonen
- * ======================================================================================================================
- */
-#if (PLATFORM_ID != PLATFORM_MSOM)
-Adafruit_ADS1115 ads;
-bool ADS_exists = false;
-#endif
-
-/*
- * ======================================================================================================================
  *  AQS
  * ======================================================================================================================
  */
 bool AQS_Enabled = false;               // if file found this is set
 int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
 int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
+
+/* 
+ *=======================================================================================================================
+ * MSLP - Mean sea level pressure 
+ *=======================================================================================================================
+ */
+bool MSLP_exists = false;
 
 /*
  * ======================================================================================================================
@@ -341,7 +338,6 @@ void bmx_initialize() {
       if (!bmp1.begin(BMX_ADDRESS_1)) { 
         msgp = (char *) "BMP1 ERR";
         BMX_1_exists = false;
-        SystemStatusBits |= SSB_BMX_1;  // Turn On Bit          
       }
       else {
         BMX_1_exists = true;
@@ -356,7 +352,6 @@ void bmx_initialize() {
         if (!bm31.begin_I2C(BMX_ADDRESS_1)) {  // Perhaps it is a BMP390
           msgp = (char *) "BMX1 ERR";
           BMX_1_exists = false;
-          SystemStatusBits |= SSB_BMX_1;  // Turn On Bit          
         }
         else {
           BMX_1_exists = true;
@@ -377,7 +372,6 @@ void bmx_initialize() {
       if (!bm31.begin_I2C(BMX_ADDRESS_1)) { 
         msgp = (char *) "BM31 ERR";
         BMX_1_exists = false;
-        SystemStatusBits |= SSB_BMX_1;  // Turn On Bit          
       }
       else {
         BMX_1_exists = true;
@@ -400,7 +394,6 @@ void bmx_initialize() {
       if (!bmp2.begin(BMX_ADDRESS_2)) { 
         msgp = (char *) "BMP2 ERR";
         BMX_2_exists = false;
-        SystemStatusBits |= SSB_BMX_2;  // Turn On Bit          
       }
       else {
         BMX_2_exists = true;
@@ -415,7 +408,6 @@ void bmx_initialize() {
         if (!bm32.begin_I2C(BMX_ADDRESS_2)) {  // Perhaps it is a BMP390
           msgp = (char *) "BMX2 ERR";
           BMX_2_exists = false;
-          SystemStatusBits |= SSB_BMX_2;  // Turn On Bit          
         }
         else {
           BMX_2_exists = true;
@@ -436,7 +428,6 @@ void bmx_initialize() {
       if (!bm32.begin_I2C(BMX_ADDRESS_2)) { 
         msgp = (char *) "BM32 ERR";
         BMX_2_exists = false;
-        SystemStatusBits |= SSB_BMX_2;  // Turn On Bit          
       }
       else {
         BMX_2_exists = true;
@@ -465,7 +456,6 @@ void htu21d_initialize() {
   if (!htu.begin()) {
     msgp = (char *) "HTU NF";
     HTU21DF_exists = false;
-    SystemStatusBits |= SSB_HTU21DF;  // Turn On Bit
   }
   else {
     HTU21DF_exists = true;
@@ -487,7 +477,6 @@ void mcp9808_initialize() {
   if (!mcp1.begin(MCP_ADDRESS_1)) {
     msgp = (char *) "MCP1 NF";
     MCP_1_exists = false;
-    SystemStatusBits |= SSB_MCP_1;  // Turn On Bit
   }
   else {
     MCP_1_exists = true;
@@ -500,7 +489,6 @@ void mcp9808_initialize() {
   if (!mcp2.begin(MCP_ADDRESS_2)) {
     msgp = (char *) "MCP2 NF";
     MCP_2_exists = false;
-    SystemStatusBits |= SSB_MCP_2;  // Turn On Bit
   }
   else {
     MCP_2_exists = true;
@@ -513,7 +501,6 @@ void mcp9808_initialize() {
   if (!mcp3.begin(MCP_ADDRESS_3)) {
     msgp = (char *) "MCP3 NF";
     MCP_3_exists = false;
-    SystemStatusBits |= SSB_MCP_3;  // Turn On Bit
   }
   else {
     MCP_3_exists = true;
@@ -526,7 +513,6 @@ void mcp9808_initialize() {
   if (!mcp4.begin(MCP_ADDRESS_4)) {
     msgp = (char *) "MCP4 NF";
     MCP_4_exists = false;
-    // SystemStatusBits |= SSB_MCP_4;  // Turn On Bit
   }
   else {
     MCP_4_exists = true;
@@ -548,7 +534,6 @@ void sht_initialize() {
   if (!sht1.begin(SHT_ADDRESS_1)) {
     msgp = (char *) "SHT1 NF";
     SHT_1_exists = false;
-    SystemStatusBits |= SSB_SHT_1;  // Turn On Bit
   }
   else {
     SHT_1_exists = true;
@@ -561,7 +546,6 @@ void sht_initialize() {
   if (!sht2.begin(SHT_ADDRESS_2)) {
     msgp = (char *) "SHT2 NF";
     SHT_2_exists = false;
-    SystemStatusBits |= SSB_SHT_2;  // Turn On Bit
   }
   else {
     SHT_2_exists = true;
@@ -585,7 +569,6 @@ void hih8_initialize() {
   else {
     msgp = (char *) "HIH8 NF";
     HIH8_exists = false;
-    SystemStatusBits |= SSB_HIH8;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -864,11 +847,10 @@ double wbgt_using_wbt(double Ta, double Tg, double Tw) {
 void si1145_initialize() {
   Output("SI1145:INIT");
   
-  // SSB_SI1145 UV index & IR & Visible Sensor (I2C ADDRESS = 0x60)
+  // SI1145 UV index & IR & Visible Sensor (I2C ADDRESS = 0x60)
   if (! uv.begin(&Wire)) {
     Output ("SI:NF");
     SI1145_exists = false;
-    SystemStatusBits |= SSB_SI1145;  // Turn On Bit
   }
   else {
     SI1145_exists = true;
@@ -927,7 +909,6 @@ void vlx_initialize() {
   else {
     msgp = (char *) "VLX NF";
     VEML7700_exists = false;
-    SystemStatusBits |= SSB_VLX;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -977,7 +958,6 @@ void blx_initialize() {
   else {
     BLX_exists = false;
     msgp = (char *) "BLX:NF";
-    SystemStatusBits |= SSB_BLX;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -1069,7 +1049,6 @@ void pm25aqi_initialize() {
   if (Wire.endTransmission()) {
     msgp = (char *) "PM:NF";
     PM25AQI_exists = false;
-    SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
   }
   else {
     if (! pmaq.begin_I2C()) {      // connect to the sensor over I2C
@@ -1215,7 +1194,6 @@ void hdc_initialize() {
   if (!hdc1.begin(HDC_ADDRESS_1, &Wire)) {
     msgp = (char *) "HDC1 NF";
     HDC_1_exists = false;
-    SystemStatusBits |= SSB_HDC_1;  // Turn On Bit
   }
   else {
     double t,h;
@@ -1230,7 +1208,6 @@ void hdc_initialize() {
   if (!hdc2.begin(HDC_ADDRESS_2, &Wire)) {
     msgp = (char *) "HDC2 NF";
     HDC_2_exists = false;
-    SystemStatusBits |= SSB_HDC_2;  // Turn On Bit
   }
   else {
     double t,h;
@@ -1254,7 +1231,6 @@ void lps_initialize() {
   if (!lps1.begin_I2C(LPS_ADDRESS_1, &Wire)) {
     msgp = (char *) "LPS1 NF";
     LPS_1_exists = false;
-    SystemStatusBits |= SSB_LPS_1;  // Turn On Bit
   }
   else {
     [[maybe_unused]] float t,p;
@@ -1270,7 +1246,6 @@ void lps_initialize() {
   if (!lps2.begin_I2C(LPS_ADDRESS_2, &Wire)) {
     msgp = (char *) "LPS2 NF";
     LPS_2_exists = false;
-    SystemStatusBits |= SSB_LPS_2;  // Turn On Bit
   }
   else {
     [[maybe_unused]] float t,p;
@@ -1300,7 +1275,6 @@ void tlw_initialize() {
     tlw.init(TLW_ADDRESS);
     msgp = (char *) "TLW OK";
     TLW_exists = true;
-    SystemStatusBits |= SSB_TLW;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -1323,7 +1297,6 @@ void tsm_initialize() {
     tsm.init(TSM_ADDRESS);
     msgp = (char *) "TSM OK";
     TSM_exists = true;
-    SystemStatusBits |= SSB_TSM;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -1345,7 +1318,6 @@ void tmsm_initialize() {
     tmsm.init(TMSM_ADDRESS);
     msgp = (char *) "TMSM OK";
     TMSM_exists = true;
-    SystemStatusBits |= SSB_TMSM;  // Turn On Bit
   }
   Output (msgp);
 }
@@ -1396,293 +1368,71 @@ void pmts_initialize() {
     Output (msgbuf);
   }
 }
-#else
+#endif
 
-/*
- * ======================================================================================================================
- * readIrradiance() - via ADS with SP Lite2 Pyranometer from Kipp & Zonen on 0 & 1 ports
+
+
+/* 
+ *=======================================================================================================================
+ * mslp_initialize() - mean sea level pressure init MSLP_exists if all the input exist.
+ *  Dependants: 
+ *    Surface air temperature Ts (deg C)  sht1_temp       Ts
+ *    Relative humidity RH (%%)           sht1_humid      RH
+ *    Station pressure ps (hPa)           bmx_1_pressure  ps
+ *    Station height (m)                  cf_elevation    station_height
  * 
- *  Reported as sr = shortwave radiation (what the pyranometer is detecting)
- * ======================================================================================================================
+ * Testing Information
+ *   https://www.airnav.com/airport/KEIK - Provides Elevation
+ *   https://www.weather.gov/wrh/timeseries?site=KEIK - Provides current MSLP
+ *=======================================================================================================================
  */
-float ads_readIrradiance(int samples = 16) {
-
-  // cf_sr_cal aka CAL_SENS_uV_PER_WM2
-  // Replace with your sensor's calibration constant (µV per W/m² from the label/certificate)
-  // Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
-
-  // cf_sr_dark_offset
-  // With the sensor covered, log the raw counts, set that as dark_offset_counts if needed.
-  // The "dark offset" is the baseline reading from the sensor when no irradiance (solar radiation) is 
-  // present—essentially, the background signal or noise level that the pyranometer outputs under fully 
-  // covered or dark conditions.
-
-  // ADS1115 at GAIN = 16: LSB = 7.8125 µV per count
-  const float LSB_uV = 7.8125;
-
-  long sum = 0;
-  for (int i = 0; i < samples; i++) {
-    int16_t raw = ads.readADC_Differential_0_1();
-    sum += raw;
-    delay(5);
+void mslp_initialize() {
+  Output("MSLP:INIT");
+  if ((cf_elevation != QC_ERR_ELEV) &&  BMX_1_exists && SHT_1_exists) {
+    MSLP_exists = true;
+    Output ("MSLP:OK");
   }
-
-  float avg_counts = (float)sum / samples;
-  avg_counts -= cf_sr_dark_offset;  // subtract dark offset if measured
-
-  // Counts → microvolts
-  float V_uV = avg_counts * LSB_uV;
-
-  // Irradiance (W/m²)
-  float irradiance = V_uV / cf_sr_cal;
-  if (irradiance < 0) irradiance = 0;  // clamp to zero
-
-  return irradiance;
+  else {
+    Output ("MSLP:NF");
+  }
 }
 
-/*
- * ======================================================================================================================
- *  ads_initialize() - Initialize 4-Channel ADC Breakout used with SP Lite2 Pyranometer from Kipp & Zonen
- * ======================================================================================================================
+/* 
+ *=======================================================================================================================
+ * mslp_caculate() - mean sea level pressure caculate
+ *  Inputs: 
+ *    Surface air temperature Ts (deg C)  sht1_temp       Ts
+ *    Relative humidity RH (%%)           sht1_humid      RH
+ *    Station pressure ps (hPa)           bmx_1_pressure  ps
+ *    Station height (m)                  cf_elevation    station_height
+ *=======================================================================================================================
  */
-void ads_initialize() {
-  Output("ADS:INIT");
+double mslp_calculate(float Ts, float RH, float ps, int station_height) {
+  double e, r, q;
+  double L = 0.0065;   // Lapse rate (K/m)
+  double T, Tv, P0;
+  double Td;
 
-  if (!ads.begin()) {
-    ADS_exists = false;
-    Output ("ADS NF");
-  }
-  else { 
-    ads.setGain(GAIN_SIXTEEN);
-    int16_t raw = ads.readADC_Differential_0_1(); // read once and toss
-    ADS_exists = true;
-    Output ("ADS OK");
-  }
-}
-#endif
+  // Calculate dew point Td (deg C) from Ts and RH
+  Td = Ts - ((100.0 - RH) / 5.0);
 
-/*
- * ======================================================================================================================
- * I2C_Check_Sensors() - See if each I2C sensor responds on the bus and take action accordingly             
- * ======================================================================================================================
- */
-void I2C_Check_Sensors() {
+  // Step 1: Vapor pressure (hPa)
+  e = 6.112 * exp((17.67 * Td) / (Td + 243.5));
 
-  // BMX_1 Barometric Pressure 
-  if (I2C_Device_Exist (BMX_ADDRESS_1)) {
-    // Sensor online but our state had it offline
-    if (BMX_1_exists == false) {
-      if (BMX_1_chip_id == BMP280_CHIP_ID) {
-        if (bmp1.begin(BMX_ADDRESS_1)) { 
-          BMX_1_exists = true;
-          Output ("BMP1 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-        } 
-      }
-      else if (BMX_1_chip_id == BME280_BMP390_CHIP_ID) {
-        if (BMX_1_type == BMX_TYPE_BME280) {
-          if (bme1.begin(BMX_ADDRESS_1)) { 
-            BMX_1_exists = true;
-            Output ("BME1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-          } 
-        }
-        if (BMX_1_type == BMX_TYPE_BMP390) {
-          if (bm31.begin_I2C(BMX_ADDRESS_1)) {
-            BMX_1_exists = true;
-            Output ("BMP390_1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-          }
-        }        
-      }
-      else {
-        if (bm31.begin_I2C(BMX_ADDRESS_1)) { 
-          BMX_1_exists = true;
-          Output ("BM31 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_1; // Turn Off Bit
-        }                  
-      }      
-    }
-  }
-  else {
-    // Sensor offline but our state has it online
-    if (BMX_1_exists == true) {
-      BMX_1_exists = false;
-      Output ("BMX1 OFFLINE");
-      SystemStatusBits |= SSB_BMX_1;  // Turn On Bit 
-    }    
-  }
+  // Step 2: Mixing ratio r (kg/kg)
+  r = 0.622 * e / (ps - e);
 
-  // BMX_2 Barometric Pressure 
-  if (I2C_Device_Exist (BMX_ADDRESS_2)) {
-    // Sensor online but our state had it offline
-    if (BMX_2_exists == false) {
-      if (BMX_2_chip_id == BMP280_CHIP_ID) {
-        if (bmp2.begin(BMX_ADDRESS_2)) { 
-          BMX_2_exists = true;
-          Output ("BMP2 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-        } 
-      }
-      else if (BMX_2_chip_id == BME280_BMP390_CHIP_ID) {
-        if (BMX_2_type == BMX_TYPE_BME280) {
-          if (bme1.begin(BMX_ADDRESS_2)) { 
-            BMX_2_exists = true;
-            Output ("BME2 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-          } 
-        }
-        if (BMX_2_type == BMX_TYPE_BMP390) {
-          if (bm31.begin_I2C(BMX_ADDRESS_2)) {
-            BMX_1_exists = true;
-            Output ("BMP390_1 ONLINE");
-            SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-          }
-        }        
-      }
-      else {
-         if (bm32.begin_I2C(BMX_ADDRESS_2)) { 
-          BMX_2_exists = true;
-          Output ("BM32 ONLINE");
-          SystemStatusBits &= ~SSB_BMX_2; // Turn Off Bit
-        }                         
-      }     
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (BMX_2_exists == true) {
-      BMX_2_exists = false;
-      Output ("BMX2 OFFLINE");
-      SystemStatusBits |= SSB_BMX_2;  // Turn On Bit 
-    }    
-  }
+  // Step 3: Specific humidity q (kg/kg)
+  q = r / (1.0 + r);
 
-  // HTU21DF Humidity & Temp Sensor
-  if (I2C_Device_Exist (HTU21DF_I2CADDR)) {
-    // Sensor online but our state had it offline
-    if (HTU21DF_exists == false) {
-      // See if we can bring sensor online
-      if (htu.begin()) {
-        HTU21DF_exists = true;
-        Output ("HTU ONLINE");
-        SystemStatusBits &= ~SSB_HTU21DF; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (HTU21DF_exists == true) {
-      HTU21DF_exists = false;
-      Output ("HTU OFFLINE");
-      SystemStatusBits |= SSB_HTU21DF;  // Turn On Bit
-    }   
-  }
+  // Mean temperature in Kelvin
+  T = (Ts + 273.15) + (L * station_height / 2.0);
 
-#ifdef NOWAY    // MCP9808 Sensors fails to update temperature if this code is enabled
-  // MCP9808 Precision I2C Temperature Sensor
-  if (I2C_Device_Exist (MCP_ADDRESS_1)) {
-    // Sensor online but our state had it offline
-    if (MCP_1_exists == false) {
-      // See if we can bring sensor online
-      if (mcp1.begin(MCP_ADDRESS_1)) {
-        MCP_1_exists = true;
-        Output ("MCP ONLINE");
-        SystemStatusBits &= ~SSB_MCP_1; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (MCP_1_exists == true) {
-      MCP_1_exists = false;
-      Output ("MCP OFFLINE");
-      SystemStatusBits |= SSB_MCP_1;  // Turn On Bit
-    }   
-  }
-#endif
+  // Virtual temperature (K)
+  Tv = T * (1.0 + 0.61 * q);
 
-  // SI1145 UV index & IR & Visible Sensor
-  if (I2C_Device_Exist (SI1145_ADDR)) {
-    // Sensor online but our state had it offline
-    if (SI1145_exists == false) {
-      // See if we can bring sensore online
-      if (uv.begin()) {
-        SI1145_exists = true;
-        Output ("SI ONLINE");
-        SystemStatusBits &= ~SSB_SI1145; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (SI1145_exists == true) {
-      SI1145_exists = false;
-      Output ("SI OFFLINE");
-      SystemStatusBits |= SSB_SI1145;  // Turn On Bit
-    }   
-  }
+  // Calculate mean sea level pressure (hPa) using the exponential formula
+  P0 = ps * exp((9.80665 * station_height) / (287.05 * Tv));
 
-  // AS5600 Wind Direction
-  if (I2C_Device_Exist (AS5600_ADR)) {
-    // Sensor online but our state had it offline
-    if (AS5600_exists == false) {
-      AS5600_exists = true;
-      Output ("WD ONLINE");
-      SystemStatusBits &= ~SSB_AS5600; // Turn Off Bit
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (AS5600_exists == true) {
-      AS5600_exists = false;
-      Output ("WD OFFLINE");
-      SystemStatusBits |= SSB_AS5600;  // Turn On Bit
-    }   
-  }
-
-  // VEML7700 Lux 
-  if (I2C_Device_Exist (VEML7700_ADDRESS)) {
-    // Sensor online but our state had it offline
-    if (VEML7700_exists == false) {
-      // See if we can bring sensor online
-      if (veml.begin()) {
-        VEML7700_exists = true;
-        Output ("VLX ONLINE");
-        SystemStatusBits &= ~SSB_VLX; // Turn Off Bit
-      }
-    }
-  }
-  else {
-    // Sensor offline but we our state has it online
-    if (VEML7700_exists == true) {
-      VEML7700_exists = false;
-      Output ("VLX OFFLINE");
-      SystemStatusBits |= SSB_VLX;  // Turn On Bit
-    }   
-  }
-
-  // PM25AQI
-  if (!AQS_Enabled) { //  When AQS is enabled the sensor powers down
-    if (I2C_Device_Exist (PM25AQI_ADDRESS)) {
-      // Sensor online but our state had it offline
-      if (PM25AQI_exists == false) {
-        // See if we can bring sensor online
-        if (pmaq.begin_I2C()) {
-          PM25AQI_exists = true;
-          Output ("PM ONLINE");
-          SystemStatusBits &= ~SSB_PM25AQI; // Turn Off Bit
-          pm25aqi_clear();
-        }
-      }
-    }
-    else {
-      // Sensor offline but we our state has it online
-      if (PM25AQI_exists == true) {
-        PM25AQI_exists = false;
-        Output ("PM OFFLINE");
-        SystemStatusBits |= SSB_PM25AQI;  // Turn On Bit
-      }   
-    }
-  }
+  return (P0);
 }

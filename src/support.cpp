@@ -145,6 +145,22 @@ bool isnumeric(char *s) {
 
 /*
  * =======================================================================================================================
+ * isValidNumberString - Helper function to validate numeric string (optional leading + or - allowed)
+ * =======================================================================================================================
+ */
+bool isValidNumberString(const char *str) {
+    if (!str || !*str) return false; // empty string invalid
+    int i = 0;
+    // Check optional sign for first char
+    if (str[0] == '+' || str[0] == '-') i = 1;
+    for (; str[i] != '\0'; i++) {
+        if (str[i] < '0' || str[i] > '9') return false;
+    }
+    return true;
+}
+
+/*
+ * =======================================================================================================================
  * isValidHexString() - validates whether a given string is a valid hexadecimal string of a specified length
  * =======================================================================================================================
  */

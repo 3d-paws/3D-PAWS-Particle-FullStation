@@ -305,7 +305,6 @@ void OLED_initialize() {
     }
     else {
       DisplayEnabled = false;
-      SystemStatusBits |= SSB_OLED; // Turn on Bit
     }
   }
 }

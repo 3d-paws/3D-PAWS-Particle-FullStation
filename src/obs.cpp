@@ -6,16 +6,11 @@
 #include <Particle.h>
 #include <SdFat.h>
 
-#if (PLATFORM_ID == PLATFORM_MSOM)
-#include <AB1805_RK.h>    // On board WatchDog Power Management
-#else
-#include <RTClib.h>
-#endif
-
 #include "include/qc.h"
 #include "include/ssbits.h"
 #include "include/mux.h"
 #include "include/sensors.h"
+#include "include/evt.h"
 #include "include/eeprom.h"
 #include "include/wrda.h"
 #include "include/cf.h"
@@ -309,6 +304,7 @@ void OBS_Do() {
   float sht1_humid = 0.0;
   float sht1_temp = 0.0;
   float heat_index = 0.0;
+  float bmx_1_pressure = 0.0;
 
 // Output("DB:OBS_Start");
 
@@ -338,9 +334,7 @@ void OBS_Do() {
 
   obs[oidx].inuse = true;
 
-  if (!AQS_Enabled) {
-    obs[oidx].ts = Time.now();
-  }
+  obs[oidx].ts = Time.now();  // This will be over writted later if AQS_Enabled
   obs[oidx].css = sig.getStrength();
 
   // Battery Charging State
@@ -549,6 +543,8 @@ void OBS_Do() {
       obs[oidx].sensor[sidx].f_obs = h;
       obs[oidx].sensor[sidx++].inuse = true;
     }
+
+    bmx_1_pressure = p; // Used later for mslp calc
 // Output("DB:OBS_BMX1x");
   }
 
@@ -688,11 +684,9 @@ void OBS_Do() {
     if (hdc1.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
       t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
       h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-      SystemStatusBits &= ~ SSB_HDC_1;  // Turn Off Bit
     }
     else {
       Output ("ERR:HDC1 Read");
-      SystemStatusBits |= SSB_HDC_1;  // Turn On Bit
     }
 
     // HDC1 Temperature
@@ -719,11 +713,9 @@ void OBS_Do() {
     if (hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
       t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
       h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-      SystemStatusBits &= ~ SSB_HDC_2;  // Turn Off Bit
     }
     else {
       Output ("ERR:HDC1 Read");
-      SystemStatusBits |= SSB_HDC_2;  // Turn On Bit
     }
 
     // HDC2 Temperature
@@ -823,8 +815,6 @@ void OBS_Do() {
       if (uv.begin()) {
         SI1145_exists = true;
         Output ("SI ONLINE");
-        SystemStatusBits &= ~SSB_SI1145; // Turn Off Bit
-
         si_vis = uv.readVisible();
         si_ir = uv.readIR();
         si_uv = uv.readUV()/100.0;
@@ -832,7 +822,6 @@ void OBS_Do() {
       else {
         SI1145_exists = false;
         Output ("SI OFFLINE");
-        SystemStatusBits |= SSB_SI1145;  // Turn On Bit    
       }
     }
 
@@ -963,7 +952,7 @@ void OBS_Do() {
     // OP1 Raw
     strcpy (obs[oidx].sensor[sidx].id, "op1r");
     obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP1_PIN);
+    obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP1_PIN) * dg_adjustment;
     obs[oidx].sensor[sidx++].inuse = true;
   }
   else if (OP1_State == OP1_STATE_RAIN) {
@@ -1032,6 +1021,14 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = (float) wbgt;
     obs[oidx].sensor[sidx++].inuse = true;    
 // Output("DB:OBS_WBGTx");
+  }
+
+  if (MSLP_exists) {
+    float mslp = (float) mslp_calculate(sht1_temp, sht1_humid, bmx_1_pressure, cf_elevation);
+    strcpy (obs[oidx].sensor[sidx].id, "mslp");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = (float) mslp;
+    obs[oidx].sensor[sidx++].inuse = true;  
   }
 
 #if (PLATFORM_ID != PLATFORM_MSOM)
@@ -1120,9 +1117,10 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = (float) t;
     obs[oidx].sensor[sidx++].inuse = true;
   }
-#else
+#endif
+#ifdef ENABLE_Evapotranspiration
   if (ADS_exists) {
-    float sr = ads_readIrradiance(16); // sr = shortwave radiation (what the pyranometer is detecting)
+    float sr = evt_readIrradiance(16); // sr = shortwave radiation (what the pyranometer is detecting)
     strcpy (obs[oidx].sensor[sidx].id, "sr");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) sr;

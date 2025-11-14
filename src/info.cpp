@@ -17,6 +17,7 @@
 #include "include/eeprom.h"
 #include "include/cf.h"
 #include "include/sensors.h"
+#include "include/evt.h"
 #include "include/wrda.h"
 #include "include/sdcard.h"
 #include "include/output.h"
@@ -231,6 +232,9 @@ bool INFO_Do() {
   }
 #endif
 
+  // Station Elevation
+  writer.name("elev").value(cf_elevation);
+
   if (!AQS_Enabled) {
     // How Option 1 is Configured
     if (OP1_State == OP1_STATE_DISTANCE) {
@@ -333,8 +337,14 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sTLW", comma);
     comma=",";
   }
+#endif
+#ifdef ENABLE_Evapotranspiration
   if (ADS_exists) {
     sprintf (buf+strlen(buf), "%sSR", comma);
+    comma=",";
+  }
+  if (EVT_exists) {
+    sprintf (buf+strlen(buf), "%sEVT", comma);
     comma=",";
   }
 #endif
@@ -375,6 +385,10 @@ bool INFO_Do() {
     }
     comma=",";
   }
+  if (MSLP_exists) {
+    sprintf (buf+strlen(buf), "%sMSLP", comma);
+    comma=",";  
+  }
   if (PM25AQI_exists) {
     sprintf (buf+strlen(buf), "%sPM25AQ", comma);
     comma=",";
@@ -386,6 +400,14 @@ bool INFO_Do() {
   }
 
   writer.name("sensors").value(buf);
+
+  // RTC
+  if (RTC_exists) {
+    writer.name("rtc").value("OK");
+  }
+  else {
+    writer.name("rtc").value("NF");
+  }
 
   // LoRa
   if (LORA_exists) {

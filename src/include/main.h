@@ -49,6 +49,10 @@ extern PMIC pmic; // Power Management IC (bq24195) I2C 0x6B
 // extern FuelGauge fuel;  // Fuel Gauge IC (MAX17043) I2C 0x36
 #endif
 
+#if (PLATFORM_ID == PLATFORM_MSOM)
+extern bool MuonWifiEnabled;
+#endif
+
  // Function prototypes
  void BackGroundWork();
  void HeartBeat();
