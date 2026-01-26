@@ -3,7 +3,7 @@
 A register is maintained where its individual bits correspond to various state information and sensor state. This register is reported in each observation as a decimal number with tag id "hth".<BR>
 <BR>
 Many of the below bits will be set at initialization. Then cleared after the first observation is made after startup. 
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 120px; border: 1px solid black; padding: 10px;">
 <pre>
 #define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
 #define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues
@@ -14,7 +14,7 @@ Many of the below bits will be set at initialization. Then cleared after the fir
 </div>
 
 Status bits for v42 and before releases
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 350px; border: 1px solid black; padding: 10px;">
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 380px; border: 1px solid black; padding: 10px;">
 <pre>
 #define SSB_PWRON           0x1       // Set at power on, but cleared after first observation
 #define SSB_SD              0x2       // Set if SD missing at boot or other SD related issues

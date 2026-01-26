@@ -9,6 +9,7 @@ When set as a AQS:
 - OP2 Pin is wired to SET pin on the air quality sensor. The SET pin on the air quality sensor, when low, puts the sensor into sleep mode. \
   Sleep mode on the air quality sensor is a feature that allows the sensor to enter a low-power state to conserve energy and extend the lifetime of the laser and fan components. \
   This reduces wear on moving parts, especially the fan and laser. Both of which have a finite lifespan (laser is about 8000 hours).
+- In AQS mode the station publishes to Particle as event type "FS". Like the Full station. No change.
 
 #### Taking Air Quality Observations
 - The air quality sensor is turn on (via OP2 Pin) 45 seconds prior to the time we need to make the observation.

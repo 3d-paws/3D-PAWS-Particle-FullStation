@@ -90,7 +90,7 @@ Sensors
 | hi       | SHT31 Heat Index Temperature            |
 | wbt      | MCP9808 & SHT31 Wet Bulb Temperature|
 | wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature            |
-| mlsp     | Mean Sea Level Pressure |
+| mslp     | Mean Sea Level Pressure |
 | tlww     | Tinovi LeafSens Wetness           |
 | tlwt     | Tinovi LeafSens Temp            |
 | tsmt     | Tinovi Soil Moisture Temperature |

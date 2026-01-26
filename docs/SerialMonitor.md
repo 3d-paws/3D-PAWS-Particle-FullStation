@@ -333,3 +333,26 @@ MKR NB 1500
 13:19:24.309 -> 
 </pre>
 </div>
+
+## Setup Notes for a Windows Computer Serial Console using Putty
+
+### Install PuTTY
+
+- Download PuTTY from the official site: [https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html)
+
+- Select the **64-bit x86 installer**: [putty-64bit-0.83-installer.msi](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.83-installer.msi)  
+
+### Plug in the Arduino Device
+
+### Locate the COM Port
+
+- Open **Device Manager** → **Ports (COM & LPT)**  
+- Identify the COM port assigned to your Arduino device
+
+### Run PuTTY
+
+1. Launch **PuTTY**.  
+2. Select **Serial** as the connection type.  
+3. Enter the **COM port** discovered from Device Manager.  
+4. Set the **Speed** (baud rate) to **9600**.  
+5. Click **Open** at the bottom to start the serial session.

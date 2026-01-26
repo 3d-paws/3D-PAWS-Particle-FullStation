@@ -3,7 +3,7 @@
 
 ## Support Notes 
 
-Evapotranspiration support is a one off and may not stay in the code base. The code isfor this feature is located in file evt.h and evt.cpp. There are conditional compilation directives `#ifdef` through the main code to wedge the feature in.  It can be compiled out of the code by use of conditional compilation directives. To do so, undefine `ENABLE_Evapotranspiration` at the top of evt.h. 
+Evapotranspiration support is a one off and may not stay in the code base. The code for this feature is located in file evt.h and evt.cpp. There are conditional compilation directives `#ifdef` through the main code to wedge the feature in.  It can be compiled out of the code by use of conditional compilation directives. To do so, undefine `ENABLE_Evapotranspiration` at the top of evt.h. 
 
 ## Requirements 
 
