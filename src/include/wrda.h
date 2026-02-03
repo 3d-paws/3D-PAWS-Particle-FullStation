@@ -137,8 +137,6 @@ extern int OP2_State;
 
 extern float dg_adjustment;
 
-
-
 // Function prototype
 void anemometer_interrupt_handler();
 void raingauge1_interrupt_handler();
@@ -147,6 +145,7 @@ void as5600_initialize();
 void OP1_Initialize();
 void OP2_Initialize();
 float Pin_ReadAvg(int pin);
+
 void DistanceGauge_TakeReading();
 float DistanceGauge_Median();
 float Wind_SampleSpeed();
@@ -158,4 +157,6 @@ int Wind_GustDirection();
 void Wind_GustUpdate();
 void Wind_TakeReading();
 void Wind_Distance_Air_Initialize();
+
+void OPT_AQS_Initialize();
 

@@ -59,6 +59,7 @@ bool MCP_2_exists = false;
 bool MCP_3_exists = false;
 bool MCP_4_exists = false;
 
+
 /*
  * ======================================================================================================================
  *  SHTX - I2C - Temperature & Humidity sensor (SHT31)  - Note the SHT40, SHT45 use same i2c address
@@ -96,6 +97,13 @@ bool HI_exists = false;
  * ======================================================================================================================
  */
 bool WBGT_exists = false;
+
+/* 
+ *=======================================================================================================================
+ * MSLP - Mean sea level pressure 
+ *=======================================================================================================================
+ */
+bool MSLP_exists = false;
 
 /*
  * ======================================================================================================================
@@ -198,13 +206,6 @@ bool PMTS_exists = false;
 bool AQS_Enabled = false;               // if file found this is set
 int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
 int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
-
-/* 
- *=======================================================================================================================
- * MSLP - Mean sea level pressure 
- *=======================================================================================================================
- */
-bool MSLP_exists = false;
 
 /*
  * ======================================================================================================================
@@ -508,7 +509,7 @@ void mcp9808_initialize() {
   }
   Output (msgp);
 
-  // 4rd MCP9808 Precision I2C Temperature Sensor (I2C ADDRESS = 0x21)
+  // 4th MCP9808 Precision I2C Temperature Sensor (I2C ADDRESS = 0x21)
   mcp4 = Adafruit_MCP9808();
   if (!mcp4.begin(MCP_ADDRESS_4)) {
     msgp = (char *) "MCP4 NF";
@@ -1369,8 +1370,6 @@ void pmts_initialize() {
   }
 }
 #endif
-
-
 
 /* 
  *=======================================================================================================================

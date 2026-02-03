@@ -33,6 +33,7 @@ extern char versioninfo[];
 extern char msgbuf[MAX_MSGBUF_SIZE];
 extern char *msgp;
 extern char Buffer32Bytes[32];
+extern int LED_PIN;
 extern bool JustPoweredOn;
 extern bool TurnLedOff;
 extern bool SendSystemInformation;

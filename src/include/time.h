@@ -10,7 +10,7 @@
 #include <location.h>     // from particle-som-gnss library
 #else
 #include <RTClib.h>
-#include <Adafruit_ADS1X15.h>
+// #include <Adafruit_ADS1X15.h>
 #endif
 
 

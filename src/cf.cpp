@@ -3,17 +3,10 @@
  *  cf.cpp - Configuration File Functions
  * ======================================================================================================================
  */
-
-/*
- * ======================================================================================================================
- * Variables and Data Structures
- * =======================================================================================================================
- */
 #include <Particle.h>
 #include <SdFat.h>
 
 #include "include/qc.h"
-#include "include/cf.h"
 #include "include/support.h"
 #include "include/ssbits.h"
 #include "include/main.h"
@@ -22,6 +15,13 @@
 #include "include/output.h"
 #include "include/evt.h"
 #include "include/cf.h"
+
+/*
+ * ======================================================================================================================
+ * Variables and Data Structures
+ * =======================================================================================================================
+ */
+
 
 /*
  * ======================================================================================================================
@@ -314,6 +314,7 @@ void SD_ReadElevationFile() {
         // Quality check
         if (tmpElev >= QC_MIN_ELEV && tmpElev <= QC_MAX_ELEV) {
           cf_elevation = tmpElev;
+          sprintf(msgbuf, "ELEV:%d", tmpElev);
         } else {
           sprintf(msgbuf, "ELEV:QCERR %d", tmpElev);
         }

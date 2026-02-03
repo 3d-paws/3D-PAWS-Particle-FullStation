@@ -102,6 +102,7 @@ bool INFO_Do() {
 
   sprintf (Buffer32Bytes,"%dm", (int) obs_interval);
   writer.name("obsi").value(Buffer32Bytes);
+  
   sprintf (Buffer32Bytes,"%dm", (int) obs_tx_interval);
   writer.name("obsti").value(Buffer32Bytes);
 

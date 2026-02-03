@@ -15,7 +15,7 @@
 #include "include/main.h"
 #include "include/output.h"
 
- /*
+/*
  * ======================================================================================================================
  * GetPinName() - return the pin name in provider buffer
  * ======================================================================================================================
@@ -800,6 +800,7 @@ int Function_DoAction(String s) {
           sprintf (Buffer32Bytes, "SETELEV:%ld OK", elevation);
 
           cf_elevation = elevation; // Set running value of elevation
+          mslp_initialize(); // Set flags so we don't need to reboot.
         } 
         else {
           sprintf (Buffer32Bytes, "SETELEV:%ld FAIL", elevation); 
@@ -1415,36 +1416,6 @@ int callback_imsi(int type, const char* buf, int len, char* cimi) {
   return (WAIT);
 }
 #endif
-
-/* 
- *=======================================================================================================================
- * OBI_AQS_Initialize() - Check SD Card for file to determine if we are a Air Quality Station
- *=======================================================================================================================
- */
-void OBI_AQS_Initialize() {
-  Output ("OBSAQS:INIT");
-  if (SD_exists) {
-    if (SD.exists(SD_OPTAQS_FILE)) {
-      Output ("OPTAQI Enabled");
-
-      // Ware are a Air Quality Station so Clear Rain Totals from EEPROM
-      time32_t current_time = Time.now();
-      EEPROM_ClearRainTotals(current_time);
-
-      pinMode (OP2_PIN, OUTPUT);
-      digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
-
-      // We will only go in AQS mode if the sensor is truely there
-      AQS_Enabled = true;
-      AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
-                                                     // to account for the AQS warmup time and 10s for sampling
-    }
-    else {
-      Output ("OPTAQI NF");
-      AQS_Enabled = false;
-    }
-  }
-}
 
 /* 
  *=======================================================================================================================

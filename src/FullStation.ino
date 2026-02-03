@@ -1,6 +1,6 @@
 PRODUCT_VERSION (43);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-251114v43"
+#define VERSION_INFO "FS-260202v43"
 
 /*
  *======================================================================================================================
@@ -253,6 +253,15 @@ PRODUCT_VERSION (43);
  *                          Removed the I2C_Check_Sensors()
  *                          Distance Sensor raw reading "op1r" now has sensor type adjustment op1r = in_ReadAvg(OP1_PIN) * dg_adjustment;
  * 
+ *          Version 44 Released on 2026-xx-xx
+ *          2025-11-15  RJB Reboot no longer needed after SETELEV:xxxx DoAction
+ *                          When ELEV.TXT is read at init, ELEV:#### is printed.
+ *          2025-11-19  RJB Bug Fix in SD_TouchFile() touch not using passed file name
+ *          2025-12-24  RJB Minor code cleanups. Moved some things around
+ *          2026-01-05  RJB Modified Wind_Distance_Air_Initialize() to not do Wind if AQS Station
+ *          2026-01-29  RJB evt_initialize() now check cf_sr_cal != 0.0 to prevent divide by zero in evt_readIrradiance()
+ *          2026-02-02  RJB Bug Fix evt_do() now set the acc.hour_key for the next hourly period
+ * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
@@ -458,6 +467,7 @@ PRODUCT_VERSION (43);
  *  pm1e25  Atmospheric Environmental PM2.5
  *  pm1e100 Atmospheric Environmental PM10.0
  *  hi      heat index
+ *  mlsp    mean sea level pressure
  *  wbt     wet bulb temperature
  *  wbgt    wet bub globe temperature
  *  tlwt    Tinovi Leaf Wetness temperature    
@@ -643,7 +653,7 @@ PRODUCT_VERSION (43);
  * Local Includes
  *=======================================================================================================================
  */
-#include "include/ssbits.h"
+#include "include/ssbits.h"         // System Status Bits
 #include "include/qc.h"             // Quality Control Min and Max Sensor Values on Surface of the Earth
 #include "include/support.h"        // Support Functions
 #include "include/sdcard.h"         // SD Card Functions
@@ -656,7 +666,7 @@ PRODUCT_VERSION (43);
 #include "include/time.h"           // Time Management Functions
 #include "include/ps.h"             // Particle Support Functions
 #include "include/sensors.h"        // I2C Based Sensor Functions
-#include "include/evt.h"           // Evapotranspiration Functions
+#include "include/evt.h"            // Evapotranspiration Functions
 #include "include/info.h"           // Station Information Functions
 #include "include/statmon.h"        // Station Monitor Functions
 #include "include/obs.h"            // Observation Functions
@@ -919,7 +929,7 @@ void setup() {
 #endif
 
   // Check SD Card for file to determine if we are a Air Quality Station
-  OBI_AQS_Initialize(); // Sets AQS_Enabled to true
+  OPT_AQS_Initialize(); // Sets AQS_Enabled to true
 
 
   //==================================================
@@ -953,8 +963,6 @@ void setup() {
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
 #endif
-
-
 
   // Scan for i2c Devices and Sensors
   mux_initialize();
@@ -1027,9 +1035,10 @@ void setup() {
 #endif
 
   if (Time.isValid()) {
-    // We now a a valid clock so we can initialize the EEPROM and make an observation
+    // We now do a valid clock before we can initialize the EEPROM and make an observation
     EEPROM_Initialize();     
   }
+
   // Lets force a publish if not doing 1 minute observations
   if (obs_interval != DEFAULT_OBS_INTERVAL) {
     lastOBS = 0;

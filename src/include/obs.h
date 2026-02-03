@@ -45,4 +45,5 @@ void OBS_Clear(int i);
 void OBS_Init();
 void OBS_Do();
 void OBS_PublishAll();
+bool OBS_Full();
 bool Particle_Publish(char *EventName);

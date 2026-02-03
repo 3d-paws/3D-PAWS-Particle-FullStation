@@ -146,6 +146,13 @@ extern bool WBGT_exists;
  */
 extern bool WBT_exists;
 
+/* 
+ *=======================================================================================================================
+ * MSLP - Mean sea level pressure 
+ *=======================================================================================================================
+ */
+extern bool MSLP_exists;
+
 /*
  * ======================================================================================================================
  *  Si1145 - I2C - UV/IR/Visible Light Sensor
@@ -215,7 +222,6 @@ typedef struct {
 
 extern PM25AQI_OBS pm25aqi_1m_obs[PM25AQI_1M_BUCKETS];
 extern int pm25aqi_1m_bucket;
-
 
 typedef struct {
   int32_t s10, s25, s100; 
@@ -309,13 +315,6 @@ extern bool TMSM_exists;
 extern bool PMTS_exists;
 #endif
 
-/* 
- *=======================================================================================================================
- * MSLP - Mean sea level pressure 
- *=======================================================================================================================
- */
-extern bool MSLP_exists;
-
 // Function prototype
 byte get_Bosch_ChipID (byte address);
 void bmx_initialize();
@@ -355,4 +354,3 @@ void tmsm_initialize();
 float ptms_readtempc();
 void pmts_initialize() ;
 #endif
-void I2C_Check_Sensors();

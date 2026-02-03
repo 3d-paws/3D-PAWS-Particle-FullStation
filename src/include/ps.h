@@ -35,5 +35,5 @@ void SimChangeCheck();
 int callback_imsi(int type, const char* buf, int len, char* cimi);
 #endif
 
-void OBI_AQS_Initialize();
+
 void OBI_TXI_Initialize();

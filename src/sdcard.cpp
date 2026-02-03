@@ -12,6 +12,7 @@
 #include "include/cf.h"
 #include "include/output.h"
 #include "include/sensors.h"
+#include "include/obs.h"
 #include "include/sdcard.h"
 
 /*
@@ -21,10 +22,6 @@
   calls to SdFat functions with these SPI commands yourself.
 */
 
-// Prototyping functions to aviod compile function unknown issue.
-bool Particle_Publish(char *EventName); 
-bool OBS_Full();
-void OBS_Do();
 
 /*
  * ======================================================================================================================
@@ -148,7 +145,7 @@ void SD_RemoveFile(char *f) {
 void SD_TouchFile(char *f) {
   if (SD_exists) {
     if (!SD.exists(f)) {
-      File fp = SD.open(SD_OP1_DIST_FILE, FILE_WRITE);
+      File fp = SD.open(f, FILE_WRITE);
       if (fp) {
         fp.close();
         sprintf (Buffer32Bytes, "SDTF:%s OK", f);

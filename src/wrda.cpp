@@ -5,6 +5,7 @@
  */
 #include "include/ssbits.h"
 #include "include/cf.h"
+#include "include/eeprom.h"
 #include "include/output.h"
 #include "include/support.h"
 #include "include/sdcard.h"
@@ -13,19 +14,18 @@
 #include "include/main.h"
 #include "include/wrda.h"
 
-
 /*
  * ======================================================================================================================
  * Variables and Data Structures
  * =======================================================================================================================
  */
-WIND_STR wind;
 
 /*
  * ======================================================================================================================
  *  Wind Direction - AS5600 Sensor
  * ======================================================================================================================
  */
+WIND_STR wind;
 bool      AS5600_exists     = true;
 #if PLATFORM_ID == PLATFORM_MSOM
 int       AS5600_ADR        = 0x40;   // AS5600L
@@ -539,7 +539,9 @@ void Wind_Distance_Air_Initialize() {
   for (int i=0; i< WIND_READINGS; i++) {
     lora_msg_poll(); // 750ms Second Delay
     HeartBeat();     // Provides a 250ms delay
-    Wind_TakeReading();
+    if (!AQS_Enabled) {
+      Wind_TakeReading();
+    }
     if (OP1_State == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
     }
@@ -548,15 +550,69 @@ void Wind_Distance_Air_Initialize() {
     }
     if (SerialConsoleEnabled) Serial.print(".");  // Provide Serial Console some feedback as we loop and wait til next observation
     OLED_spin();
+
+    if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
   }
 
   // Now we have N readings we can compute other wind related global varibles
-  Wind_TakeReading();
+
+  if (!AQS_Enabled) {
+    Wind_TakeReading();
+    ws_refresh = false; // Set to false since we have just initialized wind speed data.
+  }
   if (OP1_State == OP1_STATE_DISTANCE) {
     DistanceGauge_TakeReading();
   }
 
-  if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
+  if (PM25AQI_exists) {
+    sprintf (Buffer32Bytes, "pm1s10:%d", pm25aqi_obs.s10);
+    Output (Buffer32Bytes);
+    
+    sprintf (Buffer32Bytes, "pm1s25:%d", pm25aqi_obs.s25);
+    Output (Buffer32Bytes); 
+    
+    sprintf (Buffer32Bytes, "pm1s100:%d", pm25aqi_obs.s100);
+    Output (Buffer32Bytes);
+    
+    sprintf (Buffer32Bytes, "pm1e10:%d", pm25aqi_obs.e10);
+    Output (Buffer32Bytes);
+    
+    sprintf (Buffer32Bytes, "pm1e25:%d", pm25aqi_obs.e25);
+    Output (Buffer32Bytes);
+    
+    sprintf (Buffer32Bytes, "pm1e100:%d", pm25aqi_obs.e100);
+    Output (Buffer32Bytes);
+  }
 
-  ws_refresh = false; // Set to false since we have just initialized wind speed data.
+  if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
+}
+
+/* 
+ *=======================================================================================================================
+ * OPT_AQS_Initialize() - Check SD Card for file to determine if we are a Air Quality Station
+ *=======================================================================================================================
+ */
+void OPT_AQS_Initialize() {
+  Output ("OBSAQS:INIT");
+  if (SD_exists) {
+    if (SD.exists(SD_OPTAQS_FILE)) {
+      Output ("OPTAQS Enabled");
+
+      // Ware are a Air Quality Station so Clear Rain Totals from EEPROM
+      time32_t current_time = Time.now();
+      EEPROM_ClearRainTotals(current_time);
+
+      pinMode (OP2_PIN, OUTPUT);
+      digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
+
+      // We will only go in AQS mode if the sensor is truely there
+      AQS_Enabled = true;
+      AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
+                                                     // to account for the AQS warmup time and 10s for sampling
+    }
+    else {
+      Output ("OPTAQS NF");
+      AQS_Enabled = false;
+    }
+  }
 }

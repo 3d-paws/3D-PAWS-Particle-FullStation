@@ -5,7 +5,6 @@
  */
 
 // Extern variables
-extern char SD_INFO_FILE[];
 
 // Function prototypes
 bool INFO_Do();

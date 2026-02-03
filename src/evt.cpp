@@ -473,8 +473,11 @@ void evt_do () {
         acc.hour_key = key;
       }
 
-      if (key != acc.hour_key && acc.n > 0) {
+      if (key != acc.hour_key && acc.n > 0) { // n = # of minute samples in the hour
         Output("EVTHR:DO");
+
+        acc.hour_key = key; // Update Hour Key for our new period
+
         double ET0, ETc;
         EVT_ComputeHourAndReset(acc, ET0, ETc); // Compute hour observation and reset acc
         EVT_Build_JSON(ts, ET0, ETc);
@@ -539,7 +542,7 @@ void evt_initialize() {
     ads.readADC_Differential_0_1(); // read once and toss result
     ADS_exists = true;
     Output ("ADS:OK");
-    if (SHT_1_exists && AS5600_exists) {
+    if (SHT_1_exists && AS5600_exists && (cf_sr_cal != 0.0)) { // check cf_sr_cal to prevent divide by zero
       EVT_exists = true;
       Output ("EVT:OK");      
     }
