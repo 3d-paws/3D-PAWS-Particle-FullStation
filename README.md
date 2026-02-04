@@ -25,7 +25,7 @@ Particle WiFi Board Support.
 ### [Muon Board Support](docs/Muon.md)
 Particle Muon Board Support.
 
-### [Particle Console](docs/ParticleConsole.md)
+### [Particle Web Console](docs/ParticleWebConsole.md)
 Features and Setup of the Particle Web Console
 
 ### [Particle DoAction](docs/DoAction.md)
@@ -62,4 +62,7 @@ A health bit register. Where each bit corresponds to a system state or sensor.
 The WatchDog is a external device that can turn off power to your weather station microcontroller and sensors. 
 
 ### [Daily Reboot](docs/DailyReboot.md)
+The weather station will perform a daily reboot to clear any issues with the station.
+
+### [Particle Board Factory Reset](docs/FactoryReset.md)
 The weather station will perform a daily reboot to clear any issues with the station.

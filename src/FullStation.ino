@@ -1,6 +1,6 @@
-PRODUCT_VERSION (43);
+PRODUCT_VERSION (44);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260202v43"
+#define VERSION_INFO "FS-260204v44"
 
 /*
  *======================================================================================================================
@@ -260,7 +260,7 @@ PRODUCT_VERSION (43);
  *          2025-12-24  RJB Minor code cleanups. Moved some things around
  *          2026-01-05  RJB Modified Wind_Distance_Air_Initialize() to not do Wind if AQS Station
  *          2026-01-29  RJB evt_initialize() now check cf_sr_cal != 0.0 to prevent divide by zero in evt_readIrradiance()
- *          2026-02-02  RJB Bug Fix evt_do() now set the acc.hour_key for the next hourly period
+ *          2026-02-02  RJB Bug Fix evt_do() now set the acc.hour_key for the next hourly period Reverted on 2/4
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
