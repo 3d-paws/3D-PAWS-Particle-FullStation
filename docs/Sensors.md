@@ -28,6 +28,7 @@ Sensors
 | MB7360, MB7369, MB7380, MB7389| 5m Distance             | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
 | MB7363, MB7366, MB7383, MB7386| 10m Distance            | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
 | SP Lite2 Pyranometer          | Shortwave Radiation     | SP Lite2 Pyranometer from Kipp & Zonen                                                                   | [SP Lite2 Pyranometer](https://www.kippzonen.com/Product/9/SP-Lite2-Pyranometer)        |
+| Dallas DS18B20                | Temperature             | Connectes to DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter                                             | [Dallas DS18B20](https://www.adafruit.com/product/381)|
 
 ---
 ### Tags Names sent to Particle
@@ -247,7 +248,6 @@ Example Serial Console power on discovery output with temperature probes on 0,1,
 Reported in INFO as "dsmux":"0,1,4,7"
 
 Reported in OBS as "dst0":22.6,"dst1":22.6,"dst4":22.7,"dst7":22.6
-
 
 ### Derived Sensor Observations
 #### Heat Index Temperature
