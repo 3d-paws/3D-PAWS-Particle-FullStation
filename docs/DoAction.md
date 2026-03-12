@@ -31,9 +31,9 @@ Argron and Boron Pins for OP1=A4, OP2=A5 and Muon Pins for OP1=A0, OP2=A2
 * OP2CLR - Unassigns pin. Removes associated OP2 TXT files.
 
 Optional Station Configurations
-* OPTAQS    - Air Quality Station configuration (OPTAQS.TXT) (Requires REBOOT after setting)
-* OPTFS     - Full Station configuration (Removes OPTAQS.TXT) (Requires REBOOT after setting)
-* OPTNORAIN - Disable main rain gauge observations  (NORAIN.TXT)  
-* OPTRAIN   - Enable main rain gauge observations (Removes NORAIN.TXT)
-* OPTNOWIND - Disable wind observations (NOWIND.TXT)  
-* OPTWIND   - Enable wind observations on main rain gauge (Removes NOWIND.TXT)
+* OPTAQS  - Air Quality Station configuration (OPTAQS.TXT) (Requires REBOOT after setting)
+* OPTFS   - Full Station configuration (Removes OPTAQS.TXT) (Requires REBOOT after setting)
+* NORAIN  - Disable main rain gauge observations  (Creates NORAIN.TXT)  
+* DORAIN  - Enable main rain gauge observations (Removes NORAIN.TXT)
+* NOWIND  - Disable wind observations (Creates NOWIND.TXT)  
+* DOWIND  - Enable wind observations on main rain gauge (Removes NOWIND.TXT)
