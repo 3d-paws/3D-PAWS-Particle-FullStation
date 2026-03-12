@@ -31,9 +31,14 @@ extern char SD_OPTAQS_FILE[];
 extern char SD_OP1_DIST_FILE[];
 extern char SD_OP1_RAIN_FILE[];
 extern char SD_OP1_RAW_FILE[];
-extern char SD_OP2_RAW_FILE[];
 extern char SD_OP1_D5M_FILE[];
+extern char SD_OP2_RAW_FILE[];
+extern char SD_OP2_VBV_FILE[];
+
+extern char SD_NOWIND_FILE[];
+extern char SD_NORAIN_FILE[];
 extern char SD_ELEV_FILE[];
+extern char SD_RTRO_FILE[];
 
 // Function prototypes
 void SD_initialize();
@@ -45,4 +50,3 @@ bool SD_N2S_Delete();
 void SD_NeedToSend_Add(char *observation);
 void SD_N2S_Publish();
 void SD_A4A5_Rename();
-

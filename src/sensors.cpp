@@ -1014,9 +1014,6 @@ float blx_takereading() {
  */
 void pm25aqi_1m_clear() {
   for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
-    pm25aqi_1m_obs[i].s10 = 0;
-    pm25aqi_1m_obs[i].s25 = 0;
-    pm25aqi_1m_obs[i].s100 = 0;
     pm25aqi_1m_obs[i].e10 = 0;
     pm25aqi_1m_obs[i].e25 = 0;
     pm25aqi_1m_obs[i].e100 = 0;
@@ -1029,9 +1026,6 @@ void pm25aqi_1m_clear() {
  *=======================================================================================================================
  */
 void pm25aqi_clear() {
-  pm25aqi_obs.s10 = 0;
-  pm25aqi_obs.s25 = 0;
-  pm25aqi_obs.s100 = 0;
   pm25aqi_obs.e10 = 0;
   pm25aqi_obs.e25 = 0;
   pm25aqi_obs.e100 = 0;
@@ -1076,17 +1070,11 @@ void pm25aqi_Produce_1m_Average() {
   if (PM25AQI_exists) {
     pm25aqi_clear();
     for (int i=0; i<PM25AQI_1M_BUCKETS; i++) {
-      pm25aqi_obs.s10  += pm25aqi_1m_obs[i].s10;
-      pm25aqi_obs.s25  += pm25aqi_1m_obs[i].s25;
-      pm25aqi_obs.s100 += pm25aqi_1m_obs[i].s100;
       pm25aqi_obs.e10  += pm25aqi_1m_obs[i].e10;
       pm25aqi_obs.e25  += pm25aqi_1m_obs[i].e25;
       pm25aqi_obs.e100 += pm25aqi_1m_obs[i].e100;
     }
     // Do average
-    pm25aqi_obs.s10  = (pm25aqi_obs.s10  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.s25  = (pm25aqi_obs.s25  / PM25AQI_1M_BUCKETS);
-    pm25aqi_obs.s100 = (pm25aqi_obs.s100 / PM25AQI_1M_BUCKETS);
     pm25aqi_obs.e10  = (pm25aqi_obs.e10  / PM25AQI_1M_BUCKETS);
     pm25aqi_obs.e25  = (pm25aqi_obs.e25  / PM25AQI_1M_BUCKETS);
     pm25aqi_obs.e100 = (pm25aqi_obs.e100 / PM25AQI_1M_BUCKETS); 
@@ -1103,9 +1091,6 @@ void pm25aqi_TakeReading() {
     PM25_AQI_Data aqid;
   
     if (pmaq.read(&aqid)) {
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].s10  = aqid.pm10_standard;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].s25  = aqid.pm25_standard;
-      pm25aqi_1m_obs[pm25aqi_1m_bucket].s100 = aqid.pm100_standard;
       pm25aqi_1m_obs[pm25aqi_1m_bucket].e10  = aqid.pm10_env;
       pm25aqi_1m_obs[pm25aqi_1m_bucket].e25  = aqid.pm25_env;
       pm25aqi_1m_obs[pm25aqi_1m_bucket].e100 = aqid.pm100_env;
@@ -1145,9 +1130,6 @@ void pm25aqi_TakeReading_AQS() {
       delay(800); // sensor takes reading every 1s, so wait for the next
       if (pmaq.read(&aqid)) {
         pm25aqi_obs.count++;
-        pm25aqi_obs.s10  += aqid.pm10_standard;
-        pm25aqi_obs.s25  += aqid.pm25_standard;
-        pm25aqi_obs.s100 += aqid.pm100_standard;
         pm25aqi_obs.e10  += aqid.pm10_env;
         pm25aqi_obs.e25  += aqid.pm25_env;
         pm25aqi_obs.e100 += aqid.pm100_env;
@@ -1162,9 +1144,6 @@ void pm25aqi_TakeReading_AQS() {
     if (pm25aqi_obs.fail_count > pm25aqi_obs.count) {
       // Fail if half our sample reads failed. - I think this is reasonable - rjb
       Output("AQS:FAIL");
-      pm25aqi_obs.s10 = -999;
-      pm25aqi_obs.s25 = -999;
-      pm25aqi_obs.s100 = -999;
       pm25aqi_obs.e10 = -999;
       pm25aqi_obs.e25 = -999;
       pm25aqi_obs.e100 = -999;
@@ -1172,9 +1151,6 @@ void pm25aqi_TakeReading_AQS() {
     else {
       // Do average
       Output("AQS:OK");
-      pm25aqi_obs.s10  = (pm25aqi_obs.s10 / pm25aqi_obs.count);
-      pm25aqi_obs.s25  = (pm25aqi_obs.s25 / pm25aqi_obs.count);
-      pm25aqi_obs.s100 = (pm25aqi_obs.s100 / pm25aqi_obs.count);
       pm25aqi_obs.e10  = (pm25aqi_obs.e10 / pm25aqi_obs.count);
       pm25aqi_obs.e25  = (pm25aqi_obs.e25 / pm25aqi_obs.count);
       pm25aqi_obs.e100 = (pm25aqi_obs.e100 / pm25aqi_obs.count); 

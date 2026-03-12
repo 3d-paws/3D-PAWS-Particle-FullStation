@@ -76,6 +76,7 @@ typedef struct {
  */
 #define OP2_STATE_NULL       0
 #define OP2_STATE_RAW        1
+#define OP2_STATE_VOLTAIC    2
 
 /*
  * =======================================================================================================================
@@ -137,15 +138,21 @@ extern int OP2_State;
 
 extern float dg_adjustment;
 
+extern bool DoWind;
+extern bool DoRain;
+
 // Function prototype
 void anemometer_interrupt_handler();
 void raingauge1_interrupt_handler();
 void raingauge2_interrupt_handler();
 void as5600_initialize();
+void CheckNoWindFile();
+void CheckNoRainFile();
 void OP1_Initialize();
 void OP2_Initialize();
 float Pin_ReadAvg(int pin);
-
+float VoltaicVoltage(int pin);
+float VoltaicPercent(float half_cell_voltage);
 void DistanceGauge_TakeReading();
 float DistanceGauge_Median();
 float Wind_SampleSpeed();

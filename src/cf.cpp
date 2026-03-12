@@ -34,6 +34,7 @@ int cf_lora_unitid=0;
 int cf_lora_txpower=0;
 int cf_lora_freq=0;
 int cf_elevation=QC_ERR_ELEV;   // Supports MSLP and Evapotranspiration
+int cf_rtro=0;   // Rain total rollover offset
 
 #ifdef ENABLE_Evapotranspiration
 // Used for Evapotranspiration
@@ -327,7 +328,52 @@ void SD_ReadElevationFile() {
     }
   }
   else {
-    sprintf(msgbuf, "ELEV:NO %s", SD_ELEV_FILE); Output (msgbuf);
+    sprintf(msgbuf, "ELEV:NO %s", SD_ELEV_FILE);
+  }
+  Output(msgbuf);
+}
+
+/* 
+ * =======================================================================================================================
+ * SD_Read_RTRO_File()
+ * =======================================================================================================================
+ */
+void SD_Read_RTRO_File() {
+  if (SD_exists && SD.exists(SD_RTRO_FILE)) {
+    File rtutcfile = SD.open(SD_RTRO_FILE, FILE_READ);
+    if (rtutcfile) {
+      char buf[16];  // Enough for an int including sign and null terminator
+      size_t idx = 0;
+      while (rtutcfile.available() && idx < sizeof(buf) - 1) {
+        char c = rtutcfile.read();
+        if (c == '\n' || c == '\r') {
+          break;
+        }
+        buf[idx++] = c;
+      }
+      buf[idx] = '\0';  // Null-terminate the string
+      rtutcfile.close();
+
+      if (isValidNumberString(buf)) {
+        int tmp_rtro = atoi(buf);  // convert to int
+
+        // Quality check
+        if (tmp_rtro >= 0 && tmp_rtro <= 23) {
+          cf_rtro = tmp_rtro;
+          sprintf(msgbuf, "RTRO:%d", tmp_rtro);
+        } else {
+          sprintf(msgbuf, "RTRO:QCERR %d", tmp_rtro);
+        }
+      }
+      else {
+        sprintf(msgbuf, "RTRO:!NUMERIC");
+      }
+    } else {
+      sprintf(msgbuf, "RTRO:OPENERR %s", SD_RTRO_FILE);
+    }
+  }
+  else {
+    sprintf(msgbuf, "RTRO:NO %s", SD_RTRO_FILE);
   }
   Output(msgbuf);
 }

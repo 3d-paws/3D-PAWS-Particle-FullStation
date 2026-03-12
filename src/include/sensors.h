@@ -204,9 +204,6 @@ extern bool BLX_exists;
  *  pme = Particulate Matter Environmental
  * 
  *  Variable Tags for what we monitor and report on
- *    pm1s10
- *    pm1s25
- *    pm1s100
  *    pm1e10
  *    pm1e25
  *    pm1e100
@@ -216,7 +213,6 @@ extern bool BLX_exists;
 #define PM25AQI_1M_BUCKETS  60
 
 typedef struct {
-  int32_t s10, s25, s100; 
   int32_t e10, e25, e100;
 } PM25AQI_OBS;
 
@@ -224,7 +220,6 @@ extern PM25AQI_OBS pm25aqi_1m_obs[PM25AQI_1M_BUCKETS];
 extern int pm25aqi_1m_bucket;
 
 typedef struct {
-  int32_t s10, s25, s100; 
   int32_t e10, e25, e100;
   int count=0;
   int fail_count=0;

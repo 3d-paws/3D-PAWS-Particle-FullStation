@@ -9,6 +9,7 @@
 extern char imsi[16];
 #endif
 
+extern const char *batterystate[];
 
 // Function prototype
 void GetPinName(pin_t pin, char *pinname);

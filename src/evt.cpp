@@ -380,6 +380,9 @@ static inline int make_hour_key(time_t ts) {
 /*
  * ======================================================================================================================
  * EVT_ComputeHourAndReset() - Compute ET0 for the completed hour, return ET0 and ETc (if kc != 1)
+ * 
+ * ETc Reasonable values typically range from 0.05 to 0.4 mm/h, depending on climate, crop stage, 
+ * and time of day—peaking midday in summer and near zero at night or in cool/wet conditions.
  * =======================================================================================================================
  */
 static inline bool EVT_ComputeHourAndReset (EvtHour &acc, double &ET0_mm_h, double &ETc_mm_h) {
@@ -436,7 +439,7 @@ void EVT_Build_JSON(time_t ts, double ET0, double ETc) {
 
   writer.name("at").value(tstamp);
 
-  writer.name("et").value(ET0, 3);
+  writer.name("et").value(ET0, 3); // captures 3 decimal places (e.g., 0.123)
 
   // fabs() calculates the absolute value of a floating-point number.
   // It returns the magnitude of a number, disregarding its sign. If the input is negative, 

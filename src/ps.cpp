@@ -15,6 +15,14 @@
 #include "include/main.h"
 #include "include/output.h"
 
+const char *batterystate[] = {"UNKN", "!CHARGING", "CHARGING", "CHARGED", "DISCHARGING", "FAULT", "MISSING"};
+
+/*
+ * ======================================================================================================================
+ * Fuction Definations
+ * =======================================================================================================================
+ */
+
 /*
  * ======================================================================================================================
  * GetPinName() - return the pin name in provider buffer
@@ -218,6 +226,103 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+  else if (s.equals("NOWIND")) { 
+    Output("DoAction:NOWIND");
+    DoWind=false;
+    ws_refresh = false;
+    if (SD_exists) {
+      if (SD.exists(SD_NOWIND_FILE)) {
+        Output ("NOWIND EXISTS");
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_NOWIND_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("NOWIND SET");
+        }
+        else {
+          Output ("NOWIND OPEN ERR");
+          return(-3);
+        }
+      }
+    }
+    else {
+      Output("DOWIND, SD NF"); 
+      return(-1);      
+    }
+    return(0);  
+  }
+
+  else if (s.equals("DOWIND")) {
+    Output("DoAction:DOWIND");
+    DoWind=true;
+    if (SD_exists) {
+      if (SD.exists(SD_NOWIND_FILE)) {
+        if (SD.remove (SD_NOWIND_FILE)) {
+          Output ("NOWIND DEL OK");
+        }
+        else {
+          Output ("NOWIND DEL ERR");
+          return(-2);
+        }
+      }
+    }
+    else {
+      Output("DOWIND, SD NF"); 
+      return(-1);      
+    }
+    return(0);  
+  }
+
+  else if (s.equals("NORAIN")) { 
+    Output("DoAction:NORAIN");
+    DoRain=false;
+    if (SD_exists) {
+      if (SD.exists(SD_NORAIN_FILE)) {
+        Output ("NORAIN EXISTS");
+      }
+      else {
+        // Touch File
+        File fp = SD.open(SD_NORAIN_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          Output ("NORAIN SET");
+        }
+        else {
+          Output ("NORAIN OPEN ERR");
+          return(-3);
+        }
+      }
+    }
+    else {
+      Output("DORAIN, SD NF"); 
+      return(-1);      
+    }
+    return(0);  
+  }
+
+  else if (s.equals("DORAIN")) { 
+    Output("DoAction:DORAIN");
+    DoRain=true;
+    if (SD_exists) {
+      if (SD.exists(SD_NORAIN_FILE)) {
+        if (SD.remove (SD_NORAIN_FILE)) {
+          Output ("NORAIN DEL OK");
+        }
+        else {
+          Output ("NORAIN DEL ERR");
+          return(-2);
+        }
+      }
+    }
+    else {
+      Output("DORAIN, SD NF"); 
+      return(-1);      
+    }
+    return(0);  
+  }
+
   else if (s.equals("OP1DIST")) { // Set OP1 State File to Distance
     Output("DoAction:OP1DIST");
     if (SD_exists) {
@@ -241,6 +346,7 @@ int Function_DoAction(String s) {
         if (fp) {
           fp.close();
           Output ("OP1=DIST, SET");
+          pinMode(OP1_PIN, INPUT);
         }
         else {
           Output ("OP1=DIST, OPEN ERR");
@@ -393,6 +499,7 @@ int Function_DoAction(String s) {
         if (fp) {
           fp.close();
           Output ("OP1=RAW, SET");
+          pinMode(OP1_PIN, INPUT);
         }
         else {
           Output ("OP1=RAW, OPEN ERR");
@@ -479,18 +586,34 @@ int Function_DoAction(String s) {
         Output ("OP2=RAW, ALREADY EXISTS");    
       }
       else {
+
         // Touch File
         File fp = SD.open(SD_OP2_RAW_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
           OP2_State = OP2_STATE_RAW;
           Output ("OP2=RAW, SET");
+          pinMode(OP2_PIN, INPUT);
         }
         else {
           Output ("OP2=RAW, OPEN ERR");
           return(-2);
         }
       }
+
+      if (SD.exists(SD_OP2_VBV_FILE)) {
+        if (SD.remove (SD_OP2_VBV_FILE)) {
+          Output ("OP2=CLR, DEL VBV:OK");
+        }
+        else {
+          Output ("OP2=CLR, DEL VBV:ERR");
+          return(-3);
+        }
+      }
+      else {
+        Output ("OP2=CLR, DEL OP2VBV:NF");
+      }
+
     }
     else {
       Output("OP2=RAW, SD NF"); 
@@ -499,11 +622,55 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+    else if (s.equals("OP2VBV")) { // Set OP2 State File to Voltaic Battery Voltage
+    Output("DoAction:OP2VBV");
+    // Add OP2 Raw configuration
+    if (SD_exists) {
+      if (SD.exists(SD_OP2_VBV_FILE)) {
+        Output ("OP2=VNV, ALREADY EXISTS");    
+      }
+      else {
+
+        // Touch File
+        File fp = SD.open(SD_OP2_VBV_FILE, FILE_WRITE);
+        if (fp) {
+          fp.close();
+          OP2_State = OP2_STATE_VOLTAIC;
+          Output ("OP2=VBV, SET");
+          pinMode(OP2_PIN, INPUT);
+        }
+        else {
+          Output ("OP2=VBV, OPEN ERR");
+          return(-2);
+        }
+      }
+
+      if (SD.exists(SD_OP2_RAW_FILE)) {
+        if (SD.remove (SD_OP2_RAW_FILE)) {
+          Output ("OP2=CLR, DEL RAW:OK");
+        }
+        else {
+          Output ("OP2=CLR, DEL RAW:ERR");
+          return(-3);
+        }
+      }
+      else {
+        Output ("OP2=CLR, DEL OP2RAW:NF");
+      }
+
+    }
+    else {
+      Output("OP2=VBV, SD NF"); 
+      return(-1);      
+    }
+    return(0);
+  }
     
   else if (s.equals("OP2CLR")) { // Clear OP2 State Files
     int state=0;
     Output("DoAction:OP2CLR");
     if (SD_exists) {
+
       if (SD.exists(SD_OP2_RAW_FILE)) {
         if (SD.remove (SD_OP2_RAW_FILE)) {
           OP2_State = OP2_STATE_NULL;
@@ -517,6 +684,21 @@ int Function_DoAction(String s) {
       else {
         Output ("OP2=CLR, DEL OP2RAW:NF");
       }
+
+      if (SD.exists(SD_OP2_VBV_FILE)) {
+        if (SD.remove (SD_OP2_VBV_FILE)) {
+          OP2_State = OP2_STATE_NULL;
+          Output ("OP2=CLR, DEL VBV:OK");
+        }
+        else {
+          Output ("OP2=CLR, DEL VBV:ERR");
+          state=-2;
+        }
+      }
+      else {
+        Output ("OP2=CLR, DEL OP2VBV:NF");
+      }
+
     }
     else {
       Output("OP2=CLR, SD NF"); 
@@ -698,7 +880,7 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (s.equals("OBI105")) { // Set 15 Minute Observations, Transmit Interval to 15 Minutes
+  else if (s.equals("OBI15M")) { // Set 15 Minute Observations, Transmit Interval to 15 Minutes
     Output("DoAction:OBI15M");
     sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
     Output(msgbuf);  
@@ -784,7 +966,7 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (s.indexOf("SETELEV:" == 0)) { // Pattern start of string aka 0 offset
+  else if (s.startsWith("SETELEV:")) { // Pattern start of string aka 0 offset
     Output("DoAction:SETELEV");
     String rest = s.substring(8);   // get part after "SETELEV:", 8 = length of 
     long elevation = rest.toInt();  // convert to integer
@@ -814,6 +996,40 @@ int Function_DoAction(String s) {
     }
     else {
       Output("SETELEV, INVALID ELEV#"); 
+      return(-2);           
+    }
+    return(0);
+  }
+
+  else if (s.startsWith("SETRTRO:")) { // Pattern start of string aka 0 offset
+    Output("DoAction:SETRTRO");
+    String rest = s.substring(8); // get part after "SETRTRO:", 8 = length of 
+    long rtro = rest.toInt();     // convert to integer
+    if ((String(rtro) == rest) && (rtro >= 0) && (rtro <= 23)) {
+      if (SD_exists) {
+        if (SD.exists(SD_RTRO_FILE)) { 
+          SD_RemoveFile (SD_RTRO_FILE);
+        }
+        File file = SD.open(SD_RTRO_FILE, FILE_WRITE);
+        if (file) {
+          file.print(rtro);  // write the elevation to the file
+          file.close();      // save and close the file
+          sprintf (Buffer32Bytes, "SETRTRO:%ld OK", rtro);
+
+          cf_rtro = rtro; // Set running value of elevation
+        } 
+        else {
+          sprintf (Buffer32Bytes, "SETRTRO:%ld FAIL", rtro); 
+        }
+        Output (Buffer32Bytes);
+      }
+      else {
+        Output("SETRTRO, SD NF"); 
+        return(-1);      
+      }
+    }
+    else {
+      Output("SETRTRO, INVALID RTRO#"); 
       return(-2);           
     }
     return(0);

@@ -4,6 +4,19 @@
  * ======================================================================================================================
  */
 
+  /*
+    Assume about 100,000 effective write/erase cycles for the flash region used for emulated EEPROM.
+
+    For wear‑leveling purposes on a Particle Boron, the EEPROM_NVM struct is effectively spread over the 
+    full 4096‑byte emulated‑EEPROM region that Device‑OS manages as one logical block
+
+    Worst case writing 32 bytes once a minute. So 41,000 writes per year (365 × 24 × 60)
+
+    With Particle’s built‑in wear‑leveling on the Boron, writing your EEPROM_NVM struct once per minute is very 
+    likely to last many years—probably far longer than the device’s practical field life.
+
+ */
+
 /*
  * ======================================================================================================================
  *  EEPROM NonVolitileMemory - stores rain totals in persistant memory

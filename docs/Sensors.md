@@ -44,9 +44,6 @@ Sensors
 | wd       | Wind Direction            |
 | wg       | Wind Gust            |
 | wgd      | Wind Gust Direction            |
-| pm1s10   | PM25AQI Standard PM1.0 (µg/m³)           |
-| pm1s25   | PM25AQI Standard PM2.5 (µg/m³)           |
-| pm1s100  | PM25AQI Standard PM10.0 (µg/m³)           |
 | pm1e10   | PM25AQI Environmental PM1.0 (µg/m³)           |
 | pm1e25   | PM25AQI Environmental PM2.5 (µg/m³)           |
 | pm1e100  | PM25AQI Environmental PM10.0 (µg/m³)           |

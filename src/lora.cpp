@@ -15,7 +15,6 @@
 #include <AES.h>
 
 #include "include/ssbits.h"
-
 #include "include/cf.h"
 #include "include/main.h"
 #include "include/sdcard.h"
@@ -68,7 +67,6 @@ AES aes;
  *  Note: We are dedicating SPI1 to the RH_RF95 driver. No need to mask interrupts.
  * ======================================================================================================================
  */
-
 RH_RF95 rf95(LORA_SS, LORA_IRQ_PIN, hardware_spi); // SPI1
 
 bool LORA_exists = false;
@@ -85,7 +83,6 @@ const char *relay_msgtypes[] = {"UNKN", "INFO", "LR"}; // Particle Message Types
 
 LORA_MSG_RELAY_STR lora_msg_relay[LORA_RELAY_MSGCNT];
 
-
 /* 
  *=======================================================================================================================
  * lora_relay_msg_free()
@@ -96,7 +93,6 @@ void lora_relay_msg_free(LORA_MSG_RELAY_STR *m) {
   m->message_type = 0;
   memset (m->message, 0, LORA_RELAY_MSG_LENGTH);
 }
-
 
 /* 
  *=======================================================================================================================
@@ -162,7 +158,6 @@ void lora_msgs_to_n2s() {
   }
 }
 
-
 /* 
  *=======================================================================================================================
  * lora_device_initialize()
@@ -176,6 +171,7 @@ void lora_device_initialize() {
     }
   }
 }
+
 /* 
  *=======================================================================================================================
  * lora_cf_validate() - Validate LoRa variables from CONFIG.TXT

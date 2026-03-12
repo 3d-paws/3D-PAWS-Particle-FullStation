@@ -9,6 +9,7 @@
 #include "include/qc.h"
 #include "include/ssbits.h"
 #include "include/mux.h"
+#include "include/dsmux.h"
 #include "include/sensors.h"
 #include "include/evt.h"
 #include "include/eeprom.h"
@@ -315,7 +316,9 @@ void OBS_Do() {
     return;
   }
 
-  Wind_GustUpdate(); // Update Gust and Gust Direction readings
+  if (DoWind) {
+    Wind_GustUpdate(); // Update Gust and Gust Direction readings
+  }
   
 #if PLATFORM_ID == PLATFORM_ARGON
   int BatteryState = 0;
@@ -357,12 +360,14 @@ void OBS_Do() {
 
   if (!AQS_Enabled) {
     // Rain Gauge - Each tip is 0.2mm of rain
-    rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
-    rain = raingauge1_interrupt_count * 0.2;
-    rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > (((float)rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
-    raingauge1_interrupt_count = 0;
-    raingauge1_interrupt_stime = System.millis();
-    raingauge1_interrupt_ltime = 0; // used to debounce the tip
+    if (DoRain) {
+      rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
+      rain = raingauge1_interrupt_count * 0.2;
+      rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > (((float)rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
+      raingauge1_interrupt_count = 0;
+      raingauge1_interrupt_stime = System.millis();
+      raingauge1_interrupt_ltime = 0; // used to debounce the tip
+    }
 
     if (OP1_State == OP1_STATE_RAIN) {
       rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
@@ -373,65 +378,69 @@ void OBS_Do() {
       raingauge2_interrupt_ltime = 0; // used to debounce the tip
     }
 
-// Output("DB:OBS_URT");
-    EEPROM_UpdateRainTotals(rain, rain2);
-// Output("DB:OBS_URTx");
+    if (DoRain || (OP1_State == OP1_STATE_RAIN)) {
+      EEPROM_UpdateRainTotals(rain, rain2);
+    }
 
-    // Rain Gauge
-    strcpy (obs[oidx].sensor[sidx].id, "rg");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = rain;
-    obs[oidx].sensor[sidx++].inuse = true;
+    if (DoRain) {
+      // Rain Gauge
+      strcpy (obs[oidx].sensor[sidx].id, "rg");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = rain;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge Delta Seconds
-    // strcpy (obs[oidx].sensor[sidx].id, "rgs");
-    // obs[oidx].sensor[sidx].type = U_OBS;
-    // obs[oidx].sensor[sidx].u_obs = rgds;
-    // obs[oidx].sensor[sidx++].inuse = true;
+      // Rain Gauge Delta Seconds
+      // strcpy (obs[oidx].sensor[sidx].id, "rgs");
+      // obs[oidx].sensor[sidx].type = U_OBS;
+      // obs[oidx].sensor[sidx].u_obs = rgds;
+      // obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge Total
-    strcpy (obs[oidx].sensor[sidx].id, "rgt");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = eeprom.rgt1;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Rain Gauge Total
+      strcpy (obs[oidx].sensor[sidx].id, "rgt");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = eeprom.rgt1;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge  Prior Day
-    strcpy (obs[oidx].sensor[sidx].id, "rgp");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = eeprom.rgp1;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Rain Gauge  Prior Day
+      strcpy (obs[oidx].sensor[sidx].id, "rgp");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = eeprom.rgp1;
+      obs[oidx].sensor[sidx++].inuse = true;
+    }
 
-    // Wind Speed (Global)
-    strcpy (obs[oidx].sensor[sidx].id, "ws");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    ws = Wind_SpeedAverage();
-    ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
-    obs[oidx].sensor[sidx].f_obs = ws;
-    obs[oidx].sensor[sidx++].inuse = true;
+    if (DoWind) {
+      // Wind Speed (Global)
+      strcpy (obs[oidx].sensor[sidx].id, "ws");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      ws = Wind_SpeedAverage();
+      ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
+      obs[oidx].sensor[sidx].f_obs = ws;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Wind Direction
-    strcpy (obs[oidx].sensor[sidx].id, "wd");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    wd = Wind_DirectionVector();
-    wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
-    obs[oidx].sensor[sidx].i_obs = wd;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Wind Direction
+      strcpy (obs[oidx].sensor[sidx].id, "wd");
+      obs[oidx].sensor[sidx].type = I_OBS;
+      wd = Wind_DirectionVector();
+      wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
+      obs[oidx].sensor[sidx].i_obs = wd;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Wind Gust (Global)
-    strcpy (obs[oidx].sensor[sidx].id, "wg");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    ws = Wind_Gust();
-    ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
-    obs[oidx].sensor[sidx].f_obs = ws;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Wind Gust (Global)
+      strcpy (obs[oidx].sensor[sidx].id, "wg");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      ws = Wind_Gust();
+      ws = (isnan(ws) || (ws < QC_MIN_WS) || (ws > QC_MAX_WS)) ? QC_ERR_WS : ws;
+      obs[oidx].sensor[sidx].f_obs = ws;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Wind Gust Direction (Global)
-    strcpy (obs[oidx].sensor[sidx].id, "wgd");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    wd = Wind_GustDirection();
-    wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
-    obs[oidx].sensor[sidx].i_obs = wd;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Wind Gust Direction (Global)
+      strcpy (obs[oidx].sensor[sidx].id, "wgd");
+      obs[oidx].sensor[sidx].type = I_OBS;
+      wd = Wind_GustDirection();
+      wd = (isnan(wd) || (wd < QC_MIN_WD) || (wd > QC_MAX_WD)) ? QC_ERR_WD : wd;
+      obs[oidx].sensor[sidx].i_obs = wd;
+      obs[oidx].sensor[sidx++].inuse = true;
+    }
   }
 
 // Output("DB:OBS_I2C");
@@ -453,24 +462,7 @@ void OBS_Do() {
       pm25aqi_Produce_1m_Average();
     }
 
-    // Standard Particle PM1.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s10");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s10;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // Standard Particle PM2.5 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s25");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s25;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // Standard Particle PM10.0 concentration unit µg 𝑚3
-    strcpy (obs[oidx].sensor[sidx].id, "pm1s100");
-    obs[oidx].sensor[sidx].type = I_OBS;
-    obs[oidx].sensor[sidx].i_obs = pm25aqi_obs.s100;
-    obs[oidx].sensor[sidx++].inuse = true;
-
+    // Atmospheric Environmental is for outside
     // Atmospheric Environmental PM1.0 concentration unit µg 𝑚3
     strcpy (obs[oidx].sensor[sidx].id, "pm1e10");
     obs[oidx].sensor[sidx].type = I_OBS;
@@ -955,25 +947,28 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP1_PIN) * dg_adjustment;
     obs[oidx].sensor[sidx++].inuse = true;
   }
+  
   else if (OP1_State == OP1_STATE_RAIN) {
 // Output("DB:OBS_OP1R");
-    // Rain Guage 2
-    strcpy (obs[oidx].sensor[sidx].id, "rg2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = rain2;
-    obs[oidx].sensor[sidx++].inuse = true;
+    if (!AQS_Enabled) {
+      // Rain Guage 2
+      strcpy (obs[oidx].sensor[sidx].id, "rg2");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = rain2;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge 2 Total
-    strcpy (obs[oidx].sensor[sidx].id, "rgt2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Rain Gauge 2 Total
+      strcpy (obs[oidx].sensor[sidx].id, "rgt2");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = eeprom.rgt2;
+      obs[oidx].sensor[sidx++].inuse = true;
 
-    // Rain Gauge 2 Prior Day
-    strcpy (obs[oidx].sensor[sidx].id, "rgp2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
-    obs[oidx].sensor[sidx++].inuse = true;
+      // Rain Gauge 2 Prior Day
+      strcpy (obs[oidx].sensor[sidx].id, "rgp2");
+      obs[oidx].sensor[sidx].type = F_OBS;
+      obs[oidx].sensor[sidx].f_obs = eeprom.rgp2;
+      obs[oidx].sensor[sidx++].inuse = true;
+    }
   }
 
   if (OP2_State == OP2_STATE_RAW) {
@@ -984,6 +979,20 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = Pin_ReadAvg(OP2_PIN);
     obs[oidx].sensor[sidx++].inuse = true;
   }
+
+  if (OP2_State == OP2_STATE_VOLTAIC) {
+    // OP2 Voltaic Battery Voltage
+    float vbv = VoltaicVoltage(OP2_PIN);
+    strcpy (obs[oidx].sensor[sidx].id, "vbv");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = vbv;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    strcpy (obs[oidx].sensor[sidx].id, "vpc");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = VoltaicPercent(vbv);
+    obs[oidx].sensor[sidx++].inuse = true;
+   }
 
   // Heat Index Temperature
   if (HI_exists) {
@@ -1130,6 +1139,9 @@ void OBS_Do() {
 
   // Tinovi Soil Moisture
   mux_obs_do(oidx, sidx);
+
+  // Dallas Sensors Temperature on mux
+  dsmux_obs_do(oidx, sidx);
 
   // Set this after we read all sensors. So we capture if their state changes 
   obs[oidx].hth = SystemStatusBits;

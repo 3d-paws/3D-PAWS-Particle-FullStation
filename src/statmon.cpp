@@ -371,9 +371,9 @@ void StationMonitor() {
   if (cycle == 15) {
     if (PM25AQI_exists) {
       sprintf (msgbuf, "PM 10:%ld 25:%ld 100:%ld", 
-        pm25aqi_obs.s10,
-        pm25aqi_obs.s25,
-        pm25aqi_obs.s100);
+        pm25aqi_obs.e10,
+        pm25aqi_obs.e25,
+        pm25aqi_obs.e100);
     }
     else {
       sprintf (msgbuf, "PM NF");

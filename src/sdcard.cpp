@@ -56,12 +56,14 @@ char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_P
 char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";// File used to set pin as a Distance Gauge
 char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";// File used to set pin as a 2nd Rain Gauge
 char SD_OP1_RAW_FILE[]  = "OP1RAW.TXT"; // File used to set pin as generic analog device connected
-
+char SD_OP1_D5M_FILE[]  = "OP1D5M.TXT"; // Multiply by 1.25 for 5m Distance Gauge, Default is 10M
 char SD_OP2_RAW_FILE[]  = "OP2RAW.TXT"; // File used to set pin as generic analog device connected
+char SD_OP2_VBV_FILE[]  = "OP2VBV.TXT"; // Voltaic battery voltage
 
-char SD_OP1_D5M_FILE[] = "OP1D5M.TXT";  // Multiply by 1.25 for 5m Distance Gauge
-
-char SD_ELEV_FILE[] = "ELEV.TXT";       // Set the station elevation for MSLP calculation            
+char SD_NOWIND_FILE[] = "NOWIND.TXT";   // File used to disable wind observations
+char SD_NORAIN_FILE[] = "NORAIN.TXT";   // File used to disable main rain gauge observations
+char SD_ELEV_FILE[]   = "ELEV.TXT";     // Set the station elevation for MSLP calculation
+char SD_RTRO_FILE[]   = "RTRO.TXT";     // Set Rain total rollover offset from 0 UTC (hours).        
 
 
 /*

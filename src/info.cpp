@@ -13,9 +13,10 @@
 #endif
 
 #include "include/ssbits.h"
-#include "include/mux.h"
 #include "include/eeprom.h"
 #include "include/cf.h"
+#include "include/mux.h"
+#include "include/dsmux.h"
 #include "include/sensors.h"
 #include "include/evt.h"
 #include "include/wrda.h"
@@ -146,10 +147,9 @@ bool INFO_Do() {
   }
 
   // Battery Charge State
-  const char *bs[] = {"UNKN", "!CHARGING", "CHARGING", "CHARGED", "DISCHARGING", "FAULT", "MISSING"};
   int sbs = System.batteryState();
   if ((sbs>=0) && (sbs<=6)) {
-    writer.name("bcs").value(bs[sbs]);     
+    writer.name("bcs").value(batterystate[sbs]);     
   }
   else {
     writer.name("bcs").value(sbs);
@@ -235,8 +235,29 @@ bool INFO_Do() {
 
   // Station Elevation
   writer.name("elev").value(cf_elevation);
-
+  // Rain total rollover offset
+  writer.name("rtro").value(cf_rtro);
+  
   if (!AQS_Enabled) {
+    // How WIND is set
+    if (DoWind) {
+      writer.name("wind").value("ENABLED");
+      comma=",";
+    }
+    else {
+      writer.name("wind").value("DISABLED");
+      comma=","; 
+    }
+    // How RAIN is set
+    if (DoRain) {
+      writer.name("rain").value("ENABLED");
+      comma=",";
+    }
+    else {
+      writer.name("rain").value("DISABLED");
+      comma=","; 
+    }
+  
     // How Option 1 is Configured
     if (OP1_State == OP1_STATE_DISTANCE) {
       if (dg_adjustment == 1.25) {
@@ -259,12 +280,54 @@ bool INFO_Do() {
     if (OP2_State == OP2_STATE_RAW){
       writer.name("op2").value("RAW");
     }
+    else if (OP2_State == OP2_STATE_VOLTAIC){
+      writer.name("op2").value("VBV");
+    }
     else {
       writer.name("op2").value("NS"); // Not Set
     }
   }
 
+  // Discovered Device List
+  buf[0] = '\0'; 
+  // RTC
+  if (RTC_exists) {
+    sprintf (buf+strlen(buf), "rtc");
+  }
+  else {
+    sprintf (buf+strlen(buf), "!rtc");
+  }
+  if (SD_exists) {
+    sprintf (buf+strlen(buf), ",sd");
+  }
+  else {
+    sprintf (buf+strlen(buf), ",!sd");
+  }
+  if (eeprom_valid) {
+    sprintf (buf+strlen(buf), ",eeprom");   
+  }
+  else {
+    sprintf (buf+strlen(buf), ",eeprom(NV)");
+  }
+  if (MUX_exists) {
+    sprintf (buf+strlen(buf), ",mux");
+    comma=",";    
+  }
+  if (DSMUX_exists) {
+    sprintf (buf+strlen(buf), ",dsmux");
+    comma=",";    
+  }
+  if (LORA_exists) {
+    sprintf (buf+strlen(buf), ",lora(%d,%d,%dMHz)", cf_lora_unitid, cf_lora_txpower, cf_lora_freq);  
+  }
+  if (oled_type) {
+    sprintf (buf+strlen(buf), ",oled(%s)", OLED32 ? "32" : "64");  
+  }
+  writer.name("devs").value(buf);
+
   // Sensors
+  comma="";
+  buf[0] = '\0'; 
   if (BMX_1_exists) {
     sprintf (buf+strlen(buf), "%sBMX1(%s)", comma, bmxtype[BMX_1_type]);
     comma=",";
@@ -339,6 +402,7 @@ bool INFO_Do() {
     comma=",";
   }
 #endif
+
 #ifdef ENABLE_Evapotranspiration
   if (ADS_exists) {
     sprintf (buf+strlen(buf), "%sSR", comma);
@@ -353,6 +417,8 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sTSM", comma);
     comma=",";
   }
+
+
   if (MUX_exists) {
     for (int c=0; c<MUX_CHANNELS; c++) {
       if (mux[c].inuse) {
@@ -365,6 +431,28 @@ bool INFO_Do() {
       }
     }
   }
+
+  // DSMUX Temperature Sensors  
+  if (DSMUX_exists) {
+    sprintf (buf+strlen(buf), "%sDST(", comma);
+    
+    int count=0;
+    const char *comma1="";
+    for (int c=0; c<DS248X_CHANNELS; c++) {
+      if (dsmux_sensor_exists[c]) {
+        count++;
+        sprintf (buf+strlen(buf), "%s%d", comma1, c);
+        comma1=",";
+      }
+    }
+    if (count) {
+      sprintf (buf+strlen(buf), ")");
+    }
+    else {
+      sprintf (buf+strlen(buf), "NF)");
+    }
+  }
+
   if (TMSM_exists) {
     sprintf (buf+strlen(buf), "%sTMSM", comma);
     comma=",";
@@ -396,36 +484,17 @@ bool INFO_Do() {
   }
 
   if (!AQS_Enabled) {
-    GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
-    sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
+    if (DoRain) {
+      GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
+      sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
+    }
+    if (DoWind) {
+      GetPinName(ANEMOMETER_IRQ_PIN, Buffer32Bytes);
+      sprintf (buf+strlen(buf), "%sWS(%s)", comma, Buffer32Bytes);
+    }
   }
 
   writer.name("sensors").value(buf);
-
-  // RTC
-  if (RTC_exists) {
-    writer.name("rtc").value("OK");
-  }
-  else {
-    writer.name("rtc").value("NF");
-  }
-
-  // LoRa
-  if (LORA_exists) {
-    sprintf (buf, "%d,%d,%dMHz", cf_lora_unitid, cf_lora_txpower, cf_lora_freq);  
-  }
-  else {
-    sprintf (buf, "NF");
-  }
-  writer.name("lora").value(buf);
-
-  // Oled Display
-  if (oled_type) {
-    writer.name("oled").value(OLED32 ? "32" : "64");
-  }
-  else {
-    writer.name("oled").value("NF");
-  }
 
   // Serial Console Enable
   GetPinName(SCE_PIN, Buffer32Bytes);

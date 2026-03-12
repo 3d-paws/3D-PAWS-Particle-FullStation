@@ -17,7 +17,8 @@ Option 3: Connect to a cellular network using only APN
 
 >APN apn
 
-Below shows an example of what was needed for the T-Mobile SIM.
+Below shows an example of what was needed for the T-Mobile SIM (epc.tmobile.com).
+For Kore Super SIM use (super).
 
 >APN epc.tmobile.com
 

@@ -25,8 +25,9 @@
  *  Wind Direction - AS5600 Sensor
  * ======================================================================================================================
  */
+bool DoWind = true;
 WIND_STR wind;
-bool      AS5600_exists     = true;
+bool      AS5600_exists     = true;   // This will toggle based on sensor being able to respond.
 #if PLATFORM_ID == PLATFORM_MSOM
 int       AS5600_ADR        = 0x40;   // AS5600L
 #else
@@ -96,6 +97,7 @@ void anemometer_interrupt_handler()
  *  Optipolar Hall Effect Sensor SS451A - Rain Gauge
  * ======================================================================================================================
  */
+bool DoRain = true;
 volatile unsigned int raingauge1_interrupt_count;
 uint64_t raingauge1_interrupt_stime; // Send Time
 uint64_t raingauge1_interrupt_ltime; // Last Time
@@ -158,6 +160,48 @@ void as5600_initialize() {
 }
 
 /* 
+ * =======================================================================================================================
+ * CheckNoWindFile()
+ * =======================================================================================================================
+ */
+void CheckNoWindFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_NOWIND_FILE)) {
+      Output ("WIND: Disabled");
+      DoWind=false;
+    }
+    else {
+      Output ("WIND: Enabled");
+    }
+  }
+  else {
+    Output("WIND: Enabled, SD NF"); 
+  }     
+}
+
+/* 
+ * =======================================================================================================================
+ * CheckNoRainFile()
+ * =======================================================================================================================
+ */
+void CheckNoRainFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_NORAIN_FILE)) {
+      Output ("RAIN: Disabled");
+      DoRain=false;
+    }
+    else {
+      Output ("RAIN: Enabled");
+    }
+  }
+  else {
+    Output("RAIN: Enabled, SD NF"); 
+  }     
+}
+
+/* 
  *=======================================================================================================================
  * OP1_Initialize()
  *=======================================================================================================================
@@ -166,6 +210,7 @@ void OP1_Initialize() {
   Output ("OP1:INIT");
   if (SD_exists) {
     if (SD.exists(SD_OP1_DIST_FILE)) {
+      pinMode(OP1_PIN, INPUT);
       Output ("OP1=DIST");
       OP1_State = OP1_STATE_DISTANCE;
       if (SD.exists(SD_OP1_D5M_FILE)) {
@@ -178,9 +223,11 @@ void OP1_Initialize() {
       }
     }
     else if (SD.exists(SD_OP1_RAIN_FILE)) {
+      // pinMode(RAINGAUGE2_IRQ_PIN, INPUT_PULLUP);
       Output ("OP1=RAIN");
       OP1_State = OP1_STATE_RAIN;
       // Optipolar Hall Effect Sensor SS451A - Rain Gauge 2
+      pinMode(RAINGAUGE2_IRQ_PIN, INPUT);
       raingauge2_interrupt_count = 0;
       raingauge2_interrupt_stime = System.millis();
       raingauge2_interrupt_ltime = 0;  // used to debounce the tip
@@ -188,6 +235,7 @@ void OP1_Initialize() {
     }
     else if (SD.exists(SD_OP1_RAW_FILE)) {
       Output ("OP1=RAW");
+      pinMode(OP1_PIN, INPUT);
       OP1_State = OP1_STATE_RAW;
     }
     else {
@@ -208,8 +256,14 @@ void OP2_Initialize() {
   Output ("OP2:INIT");
   if (SD_exists) {
     if (SD.exists(SD_OP2_RAW_FILE)) {
+      pinMode(OP2_PIN, INPUT);
       Output ("OP2=RAW");
       OP2_State = OP2_STATE_RAW;
+    }
+    else if (SD.exists(SD_OP2_VBV_FILE)) {
+      pinMode(OP2_PIN, INPUT);
+      Output ("OP2=VBV");
+      OP2_State = OP2_STATE_VOLTAIC;
     }
     else {
       Output ("OP2=NULL");
@@ -233,6 +287,56 @@ float Pin_ReadAvg(int pin) {
     delay(10);  // Short delay between readings
   }
   return(totalValue / numReadings);
+}
+
+/* 
+ *=======================================================================================================================
+ * VoltaicVoltage() - Breakout the Voltaic Cell Voltage from the UCB-C 
+ * 
+ * Info: https://blog.voltaicsystems.com/reading-charge-level-of-voltaic-usb-battery-packs/ for  D+ 
+ * Info: https://blog.voltaicsystems.com/updated-usb-c-pd-and-always-on-for-v25-v50-v75-batteries/ for SBU
+ * 
+ * Newer V25/V50/V75 firmware (post-2023) moved this cell voltage signal to SBU pins (A8/B8) on USB-C for better USB 
+ * compliance. Older units used D+. Which conflicted with data transfer. 
+ * 
+ * Using both A8/B8 SBU pins ensures compatibility regardless of USB-C cable orientation (flipped or not)
+ * 
+ * Voltaic’s docs say the pack reports half the cell voltage.
+ * The expected voltage range on Voltaic V25's monitor pins (D+ on older firmware, 
+ *   SBU1 (A8) and SBU2 (B8) on newer) is 1.6V to 2.1V
+ *=======================================================================================================================
+ */
+float VoltaicVoltage(int pin) {
+  int numReadings = 5;
+  int totalValue = 0;
+  for (int i = 0; i < numReadings; i++) {
+    totalValue += analogRead(pin);
+    delay(10);  // Short delay between readings
+  }
+  float voltage = (3.3 * (totalValue / (float)numReadings)) / 4095.0; 
+  return(voltage);
+}
+
+/*
+ *=======================================================================================================================
+ * VoltaicVoltage() - Voltaic Cell Percent Charge
+ *   Full charge: 4.2V cell → 2.1V on SBU (100%)  
+ *   75% charge:  ~3.9V cell → ~1.95V on SBU  
+ *   50% charge:  ~3.7V cell → ~1.85V on SBU  
+ *   25% charge:  ~3.4V cell → ~1.7V on SBU  
+ *   Empty:       3.2V cell → 1.6V on SBU (0%)
+ *=======================================================================================================================
+ */
+float VoltaicPercent(float half_cell_voltage) {
+  float cellV = half_cell_voltage * 2.0;
+  
+  if (cellV >= 4.20) return 100.0;
+  if (cellV <= 3.20) return 0.0;
+  
+  // Simple linear approximation over Voltaic's specified 3.2-4.2V range
+  // (Li-ion curve is flat in middle, so voltage alone is rough anyway)
+  float percent = ((cellV - 3.20) / (4.20 - 3.20)) * 100.0;
+  return constrain(percent, 0, 100);
 }
 
 /*
@@ -524,7 +628,7 @@ void Wind_TakeReading() {
  *=======================================================================================================================
  */
 void Wind_Distance_Air_Initialize() {
-  Output ("WindDistAQ Init()");
+  
 
   // Clear windspeed counter  
   anemometer_interrupt_count = 0;
@@ -535,56 +639,56 @@ void Wind_Distance_Air_Initialize() {
   wind.gust_direction = -1;
   wind.bucket_idx = 0;
 
-  // Take N 1s samples of wind speed and direction and fill arrays with values.
-  for (int i=0; i< WIND_READINGS; i++) {
-    lora_msg_poll(); // 750ms Second Delay
-    HeartBeat();     // Provides a 250ms delay
+  // Check if we need to do this
+  if (DoWind || PM25AQI_exists || (OP1_State == OP1_STATE_DISTANCE)) {
+    Output ("WindDistAQInit(Do)");
+
+    // Take N 1s samples of wind speed and direction and fill arrays with values.
+    for (int i=0; i< WIND_READINGS; i++) {
+      lora_msg_poll(); // 750ms Second Delay
+      HeartBeat();     // Provides a 250ms delay
+      if (!AQS_Enabled) {
+        Wind_TakeReading();
+      }
+      if (OP1_State == OP1_STATE_DISTANCE) {
+        DistanceGauge_TakeReading();
+      }
+      if (PM25AQI_exists) {
+        pm25aqi_TakeReading();
+      }
+      if (SerialConsoleEnabled) Serial.print(".");  // Provide Serial Console some feedback as we loop and wait til next observation
+      OLED_spin();
+    }
+    if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
+
+    // Now we have N readings we can compute other wind related global varibles
+
     if (!AQS_Enabled) {
       Wind_TakeReading();
+      ws_refresh = false; // Set to false since we have just initialized wind speed data.
     }
+
     if (OP1_State == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
     }
+
     if (PM25AQI_exists) {
-      pm25aqi_TakeReading();
+      sprintf (Buffer32Bytes, "pm1e10:%ld", pm25aqi_obs.e10);
+      Output (Buffer32Bytes);
+    
+      sprintf (Buffer32Bytes, "pm1e25:%ld", pm25aqi_obs.e25);
+      Output (Buffer32Bytes);
+    
+      sprintf (Buffer32Bytes, "pm1e100:%ld", pm25aqi_obs.e100);
+      Output (Buffer32Bytes);
     }
-    if (SerialConsoleEnabled) Serial.print(".");  // Provide Serial Console some feedback as we loop and wait til next observation
-    OLED_spin();
 
     if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
   }
-
-  // Now we have N readings we can compute other wind related global varibles
-
-  if (!AQS_Enabled) {
-    Wind_TakeReading();
-    ws_refresh = false; // Set to false since we have just initialized wind speed data.
+  else {
+    Output ("WindDistAQInit(Not)");
+     ws_refresh = false;
   }
-  if (OP1_State == OP1_STATE_DISTANCE) {
-    DistanceGauge_TakeReading();
-  }
-
-  if (PM25AQI_exists) {
-    sprintf (Buffer32Bytes, "pm1s10:%d", pm25aqi_obs.s10);
-    Output (Buffer32Bytes);
-    
-    sprintf (Buffer32Bytes, "pm1s25:%d", pm25aqi_obs.s25);
-    Output (Buffer32Bytes); 
-    
-    sprintf (Buffer32Bytes, "pm1s100:%d", pm25aqi_obs.s100);
-    Output (Buffer32Bytes);
-    
-    sprintf (Buffer32Bytes, "pm1e10:%d", pm25aqi_obs.e10);
-    Output (Buffer32Bytes);
-    
-    sprintf (Buffer32Bytes, "pm1e25:%d", pm25aqi_obs.e25);
-    Output (Buffer32Bytes);
-    
-    sprintf (Buffer32Bytes, "pm1e100:%d", pm25aqi_obs.e100);
-    Output (Buffer32Bytes);
-  }
-
-  if (SerialConsoleEnabled) Serial.println();  // Send a newline out to cleanup after all the periods we have been logging
 }
 
 /* 

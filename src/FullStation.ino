@@ -1,6 +1,6 @@
 PRODUCT_VERSION (44);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260204v44"
+#define VERSION_INFO "FS-260312v45"
 
 /*
  *======================================================================================================================
@@ -253,7 +253,7 @@ PRODUCT_VERSION (44);
  *                          Removed the I2C_Check_Sensors()
  *                          Distance Sensor raw reading "op1r" now has sensor type adjustment op1r = in_ReadAvg(OP1_PIN) * dg_adjustment;
  * 
- *          Version 44 Released on 2026-xx-xx
+ *          Version 44 Released on 2026-02-04
  *          2025-11-15  RJB Reboot no longer needed after SETELEV:xxxx DoAction
  *                          When ELEV.TXT is read at init, ELEV:#### is printed.
  *          2025-11-19  RJB Bug Fix in SD_TouchFile() touch not using passed file name
@@ -261,6 +261,18 @@ PRODUCT_VERSION (44);
  *          2026-01-05  RJB Modified Wind_Distance_Air_Initialize() to not do Wind if AQS Station
  *          2026-01-29  RJB evt_initialize() now check cf_sr_cal != 0.0 to prevent divide by zero in evt_readIrradiance()
  *          2026-02-02  RJB Bug Fix evt_do() now set the acc.hour_key for the next hourly period Reverted on 2/4
+ * 
+ *          Version 45 Released on 2026-03-12
+ *          2026-02-19  RJB Bug Fix - Set 15 Minute Observations, Transmit Interval to 15 Minutes
+ *          2026-02-25  RJB Changed AQ to report only pm1e10, pm1e25, pm1e100
+ *                          Added No Wind support with DoActions NOWIND, DOWIND and file NOWIND.TXT
+ *                          Added voltaic voltage read to op2 pin option  OP2VBV(.TXT)
+ *          2026-03-10  RJB Added DSMUX 1-Wire support for 8 temperature sensors dst0-7
+ *                          Reworked INFO added devs grouping
+ *                          Fixed bug in wind init withthe period
+ *                          Added STARTUP(System.enableFeature(FEATURE_RESET_INFO)); to avoid uninitialied values.
+ *          2026-03-12  RJB Added support to set rain total rollover 
+ *                          Added pinmode INPUT to wind rain OP1, and OP2
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -663,6 +675,7 @@ PRODUCT_VERSION (44);
 #include "include/output.h"         // Serial and OLED Output Functions  
 #include "include/wrda.h"           // Wind Rain Distance Air Functions
 #include "include/mux.h"            // Mux Functions for mux connected sensors
+#include "include/dsmux.h"          // Dallas One Wire Mux Functions 
 #include "include/time.h"           // Time Management Functions
 #include "include/ps.h"             // Particle Support Functions
 #include "include/sensors.h"        // I2C Based Sensor Functions
@@ -741,7 +754,9 @@ void BackGroundWork() {
   uint64_t OneSecondFromNow = System.millis() + 1000;
 
   if (!AQS_Enabled) {
-    Wind_TakeReading();
+    if (DoWind) {
+      Wind_TakeReading();
+    }
 
     if (OP1_State == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
@@ -778,6 +793,9 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 // https://docs.particle.io/cards/firmware/system-thread/system-threading-behavior/
 SYSTEM_THREAD(ENABLED);
+
+// Ensures FEATURE_RESET_INFO is set before setup(), fixing garbage data.
+STARTUP(System.enableFeature(FEATURE_RESET_INFO));
 
 /*
  * ======================================================================================================================
@@ -858,8 +876,11 @@ void setup() {
   // If config file exists it is opened and read
   SD_ReadConfigFile();
 
-  // If elevation file exists it is opened, read and elevation set
+  // If elevation file exists it is opened, read and elevation set, else 0
   SD_ReadElevationFile();
+
+  // If offset file exists it is opened, read and rain total rollover offset set, else 0
+  SD_Read_RTRO_File();
 
   // Display EEPROM Information 
   EEPROM_Dump();
@@ -931,34 +952,47 @@ void setup() {
   // Check SD Card for file to determine if we are a Air Quality Station
   OPT_AQS_Initialize(); // Sets AQS_Enabled to true
 
-
   //==================================================
   // Wind Speed and Rain Gauge Interrupt Based Sensors
   //==================================================
-
-  if (!AQS_Enabled) {
-    // Optipolar Hall Effect Sensor SS451A - Wind Speed
-    anemometer_interrupt_count = 0;
-    anemometer_interrupt_stime = System.millis();
-    attachInterrupt(ANEMOMETER_IRQ_PIN, anemometer_interrupt_handler, FALLING);
-
-    // Optipolar Hall Effect Sensor SS451A - Rain Gauge
-    raingauge1_interrupt_count = 0;
-    raingauge1_interrupt_stime = System.millis();
-    raingauge1_interrupt_ltime = 0;  // used to debounce the tip
-    attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
-  }
-
-  // Check SD Card for files to determine Observation and Transmit Intervals
-  OBI_TXI_Initialize();
-  
   if (!AQS_Enabled) {
     // Check SD Card for files to determine if pin OP1 has a DIST, 2nd Rain Gauge or Raw file
     OP1_Initialize();
 
     // Check SD Card for files to determine if pin OP2 Raw file
     OP2_Initialize();
+
+    CheckNoWindFile(); // if NOWIND.TXT found then DoWind is set false
+    if (DoWind) {
+      // Optipolar Hall Effect Sensor SS451A - Wind Speed
+      pinMode(ANEMOMETER_IRQ_PIN, INPUT);
+      anemometer_interrupt_count = 0;
+      anemometer_interrupt_stime = System.millis();
+      attachInterrupt(ANEMOMETER_IRQ_PIN, anemometer_interrupt_handler, FALLING);
+
+      as5600_initialize();
+    }
+
+    CheckNoRainFile(); // if NORAIN.TXT found then DoWind is set false
+    if (DoRain) {
+      // Optipolar Hall Effect Sensor SS451A - Rain Gauge
+      pinMode(RAINGAUGE1_IRQ_PIN, INPUT);
+      raingauge1_interrupt_count = 0;
+      raingauge1_interrupt_stime = System.millis();
+      raingauge1_interrupt_ltime = 0;  // used to debounce the tip
+      attachInterrupt(RAINGAUGE1_IRQ_PIN, raingauge1_interrupt_handler, FALLING);
+    }
   }
+  else {
+    // Air Quality Station Enabled
+    DoWind = false; // Make sure wind is off (it's on by default)
+    DoRain = false; // Make sure rain is off (it's on by default)
+  }
+
+  // Check SD Card for files to determine Observation and Transmit Intervals
+  OBI_TXI_Initialize();
+  
+
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
@@ -969,6 +1003,10 @@ void setup() {
   if (!MUX_exists) {
     tsm_initialize(); // Check main bus
   }
+
+  // Scan Dallas 1-Wire Mux for temperature sensors
+  dsmux_initialize();
+
   bmx_initialize();
 #if (PLATFORM_ID != PLATFORM_MSOM)
   htu21d_initialize();  // This sensor has same i2c address as AS5600L
@@ -979,7 +1017,6 @@ void setup() {
   si1145_initialize();
   vlx_initialize();
   blx_initialize();
-  as5600_initialize();
   pm25aqi_initialize();
   hdc_initialize();
   lps_initialize();
@@ -1000,11 +1037,15 @@ void setup() {
   evt_initialize();   // checks for shortwave radiation from pyranometer via 16bit A/D
                       // Requires SHT_1_exists & AS5600_exists to be true for Evapotranspiration to run 
 #endif
-  
+
+// Muon can not support an external RFM95 lora module. SPI1 is being used by the built in LoRaWAN chip.
+// The built in LoRaWAN chip can not be used for plain old LoRa messages.
+#if (PLATFORM_ID != PLATFORM_MSOM)
   // Initialize RH_RF95 LoRa Module
   lora_initialize();
   lora_device_initialize();
   lora_msg_check();
+#endif
 
   // Connect the device to the Cloud. 
   // This will automatically activate the cellular connection and attempt to connect 
@@ -1081,7 +1122,7 @@ void loop() {
       // If we waited too long for acks while publishing and this threw off our wind observations.
       // In that code ws_refresh was set to true for us to reinit wind data.
       if (!AQS_Enabled) {
-        if (ws_refresh) {
+        if (DoWind && ws_refresh) {
           Output ("WS Refresh Required");
           Wind_Distance_Air_Initialize();
         }

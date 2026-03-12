@@ -72,6 +72,7 @@ extern int cf_lora_txpower;
 extern int cf_lora_freq;
 
 extern int cf_elevation;
+extern int cf_rtro; // Rain total rollover offset
 
 #ifdef ENABLE_Evapotranspiration
 // Used for Evapotranspiration
@@ -120,3 +121,4 @@ extern float cf_sr_dark_offset;
 // Function prototypes
 void SD_ReadConfigFile();
 void SD_ReadElevationFile();
+void SD_Read_RTRO_File();

@@ -3,12 +3,14 @@
 [← Particle Console](ParticleConsole.md)
 
 On the view device screen on the Particle Console there is a FUNCTIONS area at the lower right. This is used to send commands to the online device.
+After doing these commands you should do a REBOOT and then look at the INFO message on the Partice console. To validate the change.
 
 * REBOOT - Reboot device. Toggle pin A0. If no relay/watchdog is connected to A0, then a soft boot on the Particle board is performed.
 * SEND - Send queued observations.
 * INFO - Trigger station to send station information. Event type "INFO".
 * CRT - Clear rain totals that are stored in nvram.
 * SETELEV:xxxx - Set station elevation. Replace xxxx with elevation in meters. Creates file ELEV.TXT
+* SETRTRO:xx   - Set Rain Total Rollover Offset, valid values (0-23). Creates file RTRO.TXT
 
 Observation Timing and Reporting
 * TXI5M - Set 1 Minute Observations, Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes other files.
@@ -19,14 +21,19 @@ Observation Timing and Reporting
 * OBI15M - Set 15 Minute Observations, Transmit Interval to 15 Minutes (OBI15M.TXT). Removes other files.
 
 Argron and Boron Pins for OP1=A4, OP2=A5 and Muon Pins for OP1=A0, OP2=A2
-* OP1DIST - Configures pin for a 10m distance gauge (OP1DIST.TXT)
-* OP1D5M - Configures 5m Sensor. Value read from pin is multiplied by 1.25mm (OP1D5M.TXT)
-* OP1RAIN - Configures pin for 2nd rain gauge (OP1RAIN.TXT)
-* OP1RAW - Configures pin for raw analog readings (OP1RAW.TXT)
+* OP1DIST - Configure pin for a 10m distance gauge (OP1DIST.TXT) report as (sg) - Stream/Snow gauge.
+* OP1D5M - Configure 5m Sensor. Value read from pin is multiplied by 1.25mm (OP1D5M.TXT)
+* OP1RAIN - Configures pin for 2nd rain gauge (OP1RAIN.TXT) report as (rg2)
+* OP1RAW - Configures pin for raw analog readings (OP1RAW.TXT) report as (op1r)
 * OP1CLR - Unassigns pin. Removes associated OP1 TXT files.
-* OP2RAW - Configure for raw readings. Average of 5 samples 10ms apart (OP2RAW.TXT)
+* OP2RAW - Configure for raw readings. Average of 5 samples 10ms apart (OP2RAW.TXT) report as (op2r)
+* OP2VBV - Read Voltaic battery voltage (OP2VBV.TXT) report as (op2vbv)
 * OP2CLR - Unassigns pin. Removes associated OP2 TXT files.
 
 Optional Station Configurations
-* OPTAQS - Air Quality Station configuration (OPTAQS.TXT) (Requires REBOOT after setting)
-* OPTFS - Full Station configuration (Removes OPTAQS.TXT) (Requires REBOOT after setting)
+* OPTAQS    - Air Quality Station configuration (OPTAQS.TXT) (Requires REBOOT after setting)
+* OPTFS     - Full Station configuration (Removes OPTAQS.TXT) (Requires REBOOT after setting)
+* OPTNORAIN - Disable main rain gauge observations  (NORAIN.TXT)  
+* OPTRAIN   - Enable main rain gauge observations (Removes NORAIN.TXT)
+* OPTNOWIND - Disable wind observations (NOWIND.TXT)  
+* OPTWIND   - Enable wind observations on main rain gauge (Removes NOWIND.TXT)
