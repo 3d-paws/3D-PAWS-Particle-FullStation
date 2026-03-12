@@ -105,6 +105,7 @@ Sensors
 | tmsms5   | Tinovi i2cMultiSm Soil Moisture 5           |
 | tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature          |
 | tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature            |
+| dst(0-7) | Dallas DS18B20 Temperature Sensor connected to DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter|
 | pmts     | TMP112A Particle Muon on board temperature sensor|
 | sr       | SP Lite2 Pyranometer from Kipp & Zonen|
 
@@ -217,6 +218,36 @@ Pyranometer → ADS1115 -  By wiring red/blue across A0/A1, we measure the volta
   This is the “–” side of the voltage.
 - SP Lite2 Shield (black) → ADS1115 GND \
   This shield is tied to ground to suppress electrical noise.
+
+### DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter
+The MCP9808 uses the same 8 addresses, though we only used the first 4 of them for mcp1 - mcp4.  We will use the highest address @ 0x1F
+```
+  The table below shows all possible addresses
+  | A2 | A1 | A0 | 7‑bit I²C address |
+  | -- | -- | -- | ----------------- |
+  | 0  | 0  | 0  | 0x18              |
+  | 0  | 0  | 1  | 0x19              |
+  | 0  | 1  | 0  | 0x1A              |
+  | 0  | 1  | 1  | 0x1B              |
+  | 1  | 0  | 0  | 0x1C              | 
+  | 1  | 0  | 1  | 0x1D              |
+  | 1  | 1  | 0  | 0x1E              |
+  | 1  | 1  | 1  | 0x1F              | Using this address
+```
+Example Serial Console power on discovery output with temperature probes on 0,1,4,7 Probe address is informational only. 
+```  
+  DSMUX:INIT
+  DSMUX Channel Scan
+   dst0=22.25 28:3B:18:79:A2:19:03:77
+   dst1=22.56 28:FB:90:18:04:00:00:99
+   dst4=22.62 28:64:89:36:04:00:00:E6
+   dst7=22.56 28:D0:86:36:04:00:00:52
+  DSMUX 4 Found
+```
+Reported in INFO as "dsmux":"0,1,4,7"
+
+Reported in OBS as "dst0":22.6,"dst1":22.6,"dst4":22.7,"dst7":22.6
+
 
 ### Derived Sensor Observations
 #### Heat Index Temperature
