@@ -36,4 +36,4 @@ Optional Station Configurations
 * NORAIN  - Disable main rain gauge observations  (Creates NORAIN.TXT)  
 * DORAIN  - Enable main rain gauge observations (Removes NORAIN.TXT)
 * NOWIND  - Disable wind observations (Creates NOWIND.TXT)  
-* DOWIND  - Enable wind observations on main rain gauge (Removes NOWIND.TXT)
+* DOWIND  - Enable wind observations (Removes NOWIND.TXT)
