@@ -25,6 +25,9 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 ### [Daily Reboot](docs/DailyReboot.md)
 - The weather station will perform a daily reboot to clear any issues with the station.
 
+### [Do Action](docs/DoAction.md)
+- Commands and settings you can send to the board via Particle Console.
+
 ### [Evapotranspiration Information](docs/EVT.md)
 - Information about Evapotranspiration
 
