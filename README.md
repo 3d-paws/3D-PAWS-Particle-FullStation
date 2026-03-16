@@ -31,6 +31,9 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 ### [Evapotranspiration Information](docs/EVT.md)
 - Information about Evapotranspiration
 
+### [INFO - Station Information](docs/INFO.md)
+- Information about Particle message type INFO and INFO.TXT file.
+
 ### [LoRa Remote Relay](docs/LoRaRelay.md)
 - Receive LoRa messages for LoRa Remote devices. Transmit the message to Particle next transmission period.
 
@@ -38,7 +41,7 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 - Particle Muon Board Support.
 
 ### [OLED Display](docs/OLED_Display.md)
-- If an OLED display is detected at startup, messages are also sent to this display. Jumper wire is not needed for activation.
+- If an OLED display is detected at startup, messages are also sent to this display. Console jumper wire is not needed.
 
 ### [Particle DoAction](docs/DoAction.md)
 - Send commands to Particle device form Particle Web Console
@@ -57,14 +60,14 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 ### [Serial Monitor](docs/SerialMonitor.md)
 - Adding a jumper wire between Particle pin D8 (Boron & Argon), A2 (Muon) and ground will enable serial text output on the USB connector at boot time.
 
-### [Station Information (INFO)](docs/INFO.md)
-- Information about Particle message type INFO and INFO.TXT file.
-
 ### [Station Monitor](docs/StationMonitor.md)
 - Upon setup completion.  If the jumper wire is in place then the Station Monitor will run instead of the main work loop.  
 
 ### [System Health Bits (hth)](docs/SystemHealthBits.md)
-- - A health bit register. Where each bit corresponds to a system state or sensor.
+- A health bit register. Where each bit corresponds to a system state or sensor.
+
+### [Voltaic Battery Voltage](docs/VoltaicBatteryVoltage.md)
+- The Voltaic Battery provides a battery cell voltage breakout on the USB-C port.
 
 ### [WatchDog Board](docs/WatchDog.md)
 - The WatchDog is a external device that can turn off power to your weather station microcontroller and sensors. 

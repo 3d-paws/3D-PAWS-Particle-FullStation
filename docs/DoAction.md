@@ -27,7 +27,7 @@ Argron and Boron Pins for OP1=A4, OP2=A5 and Muon Pins for OP1=A0, OP2=A2
 * OP1RAW - Configures pin for raw analog readings (OP1RAW.TXT) report as (op1r)
 * OP1CLR - Unassigns pin. Removes associated OP1 TXT files.
 * OP2RAW - Configure for raw readings. Average of 5 samples 10ms apart (OP2RAW.TXT) report as (op2r)
-* OP2VBV - Read Voltaic battery voltage (OP2VBV.TXT) report as (op2vbv)
+* OP2VBV - Read Voltaic battery voltage (OP2VBV.TXT) report as (vbv and vpc)
 * OP2CLR - Unassigns pin. Removes associated OP2 TXT files.
 
 Optional Station Configurations
