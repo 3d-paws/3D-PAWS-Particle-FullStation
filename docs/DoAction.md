@@ -10,7 +10,7 @@ After doing these commands you should do a REBOOT and then look at the INFO mess
 * INFO - Trigger station to send station information. Event type "INFO".
 * CRT - Clear rain totals that are stored in nvram.
 * SETELEV:xxxx - Set station elevation. Replace xxxx with elevation in meters. Creates file ELEV.TXT
-* SETRTRO:xx   - Set Rain Total Rollover Offset, valid values (0-23). Creates file RTRO.TXT
+* SETRTRO:xx   - Set Rain Total Rollover Offset, valid values are (-12 to 12). Creates file RTRO.TXT
 
 Observation Timing and Reporting
 * TXI5M - Set 1 Minute Observations, Set Transmit Interval to 5 minutes. Creates file TXI5M.TXT. Removes other files.

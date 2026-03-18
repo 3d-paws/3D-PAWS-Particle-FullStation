@@ -294,14 +294,8 @@ bool INFO_Do() {
   if (RTC_exists) {
     sprintf (buf+strlen(buf), "rtc");
   }
-  else {
-    sprintf (buf+strlen(buf), "!rtc");
-  }
   if (SD_exists) {
     sprintf (buf+strlen(buf), ",sd");
-  }
-  else {
-    sprintf (buf+strlen(buf), ",!sd");
   }
   if (eeprom_valid) {
     sprintf (buf+strlen(buf), ",eeprom");   
@@ -417,7 +411,6 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sTSM", comma);
     comma=",";
   }
-
 
   if (MUX_exists) {
     for (int c=0; c<MUX_CHANNELS; c++) {

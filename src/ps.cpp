@@ -1005,7 +1005,7 @@ int Function_DoAction(String s) {
     Output("DoAction:SETRTRO");
     String rest = s.substring(8); // get part after "SETRTRO:", 8 = length of 
     long rtro = rest.toInt();     // convert to integer
-    if ((String(rtro) == rest) && (rtro >= 0) && (rtro <= 23)) {
+    if ((String(rtro) == rest) && (rtro >= -12) && (rtro <= 12)) {
       if (SD_exists) {
         if (SD.exists(SD_RTRO_FILE)) { 
           SD_RemoveFile (SD_RTRO_FILE);

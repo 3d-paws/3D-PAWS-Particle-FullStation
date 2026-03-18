@@ -6,6 +6,8 @@ A serial monitor from Arduino's IDE can be used. TIP: With the Arduino serial mo
 
 Upon Particle board boot with the jumper wire connected, software will wait 60 seconds for you to connect the serial monitor. Flashing the board led.  After 60 seconds the software will continue the boot process. Below is an example of what you might see as the software initializes and discovers connected devices.
 
+If the jumper remains connected after boot. You will enter the Station Monitor. The station monitor will run for 30 minutes. Removing the jumper will exit you from the station monitor.
+
 Particle
 <div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 200px; border: 1px solid black; padding: 10px;">
 <pre>

@@ -1,6 +1,6 @@
-PRODUCT_VERSION (44);
+PRODUCT_VERSION (46);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260312v45"
+#define VERSION_INFO "FS-260318v46"
 
 /*
  *======================================================================================================================
@@ -269,10 +269,15 @@ PRODUCT_VERSION (44);
  *                          Added voltaic voltage read to op2 pin option  OP2VBV(.TXT)
  *          2026-03-10  RJB Added DSMUX 1-Wire support for 8 temperature sensors dst0-7
  *                          Reworked INFO added devs grouping
- *                          Fixed bug in wind init withthe period
+ *                          Fixed bug in wind init with the period
  *                          Added STARTUP(System.enableFeature(FEATURE_RESET_INFO)); to avoid uninitialied values.
  *          2026-03-12  RJB Added support to set rain total rollover 
  *                          Added pinmode INPUT to wind rain OP1, and OP2
+ *                          Moved deviceOS to 6.3.5
+ * 
+ *          Version 46 Released on 2026-03-18
+ *          2026-03-16 RJB  Bug fix in statmon.cpp BMX identification
+ *          2026-03-17 RJB  Allowed rtro range changed to -12 to 12 
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -501,6 +506,8 @@ PRODUCT_VERSION (44);
  *  tmsms3  Tinovi Multi Level Soil Moisture Soil Sensor 3 vwc
  *  tmsms4  Tinovi Multi Level Soil Moisture Soil Sensor 4 vwc
  *  tmsms5  Tinovi Multi Level Soil Moisture Soil Sensor 5 vwc
+ * 
+ *  dst(0-7) Dallas DS18B20 Temperature Sensor connected to DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter
  * 
  * State of Health - Variables included with transmitted sensor readings
  *  bcs  = Battery Charger Status
@@ -973,7 +980,7 @@ void setup() {
       as5600_initialize();
     }
 
-    CheckNoRainFile(); // if NORAIN.TXT found then DoWind is set false
+    CheckNoRainFile(); // if NORAIN.TXT found then DoRain is set false
     if (DoRain) {
       // Optipolar Hall Effect Sensor SS451A - Rain Gauge
       pinMode(RAINGAUGE1_IRQ_PIN, INPUT);

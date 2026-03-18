@@ -358,7 +358,7 @@ void SD_Read_RTRO_File() {
         int tmp_rtro = atoi(buf);  // convert to int
 
         // Quality check
-        if (tmp_rtro >= 0 && tmp_rtro <= 23) {
+        if (tmp_rtro >= -12 && tmp_rtro <= 12) {
           cf_rtro = tmp_rtro;
           sprintf(msgbuf, "RTRO:%d", tmp_rtro);
         } else {
