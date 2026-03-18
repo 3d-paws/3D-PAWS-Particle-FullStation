@@ -1,7 +1,5 @@
 # 3D-PAWS Particle Full Station
 
-Last Updated: 2025-10-08
-
 ## Description
 
 This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and after. See [README_v39.md](docs/README_v39.md) for prior releases.
