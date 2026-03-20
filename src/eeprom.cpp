@@ -166,7 +166,7 @@ void EEPROM_Initialize() {
       // RT = Rain Total
       if ((current_time > seconds_at_rollover) && (eeprom.rgts > seconds_at_rollover)) {
         // If current time is after 6am and RT time is after 6am  - update RT time.
-        Output("T>6, RT>6 - OK");
+        Output("T>RO, RT>RO - OK");
         eeprom.rgts = current_time;
         EEPROM_ChecksumUpdate();
         EEPROM.put(eeprom_address, eeprom);          
