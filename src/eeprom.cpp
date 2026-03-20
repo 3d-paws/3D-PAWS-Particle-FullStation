@@ -229,151 +229,41 @@ void EEPROM_Initialize() {
  */
 void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
   if (eeprom_valid) {
+    bool update=false;
+
     time32_t current_time        = Time.now();
     time32_t seconds_today       = current_time % 86400;
     time32_t seconds_at_0000     = current_time - seconds_today;
     time32_t seconds_at_rollover = seconds_at_0000 + (cf_rtro * 3600);
 
+    // If no rain in 24 hours. Then rgts will be time of last rollover. 
+    // Or rgts will be the eeprom initialized time.
+    // if rgts is before rollover then we need to move today's totals to prior day
     if ((current_time > seconds_at_rollover) && (eeprom.rgts <= seconds_at_rollover)) {
-      // if rgts is before 0600 then we need to move today's totals to prior day
       eeprom.rgp1 = eeprom.rgt1;
       eeprom.rgt1 = 0;
 
-      if (OP1_State == OP1_STATE_RAIN) {
-        eeprom.rgp2 = eeprom.rgt2;
-        eeprom.rgt2 = 0;
-      }
+      eeprom.rgp2 = eeprom.rgt2;
+      eeprom.rgt2 = 0;
+      update=true;
     }
 
     // Only add valid rain to the total
     if (rgt1>0) {
       eeprom.rgt1 += rgt1;
+      update=true;
     }
-    if ((OP1_State == OP1_STATE_RAIN) && (rgt2>0)) {
+    if (rgt2>0) {
       eeprom.rgt2 += rgt2;
+      update=true;
     }
 
-    eeprom.rgts = current_time;
-    EEPROM_ChecksumUpdate();
-    EEPROM.put(eeprom_address, eeprom);
-    Output("EEPROM RT UPDATED");
-  }
-}
-
-
-/* 
- *=======================================================================================================================
- * EEPROM_Initialize_0600() - Check status of EEPROM information and determine status
- *                       Requires system clock to be valid
- *=======================================================================================================================
- */
-void EEPROM_Initialize_0600() {
-  if (Time.isValid()) {
-    time32_t current_time = Time.now();
-
-    EEPROM.get(eeprom_address, eeprom);
-
-    if (!EEPROM_Valid()) {
-      EEPROM_ClearRainTotals(current_time);
+    if (update) {
+      eeprom.rgts = current_time;
+      EEPROM_ChecksumUpdate();
+      EEPROM.put(eeprom_address, eeprom);
+      Output("EEPROM RT UPDATED");
     }
-    else {
-      time32_t seconds_today        = current_time % 86400;
-      time32_t seconds_at_0000      = current_time - seconds_today;
-      time32_t seconds_at_0600      = seconds_at_0000 + 21600;
-      time32_t seconds_yesterday_at_0600 = seconds_at_0600 - 86400;
-
-      // RT = Rain Total
-      if ((current_time > seconds_at_0600) && (eeprom.rgts > seconds_at_0600)) {
-        // If current time is after 6am and RT time is after 6am  - update RT time.
-        Output("T>6, RT>6 - OK");
-        eeprom.rgts = current_time;
-        EEPROM_ChecksumUpdate();
-        EEPROM.put(eeprom_address, eeprom);          
-      }
-      else if ((current_time > seconds_at_0600) && (eeprom.rgts <= seconds_at_0600) && (eeprom.rgts > seconds_yesterday_at_0600)){
-        // if current time is after 6am and RT time is before 6am and after yesterday at 6am -  move today's totals to yesterday
-        if (eeprom.rgts > seconds_yesterday_at_0600) {
-          Output("T>6, RT<=6 &&  RT>6Y- Move");  
-          eeprom.rgp1 = eeprom.rgt1;
-          eeprom.rgt1 = 0.0;
-          eeprom.rgp2 = eeprom.rgt2;
-          eeprom.rgt2 = 0.0;
-          eeprom.rgts = current_time;
-          EEPROM_ChecksumUpdate();
-          EEPROM.put(eeprom_address, eeprom);
-        }
-        else {
-          // if current time is after 6am and RT time is before 6am and before yesterday at 6am - EEPROM has no valid data - clear EEPROM
-          Output("T>6, RT<6 Yesterday - Clear");
-          EEPROM_ClearRainTotals(current_time);
-        }
-      }
-      else { // current time is before 6AM
-        // if current time is before 6am and RT time is before 6am and after yesterday at 6am - update RT time
-        if (eeprom.rgts > seconds_yesterday_at_0600) {
-          Output("T<6, RT<6 & RT>6 Yesterday - OK");
-          eeprom.rgts = current_time;
-          EEPROM_ChecksumUpdate();
-          EEPROM.put(eeprom_address, eeprom);          
-        }
-        else if (eeprom.rgts > (seconds_yesterday_at_0600 - 84600)) { 
-          // if current time is before 6am and RT time after 6am 2 days ago - move current total to yesterday
-          Output("T<6, RT<6 && RT>6-2d - Move");  
-          eeprom.rgp1 = eeprom.rgt1;
-          eeprom.rgt1 = 0.0;
-          eeprom.rgp2 = eeprom.rgt2;
-          eeprom.rgt2 = 0.0;
-          eeprom.rgts = current_time;
-          EEPROM_ChecksumUpdate();
-          EEPROM.put(eeprom_address, eeprom);
-        }
-        else {
-          // if current time is before 6am and RT time before 6am 2 days ago - EEPROM has no valid data - clear EEPROM
-          Output("T<6, RT<6 && RT<=6-2d - Clear");  
-          EEPROM_ClearRainTotals(current_time);
-        }
-      }
-    }
-    eeprom_valid = true;
-  }
-  else {
-    Output("EEPROM INIT ERROR");
-  }
-}
-
-/* 
- *=======================================================================================================================
- * EEPROM_UpdateRainTotals_0600() - 
- *=======================================================================================================================
- */
-void EEPROM_UpdateRainTotals_0600(float rgt1, float rgt2) {
-  if (eeprom_valid) {
-    time32_t current_time     = Time.now();
-    time32_t seconds_at_0600  = current_time - (current_time % 86400) + 21600; // time - seconds so far today + seconds to 0600
-
-    if ((current_time > seconds_at_0600) && (eeprom.rgts <= seconds_at_0600)) {
-      // if rgts is before 0600 then we need to move today's totals to prior day
-      eeprom.rgp1 = eeprom.rgt1;
-      eeprom.rgt1 = 0;
-
-      if (OP1_State == OP1_STATE_RAIN) {
-        eeprom.rgp2 = eeprom.rgt2;
-        eeprom.rgt2 = 0;
-      }
-    }
-
-    // Only add valid rain to the total
-    if (rgt1>0) {
-      eeprom.rgt1 += rgt1;
-    }
-    if ((OP1_State == OP1_STATE_RAIN) && (rgt2>0)) {
-      eeprom.rgt2 += rgt2;
-    }
-
-    eeprom.rgts = current_time;
-    EEPROM_ChecksumUpdate();
-    EEPROM.put(eeprom_address, eeprom);
-    Output("EEPROM RT UPDATED");
   }
 }
 
@@ -383,20 +273,16 @@ void EEPROM_UpdateRainTotals_0600(float rgt1, float rgt2) {
  *=======================================================================================================================
  */
 void EEPROM_SaveUnreportedRain() {
-  if (raingauge1_interrupt_count || ((OP1_State == OP1_STATE_RAIN) && raingauge2_interrupt_count)) {
-    unsigned long rgds;     // rain gauge delta seconds, seconds since last rain gauge observation logged
-    unsigned long rg2ds = 0;     // rain gauge delta seconds, seconds since last rain gauge observation logged
-    float rain2 = 0.0;
+  if (raingauge1_interrupt_count || raingauge2_interrupt_count) {
+    unsigned long rgds;      // rain gauge delta seconds, seconds since last rain gauge observation logged
 
     float rain = raingauge1_interrupt_count * 0.2;
     rgds = (System.millis()-raingauge1_interrupt_stime)/1000;  // seconds since last rain gauge observation logged
     rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
-    
-    if (OP1_State == OP1_STATE_RAIN) {
-      rain2 = raingauge2_interrupt_count * 0.2;
-      rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;  // seconds since last rain gauge observation logged
-      rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
-    }
+
+    float rain2 = raingauge2_interrupt_count * 0.2;
+    rgds = (System.millis()-raingauge2_interrupt_stime)/1000;  // seconds since last rain gauge observation logged
+    rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > ((rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
 
     EEPROM_UpdateRainTotals(rain, rain2);
   }

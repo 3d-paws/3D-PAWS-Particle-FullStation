@@ -1,6 +1,6 @@
 PRODUCT_VERSION (46);
 #define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260318v46"
+#define VERSION_INFO "FS-260320v46"
 
 /*
  *======================================================================================================================
@@ -275,9 +275,10 @@ PRODUCT_VERSION (46);
  *                          Added pinmode INPUT to wind rain OP1, and OP2
  *                          Moved deviceOS to 6.3.5
  * 
- *          Version 46 Released on 2026-03-18
+ *          Version 46 Released on 2026-03-20
  *          2026-03-16 RJB  Bug fix in statmon.cpp BMX identification
  *          2026-03-17 RJB  Allowed rtro range changed to -12 to 12 
+ *          2026-03-20 RJB  Modified EEPROM_UpdateRainTotals() to only update eeprom on change.
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM

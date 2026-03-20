@@ -79,7 +79,7 @@ unsigned int dg_buckets[DG_BUCKETS];
  *  Optipolar Hall Effect Sensor SS451A - Anemometer
  * ======================================================================================================================
  */
-volatile unsigned int anemometer_interrupt_count;
+volatile unsigned int anemometer_interrupt_count=0;
 uint64_t anemometer_interrupt_stime;
 
 /*
@@ -98,7 +98,7 @@ void anemometer_interrupt_handler()
  * ======================================================================================================================
  */
 bool DoRain = true;
-volatile unsigned int raingauge1_interrupt_count;
+volatile unsigned int raingauge1_interrupt_count=0;
 uint64_t raingauge1_interrupt_stime; // Send Time
 uint64_t raingauge1_interrupt_ltime; // Last Time
 uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
@@ -122,7 +122,7 @@ void raingauge1_interrupt_handler() {
  *  Optipolar Hall Effect Sensor SS451A - Rain Gauge 2 - Option 1
  * ======================================================================================================================
  */
-volatile unsigned int raingauge2_interrupt_count;
+volatile unsigned int raingauge2_interrupt_count=0;
 uint64_t raingauge2_interrupt_stime; // Send Time
 uint64_t raingauge2_interrupt_ltime; // Last Time
 uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
