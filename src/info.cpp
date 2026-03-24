@@ -236,7 +236,8 @@ bool INFO_Do() {
   // Station Elevation
   writer.name("elev").value(cf_elevation);
   // Rain total rollover offset
-  writer.name("rtro").value(cf_rtro);
+  sprintf(Buffer32Bytes, "%d:%02d", cf_rtro_hour, cf_rtro_minute);
+  writer.name("rtro").value(Buffer32Bytes);
   
   if (!AQS_Enabled) {
     // How WIND is set

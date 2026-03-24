@@ -34,7 +34,8 @@ int cf_lora_unitid=0;
 int cf_lora_txpower=0;
 int cf_lora_freq=0;
 int cf_elevation=QC_ERR_ELEV;   // Supports MSLP and Evapotranspiration
-int cf_rtro=0;   // Rain total rollover offset
+int cf_rtro_hour=0;             // Rain total rollover offset hour
+int cf_rtro_minute=0;           // Rain total rollover offset minute
 
 #ifdef ENABLE_Evapotranspiration
 // Used for Evapotranspiration
@@ -339,11 +340,18 @@ void SD_ReadElevationFile() {
  * =======================================================================================================================
  */
 void SD_Read_RTRO_File() {
+  cf_rtro_hour = 0;
+  cf_rtro_minute = 0;
+
   if (SD_exists && SD.exists(SD_RTRO_FILE)) {
     File rtutcfile = SD.open(SD_RTRO_FILE, FILE_READ);
     if (rtutcfile) {
       char buf[16];  // Enough for an int including sign and null terminator
+      int hour = 0;
+      int minute = 0;
+      bool valid = false;
       size_t idx = 0;
+
       while (rtutcfile.available() && idx < sizeof(buf) - 1) {
         char c = rtutcfile.read();
         if (c == '\n' || c == '\r') {
@@ -354,26 +362,35 @@ void SD_Read_RTRO_File() {
       buf[idx] = '\0';  // Null-terminate the string
       rtutcfile.close();
 
-      if (isValidNumberString(buf)) {
-        int tmp_rtro = atoi(buf);  // convert to int
+      int parsed = sscanf(buf, "%d:%d", &hour, &minute);
 
-        // Quality check
-        if (tmp_rtro >= -12 && tmp_rtro <= 12) {
-          cf_rtro = tmp_rtro;
-          sprintf(msgbuf, "RTRO:%d", tmp_rtro);
-        } else {
-          sprintf(msgbuf, "RTRO:QCERR %d", tmp_rtro);
+      if (parsed == 2) {
+        // H:MM format - validate quarter-hour
+        if ((hour >= 0 && hour <= 23) && (minute == 0 || minute == 15 || minute == 30 || minute == 45)) {
+          valid=true;
         }
+      } 
+      else if (parsed == 1) {
+        // Just H format (minute = 0)
+        if (hour >= 0 && hour <= 23) {
+          valid=true;
+        }
+      } 
+
+      if (valid) {
+        cf_rtro_hour = hour;
+        cf_rtro_minute = minute;
+        sprintf(msgbuf, "RTRO:%d:%02d", cf_rtro_hour, cf_rtro_minute);
       }
       else {
-        sprintf(msgbuf, "RTRO:!NUMERIC");
+        sprintf(msgbuf, "RTRO:0 INVALID");
       }
     } else {
-      sprintf(msgbuf, "RTRO:OPENERR %s", SD_RTRO_FILE);
+      sprintf(msgbuf, "RTRO:0 OPENERR %s", SD_RTRO_FILE);
     }
   }
   else {
-    sprintf(msgbuf, "RTRO:NO %s", SD_RTRO_FILE);
+    sprintf(msgbuf, "RTRO:0 NF %s", SD_RTRO_FILE);
   }
   Output(msgbuf);
 }

@@ -148,6 +148,7 @@ void raingauge2_interrupt_handler();
 void as5600_initialize();
 void CheckNoWindFile();
 void CheckNoRainFile();
+bool RainEnabled();
 void OP1_Initialize();
 void OP2_Initialize();
 float Pin_ReadAvg(int pin);

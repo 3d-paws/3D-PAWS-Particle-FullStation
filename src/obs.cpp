@@ -378,7 +378,7 @@ void OBS_Do() {
       raingauge2_interrupt_ltime = 0; // used to debounce the tip
     }
 
-    if (DoRain || (OP1_State == OP1_STATE_RAIN)) {
+    if (RainEnabled()) {
       EEPROM_UpdateRainTotals(rain, rain2);
     }
 

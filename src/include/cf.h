@@ -72,7 +72,10 @@ extern int cf_lora_txpower;
 extern int cf_lora_freq;
 
 extern int cf_elevation;
-extern int cf_rtro; // Rain total rollover offset
+
+// Rain total rollover offset
+extern int cf_rtro_hour;
+extern int cf_rtro_minute;
 
 #ifdef ENABLE_Evapotranspiration
 // Used for Evapotranspiration

@@ -21,7 +21,7 @@
 | `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi and Muon boards.                   |
 | `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                    |
 | `/ELEV.TXT`       | Station elevation. File contents is elevation in meters.                                |
-| `/RTRO.TXT`       | Set Rain Total Rollover Offset from 0 UTC (hours).                                      |
+| `/RTRO.TXT`       | Set Rain Total Rollover Offset from 0 UTC (hours). Valid values 0-23                    |
 |||
 | *(no of the below)* | Sets transmit interval to 15 minutes with 1 Minute Observations *(DEFAULT)*           |
 | `/TXI5M.TXT`      | Sets transmit interval to 5 minutes with 1 Minute Observations                          |

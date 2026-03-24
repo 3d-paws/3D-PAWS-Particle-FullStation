@@ -1,6 +1,6 @@
-PRODUCT_VERSION (46);
-#define COPYRIGHT "Copyright [2025] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260320v46"
+PRODUCT_VERSION (47);
+#define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
+#define VERSION_INFO "FS-260323v47"
 
 /*
  *======================================================================================================================
@@ -279,6 +279,10 @@ PRODUCT_VERSION (46);
  *          2026-03-16 RJB  Bug fix in statmon.cpp BMX identification
  *          2026-03-17 RJB  Allowed rtro range changed to -12 to 12 
  *          2026-03-20 RJB  Modified EEPROM_UpdateRainTotals() to only update eeprom on change.
+ * 
+ *          Version 47 Released on 2026-03-24
+ *          2026-03-24 RJB More work on rtro 0-23 and 00,15,30,45 support
+ *                         Added a main loop roolover check that will will trigger an observation and roolover
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -1137,7 +1141,8 @@ void loop() {
       }
 
       // Perform an Observation, save in OBS structure, Write to SD
-      if ( (lastOBS == 0) || (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) ) {
+      // We want to check rollover time every minute, so not misplace any collected rain in the wrong day total
+      if ( (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) || EEPROM_TimeToRollOver() || (lastOBS == 0) ) {
         OBS_Do();
       }
 

@@ -1003,38 +1003,67 @@ int Function_DoAction(String s) {
 
   else if (s.startsWith("SETRTRO:")) { // Pattern start of string aka 0 offset
     Output("DoAction:SETRTRO");
+    int hour = 0;
+    int minute = 0;
+    bool valid = false;
+
     String rest = s.substring(8); // get part after "SETRTRO:", 8 = length of 
-    long rtro = rest.toInt();     // convert to integer
-    if ((String(rtro) == rest) && (rtro >= -12) && (rtro <= 12)) {
+
+    // Trim whitespace
+    rest = rest.trim();
+
+    int parsed = sscanf(rest.c_str(), "%d:%d", &hour, &minute);
+
+    if (parsed == 2) {
+      // H:MM format - validate quarter-hour
+      if ((hour >= 0 && hour <= 23) && (minute == 0 || minute == 15 || minute == 30 || minute == 45)) {
+        valid=true;
+      }
+    } 
+    else if (parsed == 1) {
+      // Just H format (minute = 0)
+      hour = atoi(rest.c_str());
+      if (hour >= 0 && hour <= 23) {
+        valid=true;
+      }
+    } 
+    
+
+    // Save to SD and set config values
+    if (valid) {
       if (SD_exists) {
         if (SD.exists(SD_RTRO_FILE)) { 
           SD_RemoveFile (SD_RTRO_FILE);
         }
         File file = SD.open(SD_RTRO_FILE, FILE_WRITE);
         if (file) {
-          file.print(rtro);  // write the elevation to the file
+          file.print(rest);  // write the elevation to the file
           file.close();      // save and close the file
-          sprintf (Buffer32Bytes, "SETRTRO:%ld OK", rtro);
+          sprintf(Buffer32Bytes, "SETRTRO:%d:%02d OK", hour, minute);
+          Output (Buffer32Bytes);
 
-          cf_rtro = rtro; // Set running value of elevation
+          cf_rtro_hour = hour;
+          cf_rtro_minute = minute;
+
+          return(0);
         } 
         else {
-          sprintf (Buffer32Bytes, "SETRTRO:%ld FAIL", rtro); 
+          sprintf(Buffer32Bytes, "SETRTRO:%d:%02d FAIL", hour, minute);
+          Output (Buffer32Bytes);
+          return(-4);
         }
-        Output (Buffer32Bytes);
       }
       else {
         Output("SETRTRO, SD NF"); 
-        return(-1);      
+        return(-3);      
       }
-    }
+    } 
     else {
-      Output("SETRTRO, INVALID RTRO#"); 
-      return(-2);           
+      sprintf(Buffer32Bytes, "SETRTRO:%d:%02d INVALID", hour, minute);
+      Output (Buffer32Bytes);
+      return(-2);
     }
-    return(0);
   }
-
   else {
     Output("DoAction:UKN"); 
     return(-1);
