@@ -49,6 +49,8 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 ### [Particle Web Console](docs/ParticleWebConsole.md)
 - Features and Setup of the Particle Web Console
 
+### [Pin Mappings - Argon/Boron](docs/ArgonBoronPins.md)
+
 ### [SD Card Information](docs/SD.md)
 - Information on what is stored on the SD card.
 
