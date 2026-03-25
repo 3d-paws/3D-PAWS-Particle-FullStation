@@ -273,7 +273,16 @@ void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
       update=true;
     }
 
-    // Only add valid rain to the total
+    // We might of rolled rain total over in the above code.
+    // If there is rain in the below code. Technically the rain could have occured in the prior day.
+    // The rain has not been reported/transmitted yet. And when we do transmit it, the time will be after the 
+    // rain total rollover time. So it has to go into the NEW daily total
+
+    // {"at":"2026-03-24T23:14:16","rg":0.0,"rgt":7.6,"rgp":1.6
+    // RollOverTime
+    // {"at":"2026-03-24T23:15:02","rg":0.2,"rgt":0.2,"rgp":7.6
+
+    // Add rain to the total if there is some.
     if (rgt1>0) {
       eeprom.rgt1 += rgt1;
       update=true;

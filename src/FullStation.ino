@@ -282,7 +282,7 @@ PRODUCT_VERSION (47);
  * 
  *          Version 47 Released on 2026-03-24
  *          2026-03-24 RJB More work on rtro 0-23 and 00,15,30,45 support
- *                         Added a main loop roolover check that will will trigger an observation and roolover
+ *                         Added a main loop roolover check that will trigger an observation and roolover
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
