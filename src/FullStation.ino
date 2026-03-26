@@ -1,6 +1,6 @@
 PRODUCT_VERSION (47);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260323v47"
+#define VERSION_INFO "FS-260324v47"
 
 /*
  *======================================================================================================================
@@ -282,7 +282,7 @@ PRODUCT_VERSION (47);
  * 
  *          Version 47 Released on 2026-03-24
  *          2026-03-24 RJB More work on rtro 0-23 and 00,15,30,45 support
- *                         Added a main loop roolover check that will trigger an observation and roolover
+ *                         Added a main loop rollover check that will trigger an observation and rollover
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
