@@ -32,83 +32,86 @@ Sensors
 
 ---
 ### Tags Names sent to Particle
-| Tag Name | Description |
-|----------|-------------|
-| bcs      | Battery Charger Status            |
-| bpc      | Battery Percent Charge            |
-| cfr      | Charger Fault Register            |
-| rg       | Rain Gauge            |
-| rgs      | Rain Gauge Seconds          |
-| rgt      | Rain Gauge Total            |
-| rgp      | Rain Gauge Total Prior          |
-| ws       | Wind Speed            |
-| wd       | Wind Direction            |
-| wg       | Wind Gust            |
-| wgd      | Wind Gust Direction            |
-| pm1e10   | PM25AQI Environmental PM1.0 (µg/m³)           |
-| pm1e25   | PM25AQI Environmental PM2.5 (µg/m³)           |
-| pm1e100  | PM25AQI Environmental PM10.0 (µg/m³)           |
-| bp1      | BME280,BMP280,BMP3XX Pressure           |
-| bt1      | BME280,BMP280,BMP3XX Temperature           |
-| bh1      | BME280,BMP280,BMP3XX Humidity           |
-| bp2      | BME280,BMP280,BMP3XX Pressure           |
-| bt2      | BME280,BMP280,BMP3XX Temperature           |
-| bh2      | BME280,BMP280,BMP3XX Humidity           |
-| hh1      | HIH8000 Humidity           |
-| ht1      | HIH8000 Temperature           |
-| hh2      | HIH8000 Humidity           |
-| ht2      | HIH8000 Temperature           |
-| st1      | SHT31 Temperature           |
-| sh1      | SHT31 Humidity          |
-| st2      | SHT31 Temperature           |
-| sh2      | SHT31 Humidity           |
-| hdt1     | HDC302x Temperature           |
-| hdh1     | HDC302x Humidity           |
-| hdt2     | HDC302x Temperature           |
-| hdh2     | HDC302x Humidity           |
-| lpt1     | LPS35HW Temperature           |
-| lpp1     | LPS35HW Pressure           |
-| lpt2     | LPS35HW Temperature           |
-| lpp2     | LPS35HW Pressure           |
-| sv1      | SI1145 VIS           |
-| si1      | SI1145 IR           |
-| su1      | SI1145 UV          |
-| mt1      | MCP9808 Temperature           |
-| mt2      | MCP9808 Temperature           |
-| gt1      | MCP9808 Globe Temperature            |
-| gt2      | MCP9808 Globe Temperature            |
-| vlx      | VEML7700 LUX           |
-| blx      | DFRobot_B_LUX_V30B            |
-| sg       | Option 1 Maxbotix Distance Guage snow or stream            |
-| op1r     | Option 1 analog pin raw reading           |
-| rg2      | Option 1 2nd rain gauge            |
-| rgt2     | Option 1 2nd rain total            |
-| rgp2     | Option 1 2nd rain total prior            |
-| op2r     | Option 2 analog pin raw reading            |
-| hi       | SHT31 Heat Index Temperature            |
-| wbt      | MCP9808 & SHT31 Wet Bulb Temperature|
-| wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature            |
-| mslp     | Mean Sea Level Pressure |
-| tlww     | Tinovi LeafSens Wetness           |
-| tlwt     | Tinovi LeafSens Temp            |
-| tsmt     | Tinovi Soil Moisture Temperature |
-| tsme25   | Tinovi Soil Moisture e25 |
-| tsmec    | Tinovi Soil Moisture ec |
-| tsmvwc   | Tinovi Soil Moisture vwc |
-| tsmt-[1-8] | MUX Tinovi Soil Moisture Temperature |
-| tsme25-[1-8] | MUX Tinovi Soil Moisture e25 |
-| tsmec-[1-8] | MUX Tinovi Soil Moisture ec |
-| tsmvwc-[1-8] | MUX Tinovi Soil Moisture vwc |
-| tmsms1   | Tinovi i2cMultiSm Soil Moisture 1           |
-| tmsms2   | Tinovi i2cMultiSm Soil Moisture 2           |
-| tmsms3   | Tinovi i2cMultiSm Soil Moisture 3           |
-| tmsms4   | Tinovi i2cMultiSm Soil Moisture 4           |
-| tmsms5   | Tinovi i2cMultiSm Soil Moisture 5           |
-| tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature          |
-| tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature            |
-| dst(0-7) | Dallas DS18B20 Temperature Sensor connected to DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter|
-| pmts     | TMP112A Particle Muon on board temperature sensor|
-| sr       | SP Lite2 Pyranometer from Kipp & Zonen|
+| Tag Name | Description |Units|
+|----------|-------------|-----|
+| hth      | Health Status Bits                | value |
+| bcs      | Battery Charger Status            | value |
+| bpc      | Battery Percent Charge            | percent| 
+| cfr      | Charger Fault Register            | value |
+| rg       | Rain Gauge                        | millimeter|
+| rgs      | Rain Gauge Delta Seconds          | seconds |
+| rgt      | Rain Gauge Current Day Total      | millimeter |
+| rgp      | Rain Gauge Prior Day Total        | millimeter |
+| ws       | Wind Speed                        | meters per second | 
+| wd       | Wind Direction                    | degree |
+| wg       | Wind Gust                         | meters per second |
+| wgd      | Wind Gust Direction               | degree |
+| pm1e10   | PM25AQI Environmental PM1.0 (µg/m³)  | micrograms per cubic meter | 
+| pm1e25   | PM25AQI Environmental PM2.5 (µg/m³)  | micrograms per cubic meter |
+| pm1e100  | PM25AQI Environmental PM10.0 (µg/m³) | micrograms per cubic meter |
+| bp1      | BME280,BMP280,BMP3XX Pressure        | hectopascal hPa |
+| bt1      | BME280,BMP280,BMP3XX Temperature     | degree celsius |
+| bh1      | BME280,BMP280,BMP3XX Humidity        | percent|
+| bp2      | BME280,BMP280,BMP3XX Pressure        | hectopascal hPa |
+| bt2      | BME280,BMP280,BMP3XX Temperature     | degree celsius |
+| bh2      | BME280,BMP280,BMP3XX Humidity        | percent|
+| hh1      | HIH8000 Humidity                     | percent|
+| ht1      | HIH8000 Temperature                  | degree celsius |
+| hh2      | HIH8000 Humidity                     | percent|
+| ht2      | HIH8000 Temperature                  | degree celsius |
+| st1      | SHT31 Temperature                    | degree celsius |
+| sh1      | SHT31 Humidity                       | percent|
+| st2      | SHT31 Temperature                    | degree celsius |
+| sh2      | SHT31 Humidity                       | percent|
+| hdt1     | HDC302x Temperature                  | degree celsius |
+| hdh1     | HDC302x Humidity                     | percent|
+| hdt2     | HDC302x Temperature                  | degree celsius |
+| hdh2     | HDC302x Humidity                     | percent|
+| lpt1     | LPS35HW Temperature                  | degree celsius |
+| lpp1     | LPS35HW Pressure                     | percent|
+| lpt2     | LPS35HW Temperature                  | degree celsius |
+| lpp2     | LPS35HW Pressure                     | percent|
+| sv1      | SI1145 VIS                           | watts per square meter W/m^2 |
+| si1      | SI1145 IR                            | watts per square meter W/m^2 |
+| su1      | SI1145 UV                            | watts per square meter W/m^2 |
+| mt1      | MCP9808 Temperature                  | degree celsius |
+| mt2      | MCP9808 Temperature                  | degree celsius |
+| gt1      | MCP9808 Globe Temperature            | degree celsius |
+| gt2      | MCP9808 Globe Temperature            | degree celsius |
+| vlx      | VEML7700 LUX                         | lux |
+| blx      | DFRobot_B_LUX_V30B                   | lux |
+| sg       | Option 1 Maxbotix Distance Guage snow or stream |  millimeter |
+| op1r     | Option 1 analog pin raw reading      | float |
+| rg2      | Option 1 2nd rain gauge              | millimeter|
+| rgt2     | Option 1 2nd rain total              | millimeter|
+| rgp2     | Option 1 2nd rain total prior        | millimeter|
+| op2r     | Option 2 analog pin raw reading      | float |
+| vbv      | Option 2 Voltaic Battery Voltage     | voltage |
+| vpc      | Option 2 Voltaic Percent Charge      | percent |
+| hi       | SHT31 Heat Index Temperature         | degree celsius |
+| wbt      | MCP9808 & SHT31 Wet Bulb Temperature | degree celsius |
+| wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature | degree celsius |
+| mslp     | Mean Sea Level Pressure              | hectopascal hPa |
+| tlww     | Tinovi LeafSens Wetness              | degree celsius |
+| tlwt     | Tinovi LeafSens Temp                 | degree celsius |
+| tsmt     | Tinovi Soil Moisture Temperature     | degree celsius |
+| tsme25   | Tinovi Soil Moisture e25 (EC @ 25°C)                | decisiemens per meter dS/m |
+| tsmec    | Tinovi Soil Moisture ec (Electrical Conductivity)   | millisiemens per meter mS/m |
+| tsmvwc   | Tinovi Soil Moisture vwc (Volumetric Water Content) | percent |
+| tsmt-[1-8] | MUX Tinovi Soil Moisture Temperature | degree celsius |
+| tsme25-[1-8] | MUX Tinovi Soil Moisture e25 (EC @ 25°C)                 | decisiemens per meter dS/m |
+| tsmec-[1-8] | MUX Tinovi Soil Moisture ec (Electrical Conductivity)     | millisiemens per meter mS/m |
+| tsmvwc-[1-8] | MUX Tinovi Soil Moisture vwc (Volumetric Water Content)  | percent |
+| tmsms1   | Tinovi i2cMultiSm Soil Moisture 1 (Volumetric Water Content) | percent |
+| tmsms2   | Tinovi i2cMultiSm Soil Moisture 2 (Volumetric Water Content) | percent |
+| tmsms3   | Tinovi i2cMultiSm Soil Moisture 3 (Volumetric Water Content) | percent |
+| tmsms4   | Tinovi i2cMultiSm Soil Moisture 4 (Volumetric Water Content) | percent |
+| tmsms5   | Tinovi i2cMultiSm Soil Moisture 5 (Volumetric Water Content) | percent |
+| tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature | degree celsius |
+| tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature | degree celsius |
+| dst(0-7) | Dallas DS18B20 Temperature Sensor via DS2482S-800 8 Channel I2C | degree celsius |
+| pmts     | TMP112A Particle Muon on board temperature sensor | degree celsius |
+| sr       | SP Lite2 Pyranometer from Kipp & Zonen (Irradiance) | W/m² (watts per square meter)
 
 
 ### Wind
