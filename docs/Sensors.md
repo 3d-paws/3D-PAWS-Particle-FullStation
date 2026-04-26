@@ -126,7 +126,7 @@ Sensors
 | sr       | SP Lite2 Pyranometer from Kipp & Zonen (Irradiance) | W/m² (watts per square meter)
 
 ### Sensor Tag Name Assignments for BMPxxx, BMExxx SHT31, SHT45, HDC302x
-These sensors share i2c address 0x44 through 0x47. Here is how these sensors can be addressed.
+These sensors have multiple address options.
 <pre>
 bmx  0x77 BMP280, BME280, BMP388, BMP390    Default Address for the BMP
 bmx  0x76 BMP280, BME280, BMP388, BMP390    Default Address for the BME
