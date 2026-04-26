@@ -35,7 +35,7 @@ extern char *msgp;
 extern char Buffer32Bytes[32];
 extern int LED_PIN;
 extern bool JustPoweredOn;
-extern bool TurnLedOff;
+
 extern bool SendSystemInformation;
 extern uint64_t obs_interval;
 extern uint64_t obs_tx_interval;

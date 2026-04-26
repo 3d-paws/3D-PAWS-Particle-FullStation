@@ -10,6 +10,7 @@
 #include "include/ssbits.h"
 #include "include/mux.h"
 #include "include/dsmux.h"
+#include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
 #include "include/evt.h"
 #include "include/eeprom.h"
@@ -29,6 +30,7 @@
  * =======================================================================================================================
  */
 OBSERVATION_STR obs[MAX_ONE_MINUTE_OBS];
+float bmx_1_pressure = 0.0;
 
 /*
  * ======================================================================================================================
@@ -297,13 +299,11 @@ void OBS_Do() {
   float rain2 = 0.0;
   float ws = 0.0;
   int wd = 0;
-  unsigned long rgds;    // rain gauge delta seconds, seconds since last rain gauge observation logged
-  unsigned long rg2ds;   // rain gauge delta seconds, seconds since last rain gauge observation logged
+  // unsigned long rgds;    // rain gauge delta seconds, seconds since last rain gauge observation logged
+  // unsigned long rg2ds;   // rain gauge delta seconds, seconds since last rain gauge observation logged
   float BatteryPoC = 0.0; // Battery Percent of Charge
   float mcp3_temp = 0.0;  // globe temperature
   float wetbulb_temp = 0.0;
-  float sht1_humid = 0.0;
-  float sht1_temp = 0.0;
   float heat_index = 0.0;
   float bmx_1_pressure = 0.0;
 
@@ -361,21 +361,11 @@ void OBS_Do() {
   if (!AQS_Enabled) {
     // Rain Gauge - Each tip is 0.2mm of rain
     if (DoRain) {
-      rgds = (System.millis()-raingauge1_interrupt_stime)/1000;
-      rain = raingauge1_interrupt_count * 0.2;
-      rain = (isnan(rain) || (rain < QC_MIN_RG) || (rain > (((float)rgds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain;
-      raingauge1_interrupt_count = 0;
-      raingauge1_interrupt_stime = System.millis();
-      raingauge1_interrupt_ltime = 0; // used to debounce the tip
+      rain = raingauge1_sample();
     }
 
     if (OP1_State == OP1_STATE_RAIN) {
-      rg2ds = (System.millis()-raingauge2_interrupt_stime)/1000;
-      rain2 = raingauge2_interrupt_count * 0.2;
-      rain2 = (isnan(rain2) || (rain2 < QC_MIN_RG) || (rain2 > (((float)rg2ds / 60) * QC_MAX_RG)) ) ? QC_ERR_RG : rain2;
-      raingauge2_interrupt_count = 0;
-      raingauge2_interrupt_stime = System.millis();
-      raingauge2_interrupt_ltime = 0; // used to debounce the tip
+      rain2 = raingauge2_sample();
     }
 
     if (RainEnabled()) {
@@ -489,32 +479,8 @@ void OBS_Do() {
   if (BMX_1_exists) {
 // Output("DB:OBS_BMX1");
 
-    float p = 0.0;
-    float t = 0.0;
-    float h = 0.0;
-
-    if (BMX_1_chip_id == BMP280_CHIP_ID) {
-      p = bmp1.readPressure()/100.0F;       // bp1 hPa
-      t = bmp1.readTemperature();           // bt1
-    }
-    else if (BMX_1_chip_id == BME280_BMP390_CHIP_ID) {
-      if (BMX_1_type == BMX_TYPE_BME280) {
-        p = bme1.readPressure()/100.0F;     // bp1 hPa
-        t = bme1.readTemperature();         // bt1
-        h = bme1.readHumidity();            // bh1 
-      }
-      if (BMX_1_type == BMX_TYPE_BMP390) {
-        p = bm31.readPressure()/100.0F;     // bp1 hPa
-        t = bm31.readTemperature();         // bt1 
-      }    
-    }
-    else { // BMP388
-      p = bm31.readPressure()/100.0F;       // bp1 hPa
-      t = bm31.readTemperature();           // bt1
-    }
-    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
-    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+    float p,t,h;
+    bmx1_read(p, t, h);
     
     // BMX1 Preasure
     strcpy (obs[oidx].sensor[sidx].id, "bp1");
@@ -543,32 +509,8 @@ void OBS_Do() {
   if (BMX_2_exists) {
 // Output("DB:OBS_BMX2");
 
-    float p = 0.0;
-    float t = 0.0;
-    float h = 0.0;
-
-    if (BMX_2_chip_id == BMP280_CHIP_ID) {
-      p = bmp2.readPressure()/100.0F;       // bp2 hPa
-      t = bmp2.readTemperature();           // bt2
-    }
-    else if (BMX_2_chip_id == BME280_BMP390_CHIP_ID) {
-      if (BMX_2_type == BMX_TYPE_BME280) {
-        p = bme2.readPressure()/100.0F;     // bp2 hPa
-        t = bme2.readTemperature();         // bt2
-        h = bme2.readHumidity();            // bh2 
-      }
-      if (BMX_2_type == BMX_TYPE_BMP390) {
-        p = bm32.readPressure()/100.0F;     // bp2 hPa
-        t = bm32.readTemperature();         // bt2       
-      }
-    }
-    else { // BMP388
-      p = bm32.readPressure()/100.0F;       // bp2 hPa
-      t = bm32.readTemperature();           // bt2
-    }
-    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
-    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+    float p,t,h;
+    bmx2_read(p, t, h);
 
     // BMX2 Preasure
     strcpy (obs[oidx].sensor[sidx].id, "bp2");
@@ -592,6 +534,9 @@ void OBS_Do() {
 // Output("DB:OBS_BMX2x");
   }
 
+  // Do Sensor observations for SHT31, SHT45, BMP581, HDC302x
+  sensor_i2c_44_47_obs_do(oidx, sidx); 
+
   if (HTU21DF_exists) {
 // Output("DB:OBS_HTU");
 
@@ -614,115 +559,6 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = t;
     obs[oidx].sensor[sidx++].inuse = true;
 // Output("DB:OBS_HTUx");
-  }
-
-  if (SHT_1_exists) {
-// Output("DB:OBS_SHT1");
-
-    float t = 0.0;
-    float h = 0.0;
-
-    // SHT1 Temperature
-    strcpy (obs[oidx].sensor[sidx].id, "st1");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    t = sht1.readTemperature();
-    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-    obs[oidx].sensor[sidx].f_obs = t;
-    obs[oidx].sensor[sidx++].inuse = true;
-    sht1_temp = t; // save for derived observations
-
-    // SHT1 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "sh1");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    h = sht1.readHumidity();
-    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-    obs[oidx].sensor[sidx].f_obs = h;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    sht1_humid = h; // save for derived observations
-// Output("DB:OBS_SHT1x");
-  }
-
-  if (SHT_2_exists) {
-// Output("DB:OBS_SHT2");
-
-    float t = 0.0;
-    float h = 0.0;
-
-    // SHT2 Temperature
-    strcpy (obs[oidx].sensor[sidx].id, "st2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    t = sht2.readTemperature();
-    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-    obs[oidx].sensor[sidx].f_obs = t;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // SHT2 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "sh2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    h = sht2.readHumidity();
-    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-    obs[oidx].sensor[sidx].f_obs = h;
-    obs[oidx].sensor[sidx++].inuse = true;
-// Output("DB:OBS_SSHt2x");
-  }
-
-  if (HDC_1_exists) {
-// Output("DB:OBS_HDC1");
-
-    double t = -999.9;
-    double h = -999.9;
-
-    if (hdc1.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
-      t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-      h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-    }
-    else {
-      Output ("ERR:HDC1 Read");
-    }
-
-    // HDC1 Temperature
-    strcpy (obs[oidx].sensor[sidx].id, "hdt1");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = (float) t;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // HDC1 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "hdh1");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = (float) h;
-    obs[oidx].sensor[sidx++].inuse = true;
-// Output("DB:OBS_HDC1x");
-
-  }
-
-  if (HDC_2_exists) {
-// Output("DB:OBS_HDC2");
-
-    double t = -999.9;
-    double h = -999.9;
-
-    if (hdc2.readTemperatureHumidityOnDemand(t, h, TRIGGERMODE_LP0)) {
-      t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-      h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-    }
-    else {
-      Output ("ERR:HDC1 Read");
-    }
-
-    // HDC2 Temperature
-    strcpy (obs[oidx].sensor[sidx].id, "hdt2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = (float) t;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // HDC2 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "hdh2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = (float) h;
-    obs[oidx].sensor[sidx++].inuse = true;
-// Output("DB:OBS_HDC2x");
-
   }
 
   if (LPS_1_exists) {

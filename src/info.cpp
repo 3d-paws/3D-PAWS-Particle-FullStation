@@ -17,6 +17,7 @@
 #include "include/cf.h"
 #include "include/mux.h"
 #include "include/dsmux.h"
+#include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
 #include "include/evt.h"
 #include "include/wrda.h"
@@ -347,22 +348,10 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sMCP4/gt2", comma);
     comma=",";
   }
-  if (SHT_1_exists) {
-    sprintf (buf+strlen(buf), "%sSHT1", comma);
-    comma=",";
-  }
-  if (SHT_2_exists) {
-    sprintf (buf+strlen(buf), "%sSHT2", comma);
-    comma=",";
-  }
-  if (HDC_1_exists) {
-    sprintf (buf+strlen(buf), "%sHDC1", comma);
-    comma=",";
-  }
-  if (HDC_2_exists) {
-    sprintf (buf+strlen(buf), "%sHDC2", comma);
-    comma=",";
-  }
+
+  // Add 0x44-)x47 sensors to the list
+  sensor_i2c_44_47_info(buf, 256, comma);
+
   if (LPS_1_exists) {
     sprintf (buf+strlen(buf), "%sLPS1", comma);
     comma=",";

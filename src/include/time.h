@@ -3,6 +3,9 @@
  *  time.h - Time Management Definations
  * ======================================================================================================================
  */
+#define TM_VALID_YEAR_START     2026
+#define TM_VALID_YEAR_END       2035
+
 #if (PLATFORM_ID == PLATFORM_MSOM)
 #define AB1805_ADDRESS 0x69  // AM1805 RTC/Watchdog
 

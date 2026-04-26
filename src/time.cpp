@@ -107,7 +107,9 @@ void rtc_initialize() {
   Output (msgbuf);
 
   // If RTC valid, we set System Time Clock
-  if (ab1805.isRTCSet() && (now.tm_year >= 2025) && (now.tm_year <= 2035)) {
+  if (ab1805.isRTCSet() && (now.tm_year >= TM_VALID_YEAR_START) && (now.tm_year <= TM_VALID_YEAR_END) &&
+     (now.tm_mon >= 1) && (now.tm_mon <=12) &&
+     (now.tm_mday >= 1) && (now.tm_mday <=31)) {
     time_t t;
 
     Output("RTC:VALID");
@@ -163,7 +165,9 @@ void rtc_initialize() {
   // Do a validation check on the year. 
   // Asumption is: If RTC not set, it will not have the current year.
   
-  if ((now.year() >= 2025) && (now.year() <= 2035)) {
+  if ((now.year() >= TM_VALID_YEAR_START) && (now.year() <= TM_VALID_YEAR_END) &&
+      (now.month() >= 1) && (now.month() <=12) &&
+      (now.day() >= 1) && (now.day() <=31)) {
     Output("RTC:VALID");
     now = rtc.now();
     Time.setTime(now.unixtime()); // If RTC valid, we set STC.

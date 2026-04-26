@@ -7,6 +7,7 @@
 #include "include/main.h"
 #include "include/output.h"
 #include "include/cf.h"
+#include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
 #include "include/wrda.h"
 #include "include/sdcard.h"
@@ -498,26 +499,29 @@ void evt_do () {
         }
       }
 
-      // Read Sesonsors 
-      double T_C = sht1.readTemperature();
-      T_C = (isnan(T_C) || (T_C < QC_MIN_T)  || (T_C > QC_MAX_T))  ? QC_ERR_T  : T_C;
+      // Read Sensors 
+      if (sensor_i2c_44_47_sht1_do()) {
+        double T_C = sht1_temp;
+        double RH_pct = sht1_humid;
 
-      double RH_pct = sht1.readHumidity();
-      RH_pct = (isnan(RH_pct) || (RH_pct < QC_MIN_RH) || (RH_pct > QC_MAX_RH)) ? QC_ERR_RH : RH_pct;
+        if ((T_C!=QC_ERR_T) && (RH_pct !=QC_ERR_RH)) {
+        
+          double u2_ms  = Wind_SpeedAverage();  // m/s @ 2m (already so)
+          double sr_Wm2 = evt_readIrradiance(); // W/m2
 
-      if ((T_C!=QC_ERR_T) && (RH_pct !=QC_ERR_RH)) {
-        double u2_ms  = Wind_SpeedAverage();  // m/s @ 2m (already so)
-        double sr_Wm2 = evt_readIrradiance(); // W/m2
-
-        acc.T_sum  += T_C;
-        acc.RH_sum += RH_pct;
-        acc.u2_sum += u2_ms;
-        acc.Rs_MJ  += max(0.0, sr_Wm2) * 60.0 / 1e6;   // 1 minute integration
-        acc.n++;
-        Output("EVT1M:OK");
+          acc.T_sum  += T_C;
+          acc.RH_sum += RH_pct;
+          acc.u2_sum += u2_ms;
+          acc.Rs_MJ  += max(0.0, sr_Wm2) * 60.0 / 1e6;   // 1 minute integration
+          acc.n++;
+          Output("EVT1M:OK");
+        }
+        else {
+          Output("EVT1M:ERR");
+        }
       }
       else {
-        Output("EVT1M:ERR");
+        Output("EVT1M:ERR-NF");
       }
       evt_min = min;
     }

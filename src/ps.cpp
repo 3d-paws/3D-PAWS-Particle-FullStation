@@ -149,8 +149,7 @@ void Output_CellBatteryInfo() {
   WiFiSignal sig = WiFi.RSSI();
   float SignalStrength = sig.getStrength();
 
-  sprintf (Buffer32Bytes, "CS:%d.%02d", 
-    (int)SignalStrength, (int)(SignalStrength*100)%100);
+  sprintf (Buffer32Bytes, "CS:%.2f", SignalStrength);
   Output(Buffer32Bytes);
 #else
   CellularSignal sig = Cellular.RSSI();
@@ -164,9 +163,7 @@ void Output_CellBatteryInfo() {
     BatteryPoC = System.batteryCharge();
   }
   
-  sprintf (Buffer32Bytes, "CS:%d.%02d B:%d,%d.%02d", 
-    (int)SignalStrength, (int)(SignalStrength*100)%100,
-    BatteryState, (int)BatteryPoC, (int)(BatteryPoC*100)%100);
+  sprintf (Buffer32Bytes, "CS:%.2f B:%d,%.2f", SignalStrength, BatteryState, BatteryPoC);
   Output(Buffer32Bytes);
 #endif
 }

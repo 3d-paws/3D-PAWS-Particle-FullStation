@@ -3,6 +3,7 @@
  *  wrda.cpp - Wind Rain Distance Air Functions
  * ======================================================================================================================
  */
+#include "include/qc.h"
 #include "include/ssbits.h"
 #include "include/cf.h"
 #include "include/eeprom.h"
@@ -19,6 +20,7 @@
  * Variables and Data Structures
  * =======================================================================================================================
  */
+volatile bool TurnLedOff = false;      // Set true in rain gauge interrupt
 
 /*
  * ======================================================================================================================
@@ -100,7 +102,7 @@ void anemometer_interrupt_handler()
 bool DoRain = true;
 volatile unsigned int raingauge1_interrupt_count=0;
 uint64_t raingauge1_interrupt_stime; // Send Time
-uint64_t raingauge1_interrupt_ltime; // Last Time
+volatile uint64_t raingauge1_interrupt_ltime; // Last Time
 uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
 
 /*
@@ -109,12 +111,37 @@ uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
  * ======================================================================================================================
  */
 void raingauge1_interrupt_handler() {
-  if ((System.millis() - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
-    raingauge1_interrupt_ltime = System.millis();
+  uint64_t now = System.millis();
+  if ((now - raingauge1_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
+    raingauge1_interrupt_ltime = now;
     raingauge1_interrupt_count++;
     digitalWrite(LED_PIN, HIGH);
     TurnLedOff = true;
   }   
+}
+
+/*
+ * ======================================================================================================================
+ *  raingauge1_sample() - return rain amount since last sample
+ * ======================================================================================================================
+ */
+float raingauge1_sample() {
+  unsigned long time_ms, rg1ds, count;
+  float rg1;
+
+  noInterrupts();
+  time_ms = System.millis();
+  rg1ds = (time_ms - raingauge1_interrupt_stime) / 1000;
+  count = raingauge1_interrupt_count;
+  raingauge1_interrupt_count = 0;
+  raingauge1_interrupt_stime = time_ms;
+  raingauge1_interrupt_ltime = 0;
+  interrupts();
+
+  rg1 = count * 0.2f;
+  rg1 = (isnan(rg1) || (rg1 < QC_MIN_RG) || (rg1 > (((float)rg1ds / 60.0f) * QC_MAX_RG))) ? QC_ERR_RG : rg1;
+
+  return rg1;
 }
 
 /*
@@ -124,7 +151,7 @@ void raingauge1_interrupt_handler() {
  */
 volatile unsigned int raingauge2_interrupt_count=0;
 uint64_t raingauge2_interrupt_stime; // Send Time
-uint64_t raingauge2_interrupt_ltime; // Last Time
+volatile uint64_t raingauge2_interrupt_ltime; // Last Time
 uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
 
 /*
@@ -133,12 +160,37 @@ uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
  * ======================================================================================================================
  */
 void raingauge2_interrupt_handler() {
-  if ((System.millis() - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
-    raingauge2_interrupt_ltime = System.millis();
+  uint64_t now = System.millis();
+  if ((now - raingauge2_interrupt_ltime) > 500) { // Count tip if a half second has gone by since last interrupt
+    raingauge2_interrupt_ltime = now;
     raingauge2_interrupt_count++;
     digitalWrite(LED_PIN, HIGH);
     TurnLedOff = true;
   }   
+}
+
+/*
+ * ======================================================================================================================
+ *  raingauge2_sample() - return rain amount since last sample
+ * ======================================================================================================================
+ */
+float raingauge2_sample() {
+  unsigned long time_ms, rg2ds, count;
+  float rg2;
+
+  noInterrupts();
+  time_ms = System.millis();
+  rg2ds = (time_ms - raingauge2_interrupt_stime) / 1000;
+  count = raingauge2_interrupt_count;
+  raingauge2_interrupt_count = 0;
+  raingauge2_interrupt_stime = time_ms;
+  raingauge2_interrupt_ltime = 0;
+  interrupts();
+
+  rg2 = count * 0.2f;
+  rg2 = (isnan(rg2) || (rg2 < QC_MIN_RG) || (rg2 > (((float)rg2ds / 60.0f) * QC_MAX_RG))) ? QC_ERR_RG : rg2;
+
+  return rg2;
 }
 
 /* 

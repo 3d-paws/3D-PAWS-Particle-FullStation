@@ -9,7 +9,9 @@ Sensors
 | Adafruit BME280               | Temp/Humidity/Pressure  | Measures temp, humidity, pressure, I2C/SPI, -40 to +85°C, 0-100% RH, 1.8-5V.                             | [Adafruit BME280](https://www.adafruit.com/product/2652)    |
 | Adafruit BMP280               | Temp/Pressure           | Measures pressure (300–1100 hPa), temperature, I2C/SPI, small, low-power.                                | [Adafruit BMP280](https://www.adafruit.com/product/2651)    |
 | Adafruit BMP3XX               | Temp/Pressure           | Gen3 barometric, high-precision, ±0.5m alt., I2C/SPI.                                                    | [BMP388/BMP3XX](https://shop.pimoroni.com/en-us/products/adafruit-bmp388-precision-barometric-pressure-and-altimeter) |
+| Adafruit_BMP5xx               | Temp/Pressure           | BMP5xx series (BMP581) is a high-precision barometric pressure sensors from Bosch Sensortec | [Adafruit BMP5xx](hhttps://www.adafruit.com/product/6407) |
 | Adafruit SHT31                | Temp/Humidity           | High accuracy, ±2% RH, ±0.3°C, I2C, fast response, 2.4–5.5V.                                             | [Adafruit SHT31](https://www.adafruit.com/product/2857)     |
+| Adafruit_SHT4x                | Temp/Humidity           | Adafruit Sensirion SHT45 Precision Temp & Humidity with PTFE                                | [Adafruit SHT31](https://www.adafruit.com/product/2857)     |
 | Adafruit VEML7700             | Ambient Light           | Precise lux (0–120klux), I2C, auto-range, digital output, 3.3/5V.                                        | [Adafruit VEML7700](https://www.adafruit.com/product/4162)  |
 | Adafruit SI1145               | Light/UV/Proximity      | I2C, measures visible, IR, and digital UV index, 3-5V.                                                   | [Adafruit SI1145](https://www.adafruit.com/product/1777)    |
 | Adafruit PM25AQI              | PM2.5 Air Quality       | Measures particulate (0.3–10um), I2C (fixed 0x12), 0-500μg/m³ range, 5V.                                 | [PM25AQI](https://www.adafruit.com/product/4632)            |
@@ -113,6 +115,36 @@ Sensors
 | pmts     | TMP112A Particle Muon on board temperature sensor | degree celsius |
 | sr       | SP Lite2 Pyranometer from Kipp & Zonen (Irradiance) | W/m² (watts per square meter)
 
+### Sensor Tag Name Assignments for BMPxxx, BMExxx SHT31, SHT45, HDC302x
+These sensors share i2c address 0x44 through 0x47. Here is how these sensors can be addressed.
+<pre>
+bmx  0x77 BMP280, BME280, BMP388, BMP390    Default Address for the BMP
+bmx  0x76 BMP280, BME280, BMP388, BMP390    Default Address for the BME
+
+sht3 0x44 Default
+sht3 0x45 with jumper  
+
+sht4 0x44 Default and only address
+
+b58  0x47 default      BMP581
+b58  0x46 with jumper  BMP581
+
+            A1   A0
+hdc  0x44    0    0  Default
+hdc  0x45    0    1 
+hdc  0x46    1    0
+hdc  0x47    1    1
+</pre>
+When you start to add muptiple combinations of sensors with dynamic discovery, tag name assignments get
+complicated. Here are the rules on how tag names are assigned.
+
+The BMP280, BME280, BMP388, and BMP390 sensors are checked if they exist first. If i2c address 0x77 has one of these sensors it is assigned bx1. Where x = p,t,h. The same holds for i2c address 0x76, but assigned bx2. 
+
+The BX581 sensor has the following tag name assignement rules. If 0x46 is found to be a BMP581 and bx1 not assigned, this becomes bx1. Else if bx2 not assigned, this becomes bx2. Otherwise this become bx3. Same thing happends for i2c address 0x47. With the last tag name being bx4. If bx3 was assigned.
+
+The SHT sensors have the following tag name assignement rules. If a SHT31 or SHT45 have i2c address 0x44 it becomes st1 and sh1. If no SHT sensor on address 0x44 but a SHT31 has i2c address 0x45, then this is assigned st1 and sh1.  If i2c address 0x44 has a SHT sensor.  Then a SHT31 sensor on i2c address 0x45 is assigned st2 and sh2.
+
+The HDC302x sensor can be addresses to any of the 4 i2c addresses. Tag names are assigned on the order of discovery. Starting from i2c address 0x44. For the first HDC discovered, tag names hdt1 and hdh1 are assigned.  Then 2, 3, 4 on each additional HDC sensor.
 
 ### Wind
 #### Collecting Wind Data

@@ -313,9 +313,10 @@ extern bool PMTS_exists;
 // Function prototype
 byte get_Bosch_ChipID (byte address);
 void bmx_initialize();
+void bmx1_read(float &p, float &t, float &h);
+void bmx2_read(float &p, float &t, float &h);
 void htu21d_initialize();
 void mcp9808_initialize();
-void sht_initialize();
 void hih8_initialize();
 bool hih8_getTempHumid(float *t, float *h);
 void wbt_initialize();
@@ -338,7 +339,6 @@ void pm25aqi_initialize();
 void pm25aqi_Produce_1m_Average() ;
 void pm25aqi_TakeReading();
 void pm25aqi_TakeReading_AQS();
-void hdc_initialize();
 void lps_initialize();
 #if (PLATFORM_ID != PLATFORM_MSOM)
 void tlw_initialize();

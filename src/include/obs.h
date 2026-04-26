@@ -39,6 +39,7 @@ typedef struct {
 
 // Extern variables
 extern OBSERVATION_STR obs[MAX_ONE_MINUTE_OBS];
+extern float bmx_1_pressure;
 
 // Function prototypes
 void OBS_Clear(int i);

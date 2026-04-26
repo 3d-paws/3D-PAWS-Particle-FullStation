@@ -1,6 +1,17 @@
+/******************************************************/
+//       THIS IS A GENERATED FILE - DO NOT EDIT       //
+/******************************************************/
+
+#include "Particle.h"
+#line 1 "/Users/rjbubon/Documents/Particle/3D-PAWS-Particle-FullStation/src/FullStation.ino"
+void HeartBeat();
+void BackGroundWork();
+void setup();
+void loop();
+#line 1 "/Users/rjbubon/Documents/Particle/3D-PAWS-Particle-FullStation/src/FullStation.ino"
 PRODUCT_VERSION (48);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260426v48"
+#define VERSION_INFO "FS-2604XXv48"
 
 /*
  *======================================================================================================================
@@ -284,7 +295,7 @@ PRODUCT_VERSION (48);
  *          2026-03-24 RJB More work on rtro 0-23 and 00,15,30,45 support
  *                         Added a main loop rollover check that will trigger an observation and rollover
  * 
- *          Version 48 Released on 2026-04-26
+ *          Version 48 Released on 2026-04-XX
  *          2026-03-29 RJB Added volatile to interrupt routine variable definations, moved TurnLedOff defination to wrda
  *          2026-04-22 RJB Disabled interrupts when reading and setting shared values with the ISRs
  *                         Created functions to obtain rg1 and rg2 values

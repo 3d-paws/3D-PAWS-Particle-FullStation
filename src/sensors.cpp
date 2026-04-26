@@ -10,6 +10,7 @@
 #include "include/main.h"
 #include "include/wrda.h"
 #include "include/cf.h"
+#include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
 
 /*
@@ -58,17 +59,6 @@ bool MCP_1_exists = false;
 bool MCP_2_exists = false;
 bool MCP_3_exists = false;
 bool MCP_4_exists = false;
-
-
-/*
- * ======================================================================================================================
- *  SHTX - I2C - Temperature & Humidity sensor (SHT31)  - Note the SHT40, SHT45 use same i2c address
- * ======================================================================================================================
- */
-Adafruit_SHT31 sht1;
-Adafruit_SHT31 sht2;
-bool SHT_1_exists = false;
-bool SHT_2_exists = false;
 
 /*
  * ======================================================================================================================
@@ -142,16 +132,6 @@ int pm25aqi_1m_bucket = 0;
 PM25AQI_OBS_STR pm25aqi_obs;
 Adafruit_PM25AQI pmaq = Adafruit_PM25AQI();
 bool PM25AQI_exists = false;
-
-/*
- * ======================================================================================================================
- *  HDC302x - I2C - Precision Temperature & Humidity Sensor
- * ======================================================================================================================
- */
-Adafruit_HDC302x hdc1;
-Adafruit_HDC302x hdc2;
-bool HDC_1_exists = false;
-bool HDC_2_exists = false;
 
 /*
  * ======================================================================================================================
@@ -321,6 +301,96 @@ byte get_Bosch_ChipID (byte address) {
     Output (msgbuf);
   }
   return(0);
+}
+
+/* 
+ *=======================================================================================================================
+ * bmx1_read() - Read tph from Bosch sensor
+ *=======================================================================================================================
+ */
+void bmx1_read(float &p, float &t, float &h) {
+
+  p = -999.9;
+  t = -999.9;
+  h = -999.9;
+
+  if (BMX_1_exists) {
+    switch (BMX_1_type) {
+      case BMX_TYPE_BMP280 :
+        p = bmp1.readPressure()/100.0F;
+        t = bmp1.readTemperature();
+        break;
+        
+      case BMX_TYPE_BME280 :
+        p = bme1.readPressure()/100.0F;
+        t = bme1.readTemperature();
+        h = bme1.readHumidity(); 
+        break;
+
+      case BMX_TYPE_BMP390 :
+        p = bm31.readPressure()/100.0F;
+        t = bm31.readTemperature();
+        break;
+          
+      case BMX_TYPE_BMP388 :
+        p = bm31.readPressure()/100.0F;
+        t = bm31.readTemperature();
+        break;
+        
+      default: // WTF
+        Output ("bmx1_read (WTF)");
+        return;
+        break;
+    }
+    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * bmx2_read() - Read tph from Bosch sensor
+ *=======================================================================================================================
+ */
+void bmx2_read(float &p, float &t, float &h) {
+
+  p = -999.9;
+  t = -999.9;
+  h = -999.9;
+
+  if (BMX_2_exists) {
+    switch (BMX_2_type) {
+      case BMX_TYPE_BMP280 :
+        p = bmp2.readPressure()/100.0F;
+        t = bmp2.readTemperature();
+        break;
+        
+      case BMX_TYPE_BME280 :
+        p = bme2.readPressure()/100.0F;
+        t = bme2.readTemperature();
+        h = bme2.readHumidity(); 
+        break;
+
+      case BMX_TYPE_BMP390 :
+        p = bm32.readPressure()/100.0F;
+        t = bm32.readTemperature();
+        break;
+          
+      case BMX_TYPE_BMP388 :
+        p = bm32.readPressure()/100.0F;
+        t = bm32.readTemperature();
+        break;
+        
+      default: // WTF
+        Output ("bmx1_read (WTF)");
+        return;
+        break;
+    }
+    p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
+    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
+    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
+  }
 }
 
 /* 
@@ -1166,7 +1236,7 @@ void pm25aqi_TakeReading_AQS() {
 void hdc_initialize() {
   Output("HDC:INIT");
   
-  // 1st HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x44)
+  // 1st HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x46)
   hdc1 = Adafruit_HDC302x();
   if (!hdc1.begin(HDC_ADDRESS_1, &Wire)) {
     msgp = (char *) "HDC1 NF";
@@ -1180,7 +1250,7 @@ void hdc_initialize() {
   }
   Output (msgp);
 
-  // 2nd HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x45)
+  // 2nd HDC I2C Temperature/Humidity Sensor (I2C ADDRESS = 0x47)
   hdc2 = Adafruit_HDC302x();
   if (!hdc2.begin(HDC_ADDRESS_2, &Wire)) {
     msgp = (char *) "HDC2 NF";

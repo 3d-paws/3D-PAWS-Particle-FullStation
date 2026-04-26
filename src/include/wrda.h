@@ -116,6 +116,8 @@ typedef struct {
 #define RAINGAUGE2_IRQ_PIN OP1_PIN
 
 // Extern variables
+extern volatile bool TurnLedOff;
+
 extern volatile unsigned int anemometer_interrupt_count;
 extern uint64_t anemometer_interrupt_stime;
 
@@ -124,12 +126,12 @@ extern int AS5600_ADR;
 
 extern volatile unsigned int raingauge1_interrupt_count;
 extern uint64_t raingauge1_interrupt_stime; // Send Time
-extern uint64_t raingauge1_interrupt_ltime; // Last Time
+extern volatile uint64_t raingauge1_interrupt_ltime; // Last Time
 extern uint64_t raingauge1_interrupt_toi;   // Time of Interrupt
 
 extern volatile unsigned int raingauge2_interrupt_count;
 extern uint64_t raingauge2_interrupt_stime; // Send Time
-extern uint64_t raingauge2_interrupt_ltime; // Last Time
+extern volatile uint64_t raingauge2_interrupt_ltime; // Last Time
 extern uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
 
 extern bool ws_refresh;
@@ -144,7 +146,9 @@ extern bool DoRain;
 // Function prototype
 void anemometer_interrupt_handler();
 void raingauge1_interrupt_handler();
+float raingauge1_sample();
 void raingauge2_interrupt_handler();
+float raingauge2_sample();
 void as5600_initialize();
 void CheckNoWindFile();
 void CheckNoRainFile();
