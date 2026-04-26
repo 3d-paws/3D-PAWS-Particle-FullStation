@@ -51,24 +51,34 @@ Sensors
 | pm1e10   | PM25AQI Environmental PM1.0 (µg/m³)  | micrograms per cubic meter | 
 | pm1e25   | PM25AQI Environmental PM2.5 (µg/m³)  | micrograms per cubic meter |
 | pm1e100  | PM25AQI Environmental PM10.0 (µg/m³) | micrograms per cubic meter |
-| bp1      | BME280,BMP280,BMP3XX Pressure        | hectopascal hPa |
-| bt1      | BME280,BMP280,BMP3XX Temperature     | degree celsius |
-| bh1      | BME280,BMP280,BMP3XX Humidity        | percent|
-| bp2      | BME280,BMP280,BMP3XX Pressure        | hectopascal hPa |
-| bt2      | BME280,BMP280,BMP3XX Temperature     | degree celsius |
-| bh2      | BME280,BMP280,BMP3XX Humidity        | percent|
+| bp1      | BME280,BMP280,BMP3XX,BMP4XX Pressure        | hectopascal hPa |
+| bt1      | BME280,BMP280,BMP3XX,BMP4XX Temperature     | degree celsius |
+| bh1      | BME280,BMP280,BMP3XX,BMP4XX Humidity        | percent|
+| bp2      | BME280,BMP280,BMP3XX,BMP4XX Pressure        | hectopascal hPa |
+| bt2      | BME280,BMP280,BMP3XX,BMP4XX Temperature     | degree celsius |
+| bh2      | BME280,BMP280,BMP3XX,BMP4XX Humidity        | percent|
+| bp3      | BMP4XX Pressure        | hectopascal hPa |
+| bt3      | BMP4XX Temperature     | degree celsius |
+| bh3      | BMP4XX Humidity        | percent|
+| bp4      | BMP4XX Pressure        | hectopascal hPa |
+| bt4      | BMP4XX Temperature     | degree celsius |
+| bh4      | BMP4XX Humidity        | percent|
 | hh1      | HIH8000 Humidity                     | percent|
 | ht1      | HIH8000 Temperature                  | degree celsius |
 | hh2      | HIH8000 Humidity                     | percent|
 | ht2      | HIH8000 Temperature                  | degree celsius |
-| st1      | SHT31 Temperature                    | degree celsius |
-| sh1      | SHT31 Humidity                       | percent|
-| st2      | SHT31 Temperature                    | degree celsius |
-| sh2      | SHT31 Humidity                       | percent|
+| st1      | SHT31,SHT45 Temperature                    | degree celsius |
+| sh1      | SHT31,SHT45 Humidity                       | percent|
+| st2      | SHT31,SHT45 Temperature                    | degree celsius |
+| sh2      | SHT31,SHT45 Humidity                       | percent|
 | hdt1     | HDC302x Temperature                  | degree celsius |
 | hdh1     | HDC302x Humidity                     | percent|
 | hdt2     | HDC302x Temperature                  | degree celsius |
 | hdh2     | HDC302x Humidity                     | percent|
+| hdt3     | HDC302x Temperature                  | degree celsius |
+| hdh3     | HDC302x Humidity                     | percent|
+| hdt4     | HDC302x Temperature                  | degree celsius |
+| hdh4     | HDC302x Humidity                     | percent|
 | lpt1     | LPS35HW Temperature                  | degree celsius |
 | lpp1     | LPS35HW Pressure                     | percent|
 | lpt2     | LPS35HW Temperature                  | degree celsius |
