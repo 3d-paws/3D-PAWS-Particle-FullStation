@@ -895,7 +895,7 @@ double wbgt_using_hi(double HIc) {
 
 /* 
  *=======================================================================================================================
- * wbgt_using_wbt() - Compute Web Bulb Globe Temperature using web bulb temperature
+ * wbgt_using_wbt() - Compute Wet Bulb Globe Temperature using wet bulb temperature
  *=======================================================================================================================
  */
 double wbgt_using_wbt(double Ta, double Tg, double Tw) {

@@ -21,7 +21,7 @@
 | `/WIFI.TXT`       | Stores WiFi configuration information for Argon WiFi and Muon boards.                   |
 | `/INFO.TXT`       | Station info file. Overwritten with every INFO call.                                    |
 | `/ELEV.TXT`       | Station elevation. File contents is elevation in meters.                                |
-| `/RTRO.TXT`       | Set Rain Total Rollover Offset from 0 UTC (hours). Valid values 0-23                    |
+| `/RTRO.TXT`       | Set Rain Total Rollover Offset from 0 UTC (hours). H(:MM) H = (0-23) with optional : and MM = (00,15,30,45)|
 |||
 | *(no of the below)* | Sets transmit interval to 15 minutes with 1 Minute Observations *(DEFAULT)*           |
 | `/TXI5M.TXT`      | Sets transmit interval to 5 minutes with 1 Minute Observations                          |
@@ -53,5 +53,6 @@
 | `/OP1RAIN.TXT`  | Configures OP1 for a second rain gauge.                     |
 | `/OP1RAW.TXT`   | Configures OP1 for raw readings (avg. 5 samples spaced 10ms).|
 | `/OP2RAW.TXT`   | Configures OP2 for raw readings (avg. 5 samples spaced 10ms).|
+| `/OP2VBV.TXT`   | Configures OP2 for Voltaic Battery Voltage reading.|
 
 

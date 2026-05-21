@@ -11,7 +11,7 @@ Sensors
 | Adafruit BMP3XX               | Temp/Pressure           | Gen3 barometric, high-precision, ±0.5m alt., I2C/SPI.                                                    | [BMP388/BMP3XX](https://shop.pimoroni.com/en-us/products/adafruit-bmp388-precision-barometric-pressure-and-altimeter) |
 | Adafruit_BMP5xx               | Temp/Pressure           | BMP5xx series (BMP581) is a high-precision barometric pressure sensors from Bosch Sensortec | [Adafruit BMP5xx](hhttps://www.adafruit.com/product/6407) |
 | Adafruit SHT31                | Temp/Humidity           | High accuracy, ±2% RH, ±0.3°C, I2C, fast response, 2.4–5.5V.                                             | [Adafruit SHT31](https://www.adafruit.com/product/2857)     |
-| Adafruit_SHT4x                | Temp/Humidity           | Adafruit Sensirion SHT45 Precision Temp & Humidity with PTFE                                | [Adafruit SHT31](https://www.adafruit.com/product/2857)     |
+| Adafruit_SHT4x                | Temp/Humidity           | Adafruit Sensirion SHT45 Precision Temp & Humidity with PTFE                                | [Adafruit SHT45](https://www.adafruit.com/product/5665)     |
 | Adafruit VEML7700             | Ambient Light           | Precise lux (0–120klux), I2C, auto-range, digital output, 3.3/5V.                                        | [Adafruit VEML7700](https://www.adafruit.com/product/4162)  |
 | Adafruit SI1145               | Light/UV/Proximity      | I2C, measures visible, IR, and digital UV index, 3-5V.                                                   | [Adafruit SI1145](https://www.adafruit.com/product/1777)    |
 | Adafruit PM25AQI              | PM2.5 Air Quality       | Measures particulate (0.3–10um), I2C (fixed 0x12), 0-500μg/m³ range, 5V.                                 | [PM25AQI](https://www.adafruit.com/product/4632)            |
@@ -80,16 +80,16 @@ Sensors
 | hdt4     | HDC302x Temperature                  | degree celsius |
 | hdh4     | HDC302x Humidity                     | percent|
 | lpt1     | LPS35HW Temperature                  | degree celsius |
-| lpp1     | LPS35HW Pressure                     | percent|
+| lpp1     | LPS35HW Pressure                     | hectopascal hPa|
 | lpt2     | LPS35HW Temperature                  | degree celsius |
-| lpp2     | LPS35HW Pressure                     | percent|
+| lpp2     | LPS35HW Pressure                     | hectopascal hPa|
 | sv1      | SI1145 VIS                           | watts per square meter W/m^2 |
 | si1      | SI1145 IR                            | watts per square meter W/m^2 |
 | su1      | SI1145 UV                            | watts per square meter W/m^2 |
 | mt1      | MCP9808 Temperature                  | degree celsius |
 | mt2      | MCP9808 Temperature                  | degree celsius |
-| gt1      | MCP9808 Globe Temperature            | degree celsius |
-| gt2      | MCP9808 Globe Temperature            | degree celsius |
+| gt1      | MCP9808 Black Globe Temperature      | degree celsius |
+| gt2      | MCP9808 Black Globe Temperature      | degree celsius |
 | vlx      | VEML7700 LUX                         | lux |
 | blx      | DFRobot_B_LUX_V30B                   | lux |
 | sg       | Option 1 Maxbotix Distance Guage snow or stream |  millimeter |
@@ -104,16 +104,16 @@ Sensors
 | wbt      | MCP9808 & SHT31 Wet Bulb Temperature | degree celsius |
 | wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature | degree celsius |
 | mslp     | Mean Sea Level Pressure              | hectopascal hPa |
-| tlww     | Tinovi LeafSens Wetness              | degree celsius |
+| tlww     | Tinovi LeafSens Wetness              | dimensionless wetness index/reading |
 | tlwt     | Tinovi LeafSens Temp                 | degree celsius |
 | tsmt     | Tinovi Soil Moisture Temperature     | degree celsius |
 | tsme25   | Tinovi Soil Moisture e25 (EC @ 25°C)                | decisiemens per meter dS/m |
 | tsmec    | Tinovi Soil Moisture ec (Electrical Conductivity)   | millisiemens per meter mS/m |
 | tsmvwc   | Tinovi Soil Moisture vwc (Volumetric Water Content) | percent |
-| tsmt-[1-8] | MUX Tinovi Soil Moisture Temperature | degree celsius |
-| tsme25-[1-8] | MUX Tinovi Soil Moisture e25 (EC @ 25°C)                 | decisiemens per meter dS/m |
-| tsmec-[1-8] | MUX Tinovi Soil Moisture ec (Electrical Conductivity)     | millisiemens per meter mS/m |
-| tsmvwc-[1-8] | MUX Tinovi Soil Moisture vwc (Volumetric Water Content)  | percent |
+| tsmt-[0-7] | MUX Tinovi Soil Moisture Temperature | degree celsius |
+| tsme25-[0-7] | MUX Tinovi Soil Moisture e25 (EC @ 25°C)                 | decisiemens per meter dS/m |
+| tsmec-[0-7] | MUX Tinovi Soil Moisture ec (Electrical Conductivity)     | millisiemens per meter mS/m |
+| tsmvwc-[0-7] | MUX Tinovi Soil Moisture vwc (Volumetric Water Content)  | percent |
 | tmsms1   | Tinovi i2cMultiSm Soil Moisture 1 (Volumetric Water Content) | percent |
 | tmsms2   | Tinovi i2cMultiSm Soil Moisture 2 (Volumetric Water Content) | percent |
 | tmsms3   | Tinovi i2cMultiSm Soil Moisture 3 (Volumetric Water Content) | percent |
@@ -121,7 +121,7 @@ Sensors
 | tmsms5   | Tinovi i2cMultiSm Soil Moisture 5 (Volumetric Water Content) | percent |
 | tmsmt1   | Tinovi i2cMultiSm Soil Moisture Temperature | degree celsius |
 | tmsmt2   | Tinovi i2cMultiSm Soil Moisture Temperature | degree celsius |
-| dst(0-7) | Dallas DS18B20 Temperature Sensor via DS2482S-800 8 Channel I2C | degree celsius |
+| dst[0-7] | Dallas DS18B20 Temperature Sensor via DS2482S-800 8 Channel I2C | degree celsius |
 | pmts     | TMP112A Particle Muon on board temperature sensor | degree celsius |
 | sr       | SP Lite2 Pyranometer from Kipp & Zonen (Irradiance) | W/m² (watts per square meter)
 
@@ -145,16 +145,15 @@ hdc  0x45    0    1
 hdc  0x46    1    0
 hdc  0x47    1    1
 </pre>
-When you start to add muptiple combinations of sensors with dynamic discovery, tag name assignments get
-complicated. Here are the rules on how tag names are assigned.
+When multiple sensor combinations are used with dynamic discovery, tag name assignment can become complex. The following rules define how tag names are assigned.
 
-The BMP280, BME280, BMP388, and BMP390 sensors are checked if they exist first. If i2c address 0x77 has one of these sensors it is assigned bx1. Where x = p,t,h. The same holds for i2c address 0x76, but assigned bx2. 
+For BMP280, BME280, BMP388, and BMP390 sensors, detection is prioritized first. If one of these sensors is found at I2C address 0x77, it is assigned the tag bx1 (where x represents p, t, or h). If found at address 0x76, it is assigned bx2.
 
-The BX581 sensor has the following tag name assignement rules. If 0x46 is found to be a BMP581 and bx1 not assigned, this becomes bx1. Else if bx2 not assigned, this becomes bx2. Otherwise this become bx3. Same thing happends for i2c address 0x47. With the last tag name being bx4. If bx3 was assigned.
+For the BMP581 sensor, assignment depends on availability. If a BMP581 is found at address 0x46 and bx1 is not already assigned, it becomes bx1. Otherwise, if bx2 is not assigned, it becomes bx2. If both bx1 and bx2 are already assigned, it becomes bx3. The same logic applies to address 0x47, with the next available tag being bx4 if bx3 is already in use.
 
-The SHT sensors have the following tag name assignement rules. If a SHT31 or SHT45 have i2c address 0x44 it becomes st1 and sh1. If no SHT sensor on address 0x44 but a SHT31 has i2c address 0x45, then this is assigned st1 and sh1.  If i2c address 0x44 has a SHT sensor.  Then a SHT31 sensor on i2c address 0x45 is assigned st2 and sh2.
+For SHT sensors (SHT31 or SHT45), assignment depends on address priority. If a sensor is found at address 0x44, it is assigned st1 and sh1. If no sensor is present at 0x44 but an SHT31 is found at 0x45, it is assigned st1 and sh1. If a sensor is already present at 0x44, then an SHT31 at 0x45 is assigned st2 and sh2.
 
-The HDC302x sensor can be addresses to any of the 4 i2c addresses. Tag names are assigned on the order of discovery. Starting from i2c address 0x44. For the first HDC discovered, tag names hdt1 and hdh1 are assigned.  Then 2, 3, 4 on each additional HDC sensor.
+For HDC302x sensors, addresses may vary. Tag names are assigned in order of discovery, starting at address 0x44. The first detected sensor is assigned hdt1 and hdh1, the second hdt2 and hdh2, and so on up to four devices.
 
 ### Wind
 #### Collecting Wind Data

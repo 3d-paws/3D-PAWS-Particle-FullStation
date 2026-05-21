@@ -610,8 +610,8 @@ void OBS_Do() {
 
     bool status = hih8_getTempHumid(&t, &h);
     if (!status) {
-      t = -999.99;
-      h = 0.0;
+      t = QC_ERR_T;
+      h = QC_ERR_RH;
     }
     t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
     h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;

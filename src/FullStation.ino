@@ -296,6 +296,10 @@ PRODUCT_VERSION (48);
  *                         Add BMP581 and SMT45 - rework the i2c 0x44 - 0x47 sensore handling
  *                         Cleaned up the printing of floating point numbers to use %.2f
  * 
+ *          Version 49 Released on 2026-XX-XX
+ *          2026-04-29 RJB Blocked ISRs while in Wind_SampleSpeed()'s critical region
+ *          2026-04-30 RJB Added SHT Serial Number to initialization output and INFO. Also heater info.
+ * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
@@ -359,9 +363,11 @@ PRODUCT_VERSION (48);
  *  Adafruit_BME280         https://github.com/adafruit/Adafruit_BME280_Library - 2.1.4 - I2C ADDRESS 0x77  (SD0 to GND = 0x76)
  *  Adafruit_BMP280         https://github.com/adafruit/Adafruit_BMP280_Library - 2.3.0 -I2C ADDRESS 0x77  (SD0 to GND = 0x76)
  *  Adafruit_BMP3XX         https://github.com/adafruit/Adafruit_BMP3XX - 2.1.0 I2C ADDRESS 0x77 and (SD0 to GND = 0x76)
+ *  Adafruit_BMP5xx         https://github.com/adafruit/Adafruit_BMP5xx          - I2C ADDRESS 0x47 and 0x47
  *  Adafruit_GFX            https://github.com/adafruit/Adafruit-GFX-Library - 1.10.10
  *  Adafruit_Sensor         https://github.com/adafruit/Adafruit_Sensor - 1.1.4
  *  Adafruit_SHT31          https://github.com/adafruit/Adafruit_SHT31 - 2.2.0 I2C ADDRESS 0x44 and 0x45 when ADR Pin High
+ *  Adafruit_SHT4x          https://github.com/adafruit/Adafruit_SHT4x           - I2C ADDRESS 0x44
  *  Adafruit_VEML7700       https://github.com/adafruit/Adafruit_VEML7700/ - 2.1.2 I2C ADDRESS 0x10
  *  Adafruit_SI1145         https://github.com/adafruit/Adafruit_SI1145_Library - 1.1.1 - I2C ADDRESS 0x60
  *  Adafruit_SSD1306        https://github.com/adafruit/Adafruit_SSD1306 - 2.4.6 - I2C ADDRESS 0x3C  
@@ -981,11 +987,8 @@ void setup() {
   // Wind Speed and Rain Gauge Interrupt Based Sensors
   //==================================================
   if (!AQS_Enabled) {
-    // Check SD Card for files to determine if pin OP1 has a DIST, 2nd Rain Gauge or Raw file
-    OP1_Initialize();
-
-    // Check SD Card for files to determine if pin OP2 Raw file
-    OP2_Initialize();
+    OP1_Initialize(); // Check for files to determine OP1 Pin Configuration (DIST, 2nd Rain Gauge or Raw)
+    OP2_Initialize(); // Check for files to determine OP2 Pin Configuration (Raw, Voltaic Voltage)
 
     CheckNoWindFile(); // if NOWIND.TXT found then DoWind is set false
     if (DoWind) {

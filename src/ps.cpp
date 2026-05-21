@@ -610,7 +610,6 @@ int Function_DoAction(String s) {
       else {
         Output ("OP2=CLR, DEL OP2VBV:NF");
       }
-
     }
     else {
       Output("OP2=RAW, SD NF"); 
@@ -619,7 +618,7 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-    else if (s.equals("OP2VBV")) { // Set OP2 State File to Voltaic Battery Voltage
+  else if (s.equals("OP2VBV")) { // Set OP2 State File to Voltaic Battery Voltage
     Output("DoAction:OP2VBV");
     // Add OP2 Raw configuration
     if (SD_exists) {

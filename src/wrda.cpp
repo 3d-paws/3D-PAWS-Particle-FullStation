@@ -385,7 +385,7 @@ float VoltaicVoltage(int pin) {
 
 /*
  *=======================================================================================================================
- * VoltaicVoltage() - Voltaic Cell Percent Charge
+ * VoltaicPercent() - Voltaic Cell Percent Charge
  *   Full charge: 4.2V cell → 2.1V on SBU (100%)  
  *   75% charge:  ~3.9V cell → ~1.95V on SBU  
  *   50% charge:  ~3.7V cell → ~1.85V on SBU  
@@ -439,27 +439,32 @@ float DistanceGauge_Median() {
  *=======================================================================================================================
  */
 float Wind_SampleSpeed() {
-  uint64_t delta_ms;
+  uint64_t time_ms, delta_ms;
+  unsigned int count;
   float wind_speed;
-  
-  delta_ms = System.millis()-anemometer_interrupt_stime;
 
-  if (anemometer_interrupt_count) {
-    // wind_speed = (  ( (anemometer_interrupt_count/2) * (2 * 3.14156 * ws_radius) )  / 
-    //  (float)( (float)delta_ms / 1000)  )  * ws_calibration;
+  noInterrupts();
+  count = anemometer_interrupt_count;
+  anemometer_interrupt_count = 0;
+  time_ms = System.millis();
+  interrupts();
 
-    wind_speed = ( ( anemometer_interrupt_count * 3.14156 * ws_radius)  / 
-        (float)( (float)delta_ms / 1000) )  * ws_calibration;
+  // Unsigned subtraction naturally wraps on rollover, so if time_ms has rolled past zero and anemometer_interrupt_stime 
+  // is still the old large value, the subtraction still produces the correct elapsed time.
+  delta_ms = time_ms - anemometer_interrupt_stime;
+  anemometer_interrupt_stime = time_ms;
+
+  if (count) {
+    // wind_speed = (  ( (count/2) * (2 * 3.14156 * ws_radius) )  / (float)( (float)delta_ms / 1000)  ) * ws_calibration;
+
+    wind_speed = ( ( count * 3.14156 * ws_radius)  /  (float)( (float)delta_ms / 1000) )  * ws_calibration;
   }
   else {
     wind_speed = 0.0;
   }
-
-  anemometer_interrupt_count = 0;
-  anemometer_interrupt_stime = System.millis();
   
   return (wind_speed);
-} 
+}
 
 /* 
  *=======================================================================================================================

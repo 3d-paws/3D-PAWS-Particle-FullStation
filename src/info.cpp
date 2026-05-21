@@ -471,7 +471,7 @@ bool INFO_Do() {
       GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
       sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
     }
-    if (DoWind) {
+    if (DoWind) { // Wind Sensor
       GetPinName(ANEMOMETER_IRQ_PIN, Buffer32Bytes);
       sprintf (buf+strlen(buf), "%sWS(%s)", comma, Buffer32Bytes);
     }
