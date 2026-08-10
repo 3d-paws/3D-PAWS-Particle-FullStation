@@ -13,6 +13,7 @@
 #include "include/output.h"
 #include "include/sensors.h"
 #include "include/obs.h"
+#include "include/nvcf.h"
 #include "include/sdcard.h"
 
 /*
@@ -36,6 +37,10 @@ char SD_n2s_file[] = "N2SOBS.TXT";      // Need To Send Observation file
 uint32_t SD_n2s_max_filesz = 512 * 60 * 48;  // Keep a little over 2 days. When it fills, it is deleted and we start over.
 
 char SD_sim_file[] = "SIM.TXT";         // File used to set Ineternal or External sim configuration
+
+char SD_cnv_file[] = "CNV.TXT";         // File used to clear NV Configuration files. File is deleted after.
+char SD_crt_file[] = "CRT.TXT";         // File used to clear NV Rain Totals. File is deleted after.
+
 char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim configuration set
 
 char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
@@ -387,7 +392,7 @@ void SD_N2S_Publish() {
             // So make the observation and stay in the loop if we have space in the OBS array.
             // We need to avoid a full array that would cause all observations to be saved to N2S file 
             // we currently have open, a bad thing.
-            if ( (System.millis() - lastOBS) > (obs_interval*60*1000)) {
+            if ( (System.millis() - lastOBS) > (scv.obi*60*1000)) {
               Output ("N2S:OBS Needed");
               if (OBS_Full()) {
                 // need to get out of this loop and let the main loop make the needed observation

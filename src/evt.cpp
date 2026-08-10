@@ -12,6 +12,7 @@
 #include "include/wrda.h"
 #include "include/sdcard.h"
 #include "include/obs.h"
+#include "include/nvcf.h"
 #include "include/evt.h"
 
 #ifdef ENABLE_Evapotranspiration
@@ -30,13 +31,13 @@ static constexpr double PI_ = 3.14159265358979323846;
 
 // -------------------- Config variables from CONFIG.TXT and ELEV.TXT --------------------
 /*
- * int cf_elevation  
- * float cf_lat_deg
- * float cf_lon_deg
- * float cf_albedo
- * float cf_crop_kc
- * float cf_sr_cal
- * float cf_sr_dark_offset
+ * int scv.elevation  
+ * float scv.lat_deg
+ * float scv.lon_deg
+ * float scv.albedo
+ * float scv.crop_kc
+ * float scv.sr_cal
+ * float scv.sr_dark_offset
  */
 
 // -------------------- Hourly accumulator --------------------
@@ -76,11 +77,11 @@ bool EVT_exists = false;
  */
 float evt_readIrradiance(int samples = 16) {
 
-  // cf_sr_cal aka CAL_SENS_uV_PER_WM2
+  // scv.sr_cal aka CAL_SENS_uV_PER_WM2
   // Replace with your sensor's calibration constant (µV per W/m² from the label/certificate)
   // Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
 
-  // cf_sr_dark_offset
+  // scv.sr_dark_offset
   // With the sensor covered, log the raw counts, set that as dark_offset_counts if needed.
   // The "dark offset" is the baseline reading from the sensor when no irradiance (solar radiation) is 
   // present—essentially, the background signal or noise level that the pyranometer outputs under fully 
@@ -97,13 +98,13 @@ float evt_readIrradiance(int samples = 16) {
   }
 
   float avg_counts = (float)sum / samples;
-  avg_counts -= cf_sr_dark_offset;  // subtract dark offset if measured
+  avg_counts -= scv.sr_dark_offset;  // subtract dark offset if measured
 
   // Counts → microvolts
   float V_uV = avg_counts * LSB_uV;
 
   // Irradiance (W/m²)
-  float irradiance = V_uV / cf_sr_cal;
+  float irradiance = V_uV / scv.sr_cal;
   if (irradiance < 0) irradiance = 0;  // clamp to zero
 
   return irradiance;
@@ -339,7 +340,7 @@ static inline double penman_monteith_hourly_mm(
                        double Rs_MJ          // hourly total MJ m^-2
                     ) {
   // Psychrometrics
-  double P  = pressure_kPa_from_elev(cf_elevation);
+  double P  = pressure_kPa_from_elev(scv.elevation);
   double gam = gamma_kPa_perC(P);
   double del = delta_slope_kPa_perC(T_C);
 
@@ -349,9 +350,9 @@ static inline double penman_monteith_hourly_mm(
   double vpd = max(0.0, es - ea);
 
   // Radiation terms
-  SolarHour S = hourly_Ra_MJ(ts, cf_lat_deg, cf_lon_deg);
-  double Rso = Rso_MJ(S.Ra_MJ, cf_elevation);
-  double Rns = Rns_MJ(Rs_MJ, cf_albedo);
+  SolarHour S = hourly_Ra_MJ(ts, scv.lat_deg, scv.lon_deg);
+  double Rso = Rso_MJ(S.Ra_MJ, scv.elevation);
+  double Rns = Rns_MJ(Rs_MJ, scv.albedo);
   double Rnl = Rnl_MJ(T_C, ea, Rs_MJ, Rso);
   double Rn  = Rns - Rnl;                 // MJ m^-2 h^-1
   double G   = G_MJ(Rn, S.isDay);         // MJ m^-2 h^-1
@@ -415,7 +416,7 @@ static inline bool EVT_ComputeHourAndReset (EvtHour &acc, double &ET0_mm_h, doub
   double Rs = acc.Rs_MJ; // already hour-summed in MJ m^-2
 
   ET0_mm_h = penman_monteith_hourly_mm(hour_center, T, RH, u2, Rs);
-  ETc_mm_h = ET0_mm_h * cf_crop_kc;
+  ETc_mm_h = ET0_mm_h * scv.crop_kc;
 
   acc = EvtHour{}; // reset for next hour
   return (true);
@@ -445,7 +446,7 @@ void EVT_Build_JSON(time_t ts, double ET0, double ETc) {
   // fabs() calculates the absolute value of a floating-point number.
   // It returns the magnitude of a number, disregarding its sign. If the input is negative, 
   // it returns the positive equivalent; if the input is already positive, it returns the same positive value.
-  if (fabs(cf_crop_kc - 1.0) > 1e-6) {
+  if (fabs(scv.crop_kc - 1.0) > 1e-6) {
     writer.name("etc").value(ETc, 3);
   } 
   writer.endObject();
@@ -547,7 +548,7 @@ void evt_initialize() {
     ads.readADC_Differential_0_1(); // read once and toss result
     ADS_exists = true;
     Output ("ADS:OK");
-    if (SHT_1_exists && AS5600_exists && (cf_sr_cal != 0.0)) { // check cf_sr_cal to prevent divide by zero
+    if (SHT_1_exists && AS5600_exists && (scv.sr_cal != 0.0)) { // check scv.sr_cal to prevent divide by zero
       EVT_exists = true;
       Output ("EVT:OK");      
     }

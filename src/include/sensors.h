@@ -11,12 +11,12 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_SI1145.h>
 #include <Adafruit_SHT31.h>
-#include <Adafruit_VEML7700.h>
 #include <Adafruit_PM25AQI.h>
 #include <Adafruit_HDC302x.h>
 #include <Adafruit_LPS35HW.h>
 #include <i2cArduino.h>
 #include <i2cMultiSm.h>
+#include <BH1750.h> // DFRobot SEN0562 Ambient Light Sensor
 
 #if (PLATFORM_ID != PLATFORM_MSOM)
 #include <LeafSens.h>
@@ -117,13 +117,6 @@ extern Adafruit_SHT31 sht2;
 extern bool SHT_1_exists;
 extern bool SHT_2_exists;
 
-/*
- * ======================================================================================================================
- *  HIH8 - I2C - Temperature & Humidity sensor (HIH8000)  - 
- * ======================================================================================================================
- */
-#define HIH8000_ADDRESS   0x27
-extern bool HIH8_exists;
 
 /*
  * ======================================================================================================================
@@ -167,20 +160,22 @@ extern float si_last_uv;
 
 /*
  * ======================================================================================================================
- *  VEML7700 - I2C - Lux Sensor
- * ======================================================================================================================
- */
-#define VEML7700_ADDRESS   0x10
-extern Adafruit_VEML7700 veml;
-extern bool VEML7700_exists;
-
-/*
- * ======================================================================================================================
- *  B_LUX_V30B - I2C - Lux Sensor
+ *  B_LUX_V30B - I2C - Lux Sensor - https://wiki.dfrobot.com/sen0390/
  * ======================================================================================================================
  */
 #define BLX_ADDRESS   0x4A
 extern bool BLX_exists;
+
+/*
+ * ======================================================================================================================
+ *  DFRobot SEN0562 - I2C - Ambient Light Sensor 1-65535lx - BH1750 (via BH1750.h)
+ *  DFRobot claims a measurement range of 1 to 65,535 lx with 1.2 lx accuracy and IP68 waterproofing.
+ *  https://www.dfrobot.com/product-2664.html
+ * ======================================================================================================================
+ */
+#define BH1750_ADDRESS   0x23
+extern bool BH1750_exists;
+extern BH1750 bh1750_lux;
 
 /*
  * ======================================================================================================================
@@ -228,8 +223,6 @@ typedef struct {
 extern PM25AQI_OBS_STR pm25aqi_obs;
 extern Adafruit_PM25AQI pmaq;
 extern bool PM25AQI_exists;
-
-extern bool AQS_Enabled;
 extern int AQSWarmUpTime;
 extern int AQS_Correction ;
 
@@ -329,7 +322,7 @@ double wbgt_using_wbt(double Ta, double Tg, double Tw);
 void mslp_initialize();
 double mslp_calculate(float Ts, float RH, float ps, int station_height);
 void si1145_initialize();
-void vlx_initialize();
+void BH1750_init();
 // bool blx_getconfig()
 void blx_initialize();
 float blx_takereading();

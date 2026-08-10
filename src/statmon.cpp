@@ -20,6 +20,7 @@
 #include "include/support.h"
 #include "include/time.h"
 #include "include/main.h"
+#include "include/nvcf.h"
 #include "include/statmon.h"
 
 /*
@@ -64,7 +65,7 @@ void StationMonitor() {
   // Line 1 of OLED Wind Direction and Speed
   // =================================================================
   memset(msgbuf, 0, sizeof(msgbuf));
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     if (AS5600_exists) {
       float ws = Wind_SpeedAverage();
       sprintf (msgbuf, "WD:%3d WS:%.2f", 
@@ -82,19 +83,19 @@ void StationMonitor() {
   // Line 2 of OLED RG1 and RG2 Interrupt counts or Distance Gauge
   // =================================================================
   memset(msgbuf, 0, sizeof(msgbuf));
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     sprintf (msgbuf+strlen(msgbuf), "RG1:%02d", raingauge1_interrupt_count); 
     raingauge1_interrupt_count = 0;
     raingauge1_interrupt_stime = millis();
     raingauge1_interrupt_ltime = 0;
 
-    if (OP1_State == OP1_STATE_RAIN) {
+    if (scv.op1 == OP1_STATE_RAIN) {
       sprintf (msgbuf+strlen(msgbuf), " RG2:%02d", raingauge2_interrupt_count);
       raingauge2_interrupt_count = 0;
       raingauge2_interrupt_stime = millis();
       raingauge2_interrupt_ltime = 0;
     }
-    else if (OP1_State == OP1_STATE_DISTANCE) {
+    else if (scv.op1 == OP1_STATE_DISTANCE) {
       float dg = DistanceGauge_Median();
       sprintf (msgbuf+strlen(msgbuf), " DG:%.2f", dg);
     }
@@ -185,18 +186,7 @@ void StationMonitor() {
     } 
   }
 
-  if (cycle == 9) {   
-    if (VEML7700_exists) {
-      float lux = veml.readLux(VEML_LUX_AUTO);
-      lux = (isnan(lux)) ? 0.0 : lux;
-        sprintf (msgbuf, "LX L%.2f", lux);
-    }
-    else {
-      sprintf (msgbuf, "LX NF");
-    }
-  }
-
-  if (cycle == 10) {
+  if (cycle == 9) {
     if (LPS_1_exists) {
       float t,p;
       t = lps1.readTemperature();
@@ -208,7 +198,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 11) {
+  if (cycle == 10) {
     if (LPS_2_exists) {
       float t,p;
       t = lps2.readTemperature();
@@ -220,23 +210,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 12) {   
-    if (HIH8_exists) {
-      float t = 0.0;
-      float h = 0.0;
-      bool status = hih8_getTempHumid(&t, &h);
-      if (!status) {
-        t = -999.99;
-        h = 0.0;
-      }
-      sprintf (msgbuf, "HIH8 T%.2f H%.2f", t, h);
-    }
-    else {
-      sprintf (msgbuf, "HIH8 NF");
-    }
-  }
-
-  if (cycle == 13) {
+  if (cycle == 11) {
     if (SI1145_exists) {
       float si_vis = uv.readVisible();
       float si_ir = uv.readIR();
@@ -248,7 +222,7 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 14) {
+  if (cycle == 12) {
     if (BLX_exists) {
       float lux = blx_takereading ();
       sprintf (msgbuf, "BLX %.2f", lux);
@@ -258,7 +232,17 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 15) {
+  if (cycle == 13) {
+    if (BH1750_exists) {
+      float lux=blx_takereading();
+      sprintf (msgbuf, "BHLX %.2f", lux);
+    }
+    else {
+      sprintf (msgbuf, "BHLX NF");
+    }
+  }
+
+  if (cycle == 14) {
     // Look into how the values are being updated 
     if (PM25AQI_exists) {
       PM25_AQI_Data aqid;
@@ -273,11 +257,11 @@ void StationMonitor() {
     }
   }
 
-  if (cycle == 16) {   
+  if (cycle == 15) {   
     sprintf (msgbuf, "HTH:%d", (int)SystemStatusBits);
   }
 
-  if (cycle == 17) {
+  if (cycle == 16) {
 #if PLATFORM_ID == PLATFORM_ARGON
     WiFiSignal sig = WiFi.RSSI();
     float SignalStrength = sig.getStrength();
@@ -307,7 +291,7 @@ void StationMonitor() {
 
   // Give the use some time to read line 3 before changing
   if (count++ >= 2) {
-    cycle = (cycle+1) % 18; // << +1
+    cycle = (cycle+1) % 17; // << +1
     count = 0;
   }
 

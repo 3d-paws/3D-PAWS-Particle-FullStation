@@ -14,6 +14,9 @@
 #include "include/lora.h"
 #include "include/output.h"
 #include "include/evt.h"
+#include "include/eeprom.h"
+#include "include/wrda.h"
+#include "include/nvcf.h"
 #include "include/cf.h"
 
 /*
@@ -22,33 +25,11 @@
  * =======================================================================================================================
  */
 
-
 /*
  * ======================================================================================================================
  *  Define Global Configuration File Variables
  * ======================================================================================================================
  */
-char *cf_aes_pkey=NULL;
-long cf_aes_myiv=0;
-int cf_lora_unitid=0;
-int cf_lora_txpower=0;
-int cf_lora_freq=0;
-int cf_elevation=QC_ERR_ELEV;   // Supports MSLP and Evapotranspiration
-int cf_rtro_hour=0;             // Rain total rollover offset hour
-int cf_rtro_minute=0;           // Rain total rollover offset minute
-
-#ifdef ENABLE_Evapotranspiration
-// Used for Evapotranspiration
-float cf_lat_deg=0.0;
-float cf_lon_deg=0.0;
-float cf_albedo=0.0;
-float cf_crop_kc=0.0;
-
-// Used for Irradiance Calibration
-float cf_sr_cal=0.0;
-float cf_sr_dark_offset=0.0;
-#endif
-
 
 /*
  * ======================================================================================================================
@@ -255,36 +236,46 @@ long SD_findLong(const __FlashStringHelper * key) {
 void SD_ReadConfigFile() {
 
   if (SD_exists && SD.exists(CF_NAME)) {
+    sprintf(msgbuf, "CF:%s Found", CF_NAME);
+    Output(msgbuf);
 
-    cf_aes_pkey     = SD_findCharStr(F("aes_pkey"));
-    sprintf(msgbuf, "CF:aes_pkey=[%s]", cf_aes_pkey); Output (msgbuf);
+    scv.aes_pkey     = SD_findCharStr(F("aes_pkey"));
+    sprintf(msgbuf, "CF:aes_pkey=[%s]", scv.aes_pkey.c_str()); Output (msgbuf);
 
-    cf_aes_myiv     = SD_findLong(F("aes_myiv"));
-    sprintf(msgbuf, "CF:aes_myiv=[%lu]", cf_aes_myiv);   Output (msgbuf);
+    scv.aes_myiv     = SD_findLong(F("aes_myiv"));
+    sprintf(msgbuf, "CF:aes_myiv=[%lu]", scv.aes_myiv);   Output (msgbuf);
 
-    cf_lora_unitid  = SD_findInt(F("lora_unitid"));
-    sprintf(msgbuf, "CF:lora_unitid=[%d]", cf_lora_unitid); Output (msgbuf);
+    scv.lora_unitid  = SD_findInt(F("lora_unitid"));
+    sprintf(msgbuf, "CF:lora_unitid=[%d]", scv.lora_unitid); Output (msgbuf);
 
-    cf_lora_txpower = SD_findInt(F("lora_txpower"));
-    sprintf(msgbuf, "CF:lora_txpower=[%d]", cf_lora_txpower); Output (msgbuf);
+    scv.lora_txpower = SD_findInt(F("lora_txpower"));
+    sprintf(msgbuf, "CF:lora_txpower=[%d]", scv.lora_txpower); Output (msgbuf);
 
-    cf_lora_freq   = SD_findInt(F("lora_freq"));
-    sprintf(msgbuf, "CF:lora_freq=[%d]", cf_lora_freq); Output (msgbuf);
+    scv.lora_freq   = SD_findInt(F("lora_freq"));
+    sprintf(msgbuf, "CF:lora_freq=[%d]", scv.lora_freq); Output (msgbuf);
+
+    scv.lat_deg   = SD_findFloat(F("lat_deg"));
+    sprintf(msgbuf, "CF:lat_deg=[%.f]", scv.lat_deg);
+    Output (msgbuf); 
+    
+    scv.lon_deg   = SD_findFloat(F("lon_deg"));
+    sprintf(msgbuf, "CF:lon_deg=[%.f]", scv.lon_deg);
+    Output (msgbuf);  
 
 #ifdef ENABLE_Evapotranspiration
-    cf_sr_cal   = SD_findFloat(F("sr_cal"));
+    scv.sr_cal   = SD_findFloat(F("sr_cal"));
     sprintf(msgbuf, "CF:sr_cal=[%d.%02d]", 
-      (int)cf_sr_cal, (int)(cf_sr_cal*100)%100); 
+      (int)scv.sr_cal, (int)(scv.sr_cal*100)%100); 
     Output (msgbuf);
 
-    cf_sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
+    scv.sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
     sprintf(msgbuf, "CF:sr_dark_offset=[%d.%02d]", 
-      (int) cf_sr_dark_offset, (int)(cf_sr_dark_offset*100)%100); 
+      (int) scv.sr_dark_offset, (int)(scv.sr_dark_offset*100)%100); 
     Output (msgbuf);
 #endif
   }
   else {
-    sprintf(msgbuf, "CF:NO %s", CF_NAME); Output (msgbuf);
+    sprintf(msgbuf, "CF:%s NF", CF_NAME);
     Output(msgbuf);
   }
 }
@@ -315,7 +306,7 @@ void SD_ReadElevationFile() {
 
         // Quality check
         if (tmpElev >= QC_MIN_ELEV && tmpElev <= QC_MAX_ELEV) {
-          cf_elevation = tmpElev;
+          scv.elevation = tmpElev;
           sprintf(msgbuf, "ELEV:%d", tmpElev);
         } else {
           sprintf(msgbuf, "ELEV:QCERR %d", tmpElev);
@@ -340,8 +331,8 @@ void SD_ReadElevationFile() {
  * =======================================================================================================================
  */
 void SD_Read_RTRO_File() {
-  cf_rtro_hour = 0;
-  cf_rtro_minute = 0;
+  scv.rtro_hour = 0;
+  scv.rtro_minute = 0;
 
   if (SD_exists && SD.exists(SD_RTRO_FILE)) {
     File rtutcfile = SD.open(SD_RTRO_FILE, FILE_READ);
@@ -378,9 +369,9 @@ void SD_Read_RTRO_File() {
       } 
 
       if (valid) {
-        cf_rtro_hour = hour;
-        cf_rtro_minute = minute;
-        sprintf(msgbuf, "RTRO:%d:%02d", cf_rtro_hour, cf_rtro_minute);
+        scv.rtro_hour = hour;
+        scv.rtro_minute = minute;
+        sprintf(msgbuf, "RTRO:%d:%02d", scv.rtro_hour, scv.rtro_minute);
       }
       else {
         sprintf(msgbuf, "RTRO:0 INVALID");
@@ -393,4 +384,291 @@ void SD_Read_RTRO_File() {
     sprintf(msgbuf, "RTRO:0 NF %s", SD_RTRO_FILE);
   }
   Output(msgbuf);
+}
+
+/* 
+ * =======================================================================================================================
+ * SD_CheckNoWindFile()
+ * =======================================================================================================================
+ */
+void SD_CheckNoWindFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_NOWIND_FILE)) {
+      Output ("WIND: Disabled");
+      scv.wind=false;
+    }
+    else {
+      Output ("WIND: Enabled");
+    }
+  }
+  else {
+    Output("WIND: Enabled, SD NF"); 
+  }     
+}
+
+/* 
+ * =======================================================================================================================
+ * SD_CheckNoRainFile()
+ * =======================================================================================================================
+ */
+void SD_CheckNoRainFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_NORAIN_FILE)) {
+      Output ("RAIN: Disabled");
+      scv.rg1=false;
+    }
+    else {
+      Output ("RAIN: Enabled");
+    }
+  }
+  else {
+    Output("RAIN: Enabled, SD NF"); 
+  }     
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckAQSFile() - Check SD Card for file to determine if we are a Air Quality Station
+ *=======================================================================================================================
+ */
+void SD_CheckAQSFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_OPTAQS_FILE)) {
+      Output ("AQS: Enabled");
+      scv.aqs = true;
+    }
+    else {
+      Output ("AQS: NF");
+      scv.aqs = false;
+    }
+  }
+  else {
+      Output ("AQS: Disabled, SD NF");
+      scv.aqs = false;    
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckOP1Files() - Check Files related to Option Pin 1 and set scv.op1
+ *=======================================================================================================================
+ */
+void SD_CheckOP1Files() {
+  if (SD_exists) {
+    if (SD.exists(SD_OP1_DIST_FILE)) {
+      Output ("OP1=DIST");
+      scv.op1 = OP1_STATE_DISTANCE;
+    }
+    else if (SD.exists(SD_OP1_RAIN_FILE)) {
+      Output ("OP1=RAIN");
+      scv.op1 = OP1_STATE_RAIN;
+    }
+    else if (SD.exists(SD_OP1_RAW_FILE)) {
+      Output ("OP1=RAW");
+      scv.op1 = OP1_STATE_RAW;
+    }
+    else {
+      Output ("OP1=NULL");
+      scv.op1 = OP1_STATE_NULL;
+    }
+  }
+  else {
+    Output ("OP1=NULL,SD NF");
+    scv.op1 = OP1_STATE_NULL;
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckOP15MFile() - Check SD Card for file to determine if we are a Air Quality Station
+ *=======================================================================================================================
+ */
+void SD_CheckOP15MFile() {
+
+  if (SD_exists) {
+    if (SD.exists(SD_OP1_D5M_FILE)) {
+      Output ("OP15M: Enabled");
+      scv.op1d5m = true;
+    }
+    else {
+      Output ("OP15M: NF");
+      scv.op1d5m = false;
+    }
+  }
+  else {
+      Output ("OP15M: Disabled, SD NF");
+      scv.op1d5m = false;    
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckOP2File() - Check Files related to Option Pin 2 and set scv.op2
+ *=======================================================================================================================
+ */
+void SD_CheckOP2Files() {
+  if (SD_exists) {
+    if (SD.exists(SD_OP2_RAW_FILE)) {
+      Output ("OP2=RAW");
+      scv.op2 = OP2_STATE_RAW;
+    }
+    else if (SD.exists(SD_OP2_VBV_FILE)) {
+      Output ("OP2=VBV");
+      scv.op2 = OP2_STATE_VOLTAIC;
+    }
+    else {
+      Output ("OP2=NULL");
+      scv.op2 = OP2_STATE_NULL;
+    }
+  }
+  else {
+    Output ("OP2=NULL,SD NF");
+    scv.op2 = OP2_STATE_NULL;
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckN2SandSetSSB() - Check Need 2 Send file and set SystemStatusBits if found
+ *=======================================================================================================================
+ */
+void SD_CheckN2SandSetSSB() {
+  if (SD_exists) {
+    if (SD.exists(SD_n2s_file)) {
+      SystemStatusBits |= SSB_N2S; // Turn on Bit to Report if we have Need to Send Observations
+      Output("N2S:Exists");
+    }
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_CheckOBITXIFiles() - Observation Interval and Transmit Interval Initialize
+ *=======================================================================================================================
+ */
+void SD_CheckOBITXIFiles() {
+  if (SD_exists) {
+    if (SD.exists(SD_TX5M_FILE)) {
+      Output ("TXI5M Found");
+      scv.txi = 5;
+      SD_RemoveFile (SD_TX10M_FILE);
+      SD_RemoveFile (SD_OB5M_FILE);
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_TX10M_FILE)) {
+      Output ("TXI10M Found");
+      scv.txi = 10;
+      SD_RemoveFile (SD_OB5M_FILE);
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB5M_FILE)) {
+      Output ("OBI5M Found");
+      scv.obi = scv.txi = 5;
+      SD_RemoveFile (SD_OB10M_FILE);
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB10M_FILE)) {
+      Output ("OBI10M Found");
+      scv.obi = scv.txi = 10;
+      SD_RemoveFile (SD_OB15M_FILE);
+    }
+    else if (SD.exists(SD_OB15M_FILE)) {
+      Output ("OBI15M Found");
+      scv.obi = scv.txi = 15;
+    }
+    else {
+      Output ("OBITXI: NF, Using Defaults");
+      scv.obi = DEFAULT_OBS_INTERVAL;
+      scv.txi = DEFAULT_OBS_TRANSMIT_INTERVAL;
+    }
+  }
+
+  // Do a check and make sure OBS and Transmit is at least 5m or greater when AQS is enabled
+  if (scv.aqs) {
+    if (scv.obi<5) {
+      Output ("OBI Corrected 5M");
+      scv.obi = 5;
+    }
+    if (scv.txi<5) {
+      Output ("TXI Corrected 5M");
+      scv.txi = 5;
+    }
+  }
+
+  sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
+  Output(msgbuf);  
+}
+
+/* 
+ *=======================================================================================================================
+ * SD_GetSystemVariables() - Read in main and individual configuration files and set system variables
+ *=======================================================================================================================
+ */
+void SD_GetSystemVariables() {
+  if (SD_exists) {
+    SD_CheckN2SandSetSSB();
+
+    // Rename A4 and A5 files used in releases prior to release 40. 
+    // Remove function this when we determine all sites are at release 40 or greater
+    SD_A4A5_Rename();
+
+    // If config file exists it is opened and read
+    SD_ReadConfigFile();
+
+    // If elevation file exists it is opened, read and elevation set, else 0
+    SD_ReadElevationFile();
+
+    // If offset file exists it is opened, read and rain total rollover offset set, else 0
+    SD_Read_RTRO_File();
+
+    // Are we a Air Quality Station
+    SD_CheckAQSFile();
+
+    // See what has been define for these pins
+    SD_CheckOP1Files();
+    SD_CheckOP15MFile();  // only important if (scv.op1 == OP1_STATE_DISTANCE)
+    SD_CheckOP2Files();
+
+    if (!scv.aqs) {
+      SD_CheckNoWindFile(); // if NOWIND.TXT found then scv.wind is set false
+      SD_CheckNoRainFile(); // if NORAIN.TXT found then scv.rg1 is set false
+    }
+  }
+
+  SD_CheckOBITXIFiles();
+}
+
+
+/*
+ * ======================================================================================================================
+ * SD_CheckClearRainTotals()
+ * If the SD card is available and CRT.TXT exists:
+ *   1. Clear Rain Totals
+ *   2. Delete CNV.TXT after successful config deletion
+ *
+ * Returns true only when CNV.TXT was found and all requested deletes succeeded.
+ * ======================================================================================================================
+ */
+bool SD_CheckClearRainTotals() {
+    // Do not access the SD filesystem unless it is known to be available.
+    time32_t current_time = Time.now();
+    Output("CRT:");
+    EEPROM_ClearRainTotals(current_time);
+
+    // Config files were successfully deleted; remove the trigger file too.
+    if (unlink(SD_crt_file) == 0) {
+        snprintf(msgbuf, sizeof(msgbuf), "CRT:%s Deleted", SD_crt_file);
+        Output(msgbuf);
+        return true;
+    }
+
+    snprintf(msgbuf, sizeof(msgbuf), "CRT:%s Delete Failed: %s", SD_crt_file, strerror(errno));
+    Output(msgbuf);
+
+    return false;
 }

@@ -14,14 +14,63 @@
 #include "include/wrda.h"
 #include "include/main.h"
 #include "include/output.h"
+#include "include/nvcf.h"
+#include "include/ps.h"
 
 const char *batterystate[] = {"UNKN", "!CHARGING", "CHARGING", "CHARGED", "DISCHARGING", "FAULT", "MISSING"};
+
+volatile OTAState ota_state = NO_UPDATE;
+unsigned long ota_stateStarted = 0;
+const unsigned long UPDATE_WAIT_MS = 300000;        // 5 minutes
 
 /*
  * ======================================================================================================================
  * Fuction Definations
  * =======================================================================================================================
  */
+
+/*
+ * ======================================================================================================================
+ * enterOTAState() - 
+ * ======================================================================================================================
+ */
+void enterOTAState(OTAState s) {
+    ota_state = s;
+    ota_stateStarted = millis();
+}
+
+/*
+ * ======================================================================================================================
+ * getCellularGlobalIdentity() - 
+ * 
+ * Standard Decimal Format Max Length: 24 characters (including null-terminator) "999-999-65535-268435455\0"
+ *   mcc: Max 3 characters (e.g., "999")
+ *   mnc: Max 3 characters (e.g., "999")
+ *   lac: Max 5 characters (e.g., "65535")
+ *   cid: Max 9 characters (e.g., "268435455" for LTE/5G ECGI)
+ * ======================================================================================================================
+ */
+
+bool getCellularGlobalIdentity(char *buf, size_t buf_len) {
+  CellularGlobalIdentity cgi = {0};
+  cgi.size = sizeof(CellularGlobalIdentity);
+  cgi.version = CGI_VERSION_LATEST;
+
+  cellular_result_t res = cellular_global_identity(&cgi, NULL);
+
+  if (res != SYSTEM_ERROR_NONE) {
+      buf[0] = '\0';
+      return false;
+  }
+
+  snprintf(buf, buf_len, "%d-%d-%u-%lu",
+    cgi.mobile_country_code,
+    cgi.mobile_network_code,
+    cgi.location_area_code,
+    cgi.cell_id);
+  return true;
+}
+
 
 /*
  * ======================================================================================================================
@@ -223,10 +272,17 @@ int Function_DoAction(String s) {
     return(0);
   }
 
+    else if (s.equals("CNV")) { // Clear NV Config Files
+    Output("DoAction:CNV");
+    return(nv_deleteConfigFiles());
+  }
+
   else if (s.equals("NOWIND")) { 
     Output("DoAction:NOWIND");
-    DoWind=false;
     ws_refresh = false;
+    scv.wind=false;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_NOWIND_FILE)) {
         Output ("NOWIND EXISTS");
@@ -237,6 +293,7 @@ int Function_DoAction(String s) {
         if (fp) {
           fp.close();
           Output ("NOWIND SET");
+          
         }
         else {
           Output ("NOWIND OPEN ERR");
@@ -253,7 +310,9 @@ int Function_DoAction(String s) {
 
   else if (s.equals("DOWIND")) {
     Output("DoAction:DOWIND");
-    DoWind=true;
+    scv.wind=true;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_NOWIND_FILE)) {
         if (SD.remove (SD_NOWIND_FILE)) {
@@ -274,7 +333,9 @@ int Function_DoAction(String s) {
 
   else if (s.equals("NORAIN")) { 
     Output("DoAction:NORAIN");
-    DoRain=false;
+    scv.rg1=false;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_NORAIN_FILE)) {
         Output ("NORAIN EXISTS");
@@ -301,7 +362,9 @@ int Function_DoAction(String s) {
 
   else if (s.equals("DORAIN")) { 
     Output("DoAction:DORAIN");
-    DoRain=true;
+    scv.rg1=true;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_NORAIN_FILE)) {
         if (SD.remove (SD_NORAIN_FILE)) {
@@ -320,8 +383,14 @@ int Function_DoAction(String s) {
     return(0);  
   }
 
-  else if (s.equals("OP1DIST")) { // Set OP1 State File to Distance
+  else if (s.equals("OP1DIST")) { // Set OP1 State File to 10m Distance 
     Output("DoAction:OP1DIST");
+    scv.op1 = OP1_STATE_DISTANCE;
+    scv.op1d5m = false;
+    dg_adjustment = 2.5;
+    pinMode(OP1_PIN, INPUT);
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OP1_RAIN_FILE)) {
         EEPROM_ClearRain2Totals();
@@ -343,7 +412,6 @@ int Function_DoAction(String s) {
         if (fp) {
           fp.close();
           Output ("OP1=DIST, SET");
-          pinMode(OP1_PIN, INPUT);
         }
         else {
           Output ("OP1=DIST, OPEN ERR");
@@ -352,7 +420,7 @@ int Function_DoAction(String s) {
       }
 
       // Set Distance Sensor Divisor to that of 10m
-      dg_adjustment = 2.5;
+
       if (SD.exists(SD_OP1_D5M_FILE)) {
         if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=DIST, DEL 5M:OK, 10M SET");
@@ -376,6 +444,11 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OP1RAIN")) { // Set OP1 State File to Rain
     Output("DoAction:OP1RAIN");
+    scv.op1 = OP1_STATE_RAIN;
+    scv.op1d5m = false;
+    dg_adjustment = 2.5;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OP1_DIST_FILE)) {
         if (SD.remove (SD_OP1_DIST_FILE)) {
@@ -422,6 +495,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OP1D5M")) { // Set 5M Distance Sensor State File
     Output("DoAction:OP1D5M");
+    scv.op1d5m = true;
+    dg_adjustment = 1.25;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OP1_D5M_FILE)) {
         Output ("OP1D5M, ALREADY EXISTS");      
@@ -431,7 +508,6 @@ int Function_DoAction(String s) {
         File fp = SD.open(SD_OP1_D5M_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          dg_adjustment = 1.25;
           Output ("OP1D5M SET");
         }
         else {
@@ -449,8 +525,13 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OP1RAW")) { // Set OP1 State File to Raw
     Output("DoAction:OP1RAW");
-    if (SD_exists) {
+    scv.op1 = OP1_STATE_RAW;
+    scv.op1d5m = false;
+    dg_adjustment = 2.5;
+    pinMode(OP1_PIN, INPUT);
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
 
+    if (SD_exists) {
       // Remove Rain Configuration
       if (SD.exists(SD_OP1_RAIN_FILE)) {
         EEPROM_ClearRain2Totals();
@@ -475,7 +556,7 @@ int Function_DoAction(String s) {
       }
 
       // Remove Distanve sensor type and reset distance adjustment to default 10m
-      dg_adjustment = 2.5;
+      
       if (SD.exists(SD_OP1_D5M_FILE)) {
         if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=DIST, DEL 5M:OK");
@@ -511,13 +592,18 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (s.equals("OP1CLR")) { // Clear OP1 State Files
+  else if (s.equals("OP1CLR")) { // Clear OP1 State Files !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     int state=0;
     Output("DoAction:OP1CLR");
+    scv.op1 = OP1_STATE_NULL;
+    scv.op1d5m = false;
+    dg_adjustment = 2.5;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OP1_DIST_FILE)) {
         if (SD.remove (SD_OP1_DIST_FILE)) {
-          OP1_State = OP1_STATE_NULL;
+          scv.op1 = OP1_STATE_NULL;
           Output ("OP1=CLR, DEL DIST:OK");
         }
         else {
@@ -531,7 +617,7 @@ int Function_DoAction(String s) {
 
       if (SD.exists(SD_OP1_RAIN_FILE)) {
         if (SD.remove (SD_OP1_RAIN_FILE)) {
-          OP1_State = OP1_STATE_NULL;      // We still need a reboot to get rid of ISR
+          scv.op1 = OP1_STATE_NULL;
           Output ("OP1=CLR, DEL RAIN:OK");
         }
         else {
@@ -545,7 +631,7 @@ int Function_DoAction(String s) {
 
       if (SD.exists(SD_OP1_RAW_FILE)) {
         if (SD.remove (SD_OP1_RAW_FILE)) {
-          OP1_State = OP1_STATE_NULL;
+          scv.op1 = OP1_STATE_NULL;
           Output ("OP1=CLR, DEL RAW:OK");
         }
         else {
@@ -560,13 +646,13 @@ int Function_DoAction(String s) {
       if (SD.exists(SD_OP1_D5M_FILE)) {
         if (SD.remove (SD_OP1_D5M_FILE)) {
           Output ("OP1=CLR, DEL 5M:OK");
-          dg_adjustment = 2.5;
         }
         else {
           Output ("OP1=CLR, DEL 5M:ERR");
           state+=-5;
         }
       }
+      
     }
     else {
       Output("OP1=CLR, SD NF"); 
@@ -577,6 +663,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OP2RAW")) { // Set OP2 State File to Raw
     Output("DoAction:OP2RAW");
+    scv.op2 = OP2_STATE_RAW;
+    pinMode(OP2_PIN, INPUT);
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     // Add OP2 Raw configuration
     if (SD_exists) {
       if (SD.exists(SD_OP2_RAW_FILE)) {
@@ -588,9 +678,8 @@ int Function_DoAction(String s) {
         File fp = SD.open(SD_OP2_RAW_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          OP2_State = OP2_STATE_RAW;
+          scv.op2 = OP2_STATE_RAW;
           Output ("OP2=RAW, SET");
-          pinMode(OP2_PIN, INPUT);
         }
         else {
           Output ("OP2=RAW, OPEN ERR");
@@ -620,6 +709,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OP2VBV")) { // Set OP2 State File to Voltaic Battery Voltage
     Output("DoAction:OP2VBV");
+    scv.op2 = OP2_STATE_VOLTAIC;
+    pinMode(OP2_PIN, INPUT);
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     // Add OP2 Raw configuration
     if (SD_exists) {
       if (SD.exists(SD_OP2_VBV_FILE)) {
@@ -631,9 +724,7 @@ int Function_DoAction(String s) {
         File fp = SD.open(SD_OP2_VBV_FILE, FILE_WRITE);
         if (fp) {
           fp.close();
-          OP2_State = OP2_STATE_VOLTAIC;
           Output ("OP2=VBV, SET");
-          pinMode(OP2_PIN, INPUT);
         }
         else {
           Output ("OP2=VBV, OPEN ERR");
@@ -665,11 +756,14 @@ int Function_DoAction(String s) {
   else if (s.equals("OP2CLR")) { // Clear OP2 State Files
     int state=0;
     Output("DoAction:OP2CLR");
+    scv.op2 = OP2_STATE_NULL;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
 
       if (SD.exists(SD_OP2_RAW_FILE)) {
         if (SD.remove (SD_OP2_RAW_FILE)) {
-          OP2_State = OP2_STATE_NULL;
+          scv.op2 = OP2_STATE_NULL;
           Output ("OP2=CLR, DEL RAW:OK");
         }
         else {
@@ -683,18 +777,17 @@ int Function_DoAction(String s) {
 
       if (SD.exists(SD_OP2_VBV_FILE)) {
         if (SD.remove (SD_OP2_VBV_FILE)) {
-          OP2_State = OP2_STATE_NULL;
           Output ("OP2=CLR, DEL VBV:OK");
         }
         else {
           Output ("OP2=CLR, DEL VBV:ERR");
           state=-2;
         }
+       
       }
       else {
         Output ("OP2=CLR, DEL OP2VBV:NF");
-      }
-
+      }  
     }
     else {
       Output("OP2=CLR, SD NF"); 
@@ -705,8 +798,11 @@ int Function_DoAction(String s) {
 
   else if (s.equals("TXI5M")) { // Set 1 Minute Observations, Transmit Interval to 5 Minutes
     Output("DoAction:TXI5M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf);  
+    scv.obi = DEFAULT_OBS_INTERVAL;
+    scv.txi = 5;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
 
     if (SD_exists) {
       if (SD.exists(SD_TX5M_FILE)) {
@@ -722,15 +818,13 @@ int Function_DoAction(String s) {
           SD_RemoveFile (SD_OB5M_FILE);
           SD_RemoveFile (SD_OB10M_FILE);
           SD_RemoveFile (SD_OB15M_FILE);
-          obs_interval = DEFAULT_OBS_INTERVAL;
-          obs_tx_interval = 5;
           Output ("TXI5M SET");
         }
         else {
           Output ("TXI5M OPEN ERR");
           return(-2);
         }
-        sprintf (msgbuf, "NEW: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        sprintf (msgbuf, "NEW: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
         Output(msgbuf);
       }
     }
@@ -743,8 +837,11 @@ int Function_DoAction(String s) {
 
   else if (s.equals("TXI10M")) { // Set 1 Minute Observations, Transmit Interval to 10 Minutes
     Output("DoAction:TXI10M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf);  
+    scv.obi = DEFAULT_OBS_INTERVAL;
+    scv.txi = 10;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
 
     if (SD_exists) {
       if (SD.exists(SD_TX10M_FILE)) {
@@ -761,14 +858,12 @@ int Function_DoAction(String s) {
           SD_RemoveFile (SD_OB5M_FILE);
           SD_RemoveFile (SD_OB10M_FILE);
           SD_RemoveFile (SD_OB15M_FILE);
-          obs_interval = DEFAULT_OBS_INTERVAL;
-          obs_tx_interval = 10;
         }
         else {
           Output ("TXI10M OPEN ERR");
           return(-2);
         }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
         Output(msgbuf);
       }
     }
@@ -781,8 +876,11 @@ int Function_DoAction(String s) {
 
   else if (s.equals("TXI15M")) { // Set 1 Minute Observations, Transmit Interval to 15 Minutes, 
     Output("DoAction:TXI15M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf);
+    scv.obi = DEFAULT_OBS_INTERVAL;
+    scv.txi = DEFAULT_OBS_TRANSMIT_INTERVAL;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
 
     if (SD_exists) {
       SD_RemoveFile (SD_TX5M_FILE);
@@ -790,9 +888,8 @@ int Function_DoAction(String s) {
       SD_RemoveFile (SD_OB5M_FILE);
       SD_RemoveFile (SD_OB10M_FILE);
       SD_RemoveFile (SD_OB15M_FILE);
-      obs_interval = DEFAULT_OBS_INTERVAL;
-      obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;
-      sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+
+      sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
       Output(msgbuf);
     }
     else {
@@ -804,8 +901,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OBI5M")) { // Set 5 Minute Observations, Transmit Interval to 5 Minutes
     Output("DoAction:OBI5M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
-    Output(msgbuf);  
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
+    Output(msgbuf); 
+    scv.obi = scv.txi = 5;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
 
     if (SD_exists) {
       if (SD.exists(SD_OB5M_FILE)) {
@@ -822,13 +921,12 @@ int Function_DoAction(String s) {
           // SD_RemoveFile (SD_OB5M_FILE);
           SD_RemoveFile (SD_OB10M_FILE);
           SD_RemoveFile (SD_OB15M_FILE);
-          obs_interval = obs_tx_interval = 5;
         }
         else {
           Output ("OBI5M OPEN ERR");
           return(-2);
         }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
         Output(msgbuf);
       }
     }
@@ -841,8 +939,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OBI10M")) { // Set 10 Minute Observations, Transmit Interval to 10 Minutes
     Output("DoAction:OBI10M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
-    Output(msgbuf);  
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
+    Output(msgbuf); 
+    scv.obi = scv.txi = 10;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
 
     if (SD_exists) {
       if (SD.exists(SD_OB10M_FILE)) {
@@ -859,13 +959,12 @@ int Function_DoAction(String s) {
           SD_RemoveFile (SD_OB5M_FILE);
           // SD_RemoveFile (SD_OB10M_FILE);
           SD_RemoveFile (SD_OB15M_FILE);
-          obs_interval = obs_tx_interval = 10;
         }
         else {
           Output ("OBI10M OPEN ERR");
           return(-2);
         }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
         Output(msgbuf);
       }
     }
@@ -878,8 +977,10 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OBI15M")) { // Set 15 Minute Observations, Transmit Interval to 15 Minutes
     Output("DoAction:OBI15M");
-    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+    sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf);  
+    scv.obi = scv.txi = 15;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
 
     if (SD_exists) {
       if (SD.exists(SD_OB15M_FILE)) {
@@ -896,13 +997,12 @@ int Function_DoAction(String s) {
           SD_RemoveFile (SD_OB5M_FILE);
           SD_RemoveFile (SD_OB10M_FILE);
           //SD_RemoveFile (SD_OB15M_FILE);
-          obs_interval = obs_tx_interval = 15;
         }
         else {
           Output ("OBI15M OPEN ERR");
           return(-2);
         }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
+        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
         Output(msgbuf);
       }
     }
@@ -915,6 +1015,9 @@ int Function_DoAction(String s) {
 
   else if (s.equals("OPTAQS")) { // Enable Air Quality Station
     Output("DoAction:OPTAQS");
+    scv.aqs = true;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OPTAQS_FILE)) {
         Output ("OPTAQS, ALREADY SET");  
@@ -939,16 +1042,17 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-  else if (s.equals("OPTFS")) { // Enable Air Quality Station
+  else if (s.equals("OPTFS")) { // Enable Full Station
     Output("DoAction:OPTFS");
+    time32_t current_time = Time.now();
+    EEPROM_ClearRainTotals(current_time);
+    scv.aqs = false;
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
     if (SD_exists) {
       if (SD.exists(SD_OPTAQS_FILE)) {
         SD_RemoveFile (SD_OPTAQS_FILE);
-
         // Switching to Full Station Clear Rain Totals from EEPROM
-        time32_t current_time = Time.now();
-        EEPROM_ClearRainTotals(current_time);
-
         Output ("OPTFS SET");
       }
       else {
@@ -966,7 +1070,13 @@ int Function_DoAction(String s) {
     Output("DoAction:SETELEV");
     String rest = s.substring(8);   // get part after "SETELEV:", 8 = length of 
     long elevation = rest.toInt();  // convert to integer
+
     if ((String(elevation) == rest) && (elevation >= QC_MIN_ELEV) && (elevation <= QC_MAX_ELEV)) {
+      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+      scv.elevation = elevation; // Set running value of elevation
+      mslp_initialize(); // Set flags so we don't need to reboot.
+      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
       if (SD_exists) {
         if (SD.exists(SD_ELEV_FILE)) { 
           SD_RemoveFile (SD_ELEV_FILE);
@@ -976,9 +1086,6 @@ int Function_DoAction(String s) {
           file.print(elevation);  // write the elevation to the file
           file.close();           // save and close the file
           sprintf (Buffer32Bytes, "SETELEV:%ld OK", elevation);
-
-          cf_elevation = elevation; // Set running value of elevation
-          mslp_initialize(); // Set flags so we don't need to reboot.
         } 
         else {
           sprintf (Buffer32Bytes, "SETELEV:%ld FAIL", elevation); 
@@ -1027,6 +1134,10 @@ int Function_DoAction(String s) {
 
     // Save to SD and set config values
     if (valid) {
+      scv.rtro_hour = hour;
+      scv.rtro_minute = minute;
+      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+
       if (SD_exists) {
         if (SD.exists(SD_RTRO_FILE)) { 
           SD_RemoveFile (SD_RTRO_FILE);
@@ -1037,10 +1148,6 @@ int Function_DoAction(String s) {
           file.close();      // save and close the file
           sprintf(Buffer32Bytes, "SETRTRO:%d:%02d OK", hour, minute);
           Output (Buffer32Bytes);
-
-          cf_rtro_hour = hour;
-          cf_rtro_minute = minute;
-
           return(0);
         } 
         else {
@@ -1657,65 +1764,5 @@ int callback_imsi(int type, const char* buf, int len, char* cimi) {
   return (WAIT);
 }
 #endif
-
-/* 
- *=======================================================================================================================
- * OBI_TXI_Initialize() - Observation Interval Transmit Interval Initialize
- *=======================================================================================================================
- */
-void OBI_TXI_Initialize() {
-  Output ("OBSTXI:INIT");
-  if (SD_exists) {
-    if (SD.exists(SD_TX5M_FILE)) {
-      Output ("TXI5M Found");
-      obs_tx_interval = 5;
-      SD_RemoveFile (SD_TX10M_FILE);
-      SD_RemoveFile (SD_OB5M_FILE);
-      SD_RemoveFile (SD_OB10M_FILE);
-      SD_RemoveFile (SD_OB15M_FILE);
-    }
-    else if (SD.exists(SD_TX10M_FILE)) {
-      Output ("TXI10M Found");
-      obs_tx_interval = 10;
-      SD_RemoveFile (SD_OB5M_FILE);
-      SD_RemoveFile (SD_OB10M_FILE);
-      SD_RemoveFile (SD_OB15M_FILE);
-    }
-    else if (SD.exists(SD_OB5M_FILE)) {
-      Output ("OBI5M Found");
-      obs_interval = obs_tx_interval = 5;
-      SD_RemoveFile (SD_OB10M_FILE);
-      SD_RemoveFile (SD_OB15M_FILE);
-    }
-    else if (SD.exists(SD_OB10M_FILE)) {
-      Output ("OBI10M Found");
-      obs_interval = obs_tx_interval = 10;
-      SD_RemoveFile (SD_OB15M_FILE);
-    }
-    else if (SD.exists(SD_OB15M_FILE)) {
-      Output ("OBI15M Found");
-      obs_interval = obs_tx_interval = 15;
-    }
-    else {
-      obs_interval = DEFAULT_OBS_INTERVAL;
-      obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;
-    }
-  }
-
-  // Do a check and make sure OBS and Transmit is at least 5m or greater when AQS is enabled
-  if (AQS_Enabled) {
-    if (obs_interval<5) {
-      Output ("OBI Corrected 5M");
-      obs_interval = 5;
-    }
-    if (obs_tx_interval<5) {
-      Output ("TXI Corrected 5M");
-      obs_tx_interval = 5;
-    }
-  }
-
-  sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) obs_interval, (int) obs_tx_interval);
-  Output(msgbuf);  
-}
 
 

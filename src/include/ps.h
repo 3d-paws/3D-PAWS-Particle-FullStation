@@ -4,6 +4,13 @@
  * ======================================================================================================================
  */
 
+enum OTAState {
+    NO_UPDATE,
+    UPDATE_PENDING,
+    WAITING_FOR_UPDATE,
+    UPDATE_FAILED
+};
+
 // Extern variables
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 extern char imsi[16];
@@ -11,7 +18,13 @@ extern char imsi[16];
 
 extern const char *batterystate[];
 
+extern volatile OTAState ota_state;
+extern unsigned long ota_stateStarted;
+extern const unsigned long UPDATE_WAIT_MS;
+
 // Function prototype
+void enterOTAState(OTAState s);
+bool getCellularGlobalIdentity(char *buf, size_t buf_len);
 void GetPinName(pin_t pin, char *pinname);
 void OutputResetReason();
 void Output_CellBatteryInfo();
@@ -35,6 +48,3 @@ void SimChangeCheck();
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 int callback_imsi(int type, const char* buf, int len, char* cimi);
 #endif
-
-
-void OBI_TXI_Initialize();

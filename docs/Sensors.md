@@ -83,9 +83,9 @@ Sensors
 | lpp1     | LPS35HW Pressure                     | hectopascal hPa|
 | lpt2     | LPS35HW Temperature                  | degree celsius |
 | lpp2     | LPS35HW Pressure                     | hectopascal hPa|
-| sv1      | SI1145 VIS                           | watts per square meter W/m^2 |
-| si1      | SI1145 IR                            | watts per square meter W/m^2 |
-| su1      | SI1145 UV                            | watts per square meter W/m^2 |
+| sv1      | SI1145 VIS                           | light intensity count |
+| si1      | SI1145 IR                            | light intensity count |
+| su1      | SI1145 UV                            | light intensity count |
 | mt1      | MCP9808 Temperature                  | degree celsius |
 | mt2      | MCP9808 Temperature                  | degree celsius |
 | gt1      | MCP9808 Black Globe Temperature      | degree celsius |

@@ -12,6 +12,7 @@
 #include "include/dsmux.h"
 #include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
+#include "include/tf02pro.h"
 #include "include/evt.h"
 #include "include/eeprom.h"
 #include "include/wrda.h"
@@ -22,6 +23,7 @@
 #include "include/support.h"
 #include "include/time.h"
 #include "include/main.h"
+#include "include/nvcf.h"
 #include "include/obs.h"
 
 /*
@@ -316,7 +318,7 @@ void OBS_Do() {
     return;
   }
 
-  if (DoWind) {
+  if (scv.wind) {
     Wind_GustUpdate(); // Update Gust and Gust Direction readings
   }
   
@@ -337,7 +339,7 @@ void OBS_Do() {
 
   obs[oidx].inuse = true;
 
-  obs[oidx].ts = Time.now();  // This will be over writted later if AQS_Enabled
+  obs[oidx].ts = Time.now();  // This will be over writted later if scv.aqs
   obs[oidx].css = sig.getStrength();
 
   // Battery Charging State
@@ -358,13 +360,13 @@ void OBS_Do() {
   obs[oidx].sensor[sidx].i_obs = cfr;
   obs[oidx].sensor[sidx++].inuse = true;
 
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     // Rain Gauge - Each tip is 0.2mm of rain
-    if (DoRain) {
+    if (scv.rg1) {
       rain = raingauge1_sample();
     }
 
-    if (OP1_State == OP1_STATE_RAIN) {
+    if (scv.op1 == OP1_STATE_RAIN) {
       rain2 = raingauge2_sample();
     }
 
@@ -372,7 +374,7 @@ void OBS_Do() {
       EEPROM_UpdateRainTotals(rain, rain2);
     }
 
-    if (DoRain) {
+    if (scv.rg1) {
       // Rain Gauge
       strcpy (obs[oidx].sensor[sidx].id, "rg");
       obs[oidx].sensor[sidx].type = F_OBS;
@@ -398,7 +400,7 @@ void OBS_Do() {
       obs[oidx].sensor[sidx++].inuse = true;
     }
 
-    if (DoWind) {
+    if (scv.wind) {
       // Wind Speed (Global)
       strcpy (obs[oidx].sensor[sidx].id, "ws");
       obs[oidx].sensor[sidx].type = F_OBS;
@@ -444,7 +446,7 @@ void OBS_Do() {
 // Output("DB:OBS_PM");
     
     // Air Quality station, wake up sensor, wait 30s use 2nd reading, put sensor to sleep
-    if (AQS_Enabled) {
+    if (scv.aqs) {
       pm25aqi_TakeReading_AQS(); // This does Over Sampling and sleep management
       obs[oidx].ts = Time.now(); // Get time after the above wakeup and reading of sensor.
     }
@@ -603,33 +605,6 @@ void OBS_Do() {
 // Output("DB:OBS_LPS2x");
   }
 
-  if (HIH8_exists) {
-// Output("DB:OBS_HIH");
-    float t = 0.0;
-    float h = 0.0;
-
-    bool status = hih8_getTempHumid(&t, &h);
-    if (!status) {
-      t = QC_ERR_T;
-      h = QC_ERR_RH;
-    }
-    t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
-    h = (isnan(h) || (h < QC_MIN_RH) || (h > QC_MAX_RH)) ? QC_ERR_RH : h;
-
-    // HIH8 Temperature
-    strcpy (obs[oidx].sensor[sidx].id, "ht2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = t;
-    obs[oidx].sensor[sidx++].inuse = true;
-
-    // HIH8 Humidity
-    strcpy (obs[oidx].sensor[sidx].id, "hh2");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = h;
-    obs[oidx].sensor[sidx++].inuse = true;
-// Output("DB:OBS_HIHx");
-  }
-
   if (SI1145_exists) {
 // Output("DB:OBS_SII");
     float si_vis = uv.readVisible();
@@ -741,19 +716,6 @@ void OBS_Do() {
 // Output("DB:OBS_MCP4x");
   }
 
-  if (VEML7700_exists) {
-// Output("DB:OBS_VEML");
-    float lux = veml.readLux(VEML_LUX_AUTO);
-    lux = (isnan(lux) || (lux < QC_MIN_VLX)  || (lux > QC_MAX_VLX))  ? QC_ERR_VLX  : lux;
-
-    // VEML7700 Auto Lux Value
-    strcpy (obs[oidx].sensor[sidx].id, "vlx");
-    obs[oidx].sensor[sidx].type = F_OBS;
-    obs[oidx].sensor[sidx].f_obs = lux;
-    obs[oidx].sensor[sidx++].inuse = true;
-// Output("DB:OBS_VEMLx");
-  }
-
   if (BLX_exists) {
 // Output("DB:OBS_BLX");
     float lux=blx_takereading();
@@ -767,7 +729,20 @@ void OBS_Do() {
 // Output("DB:OBS_BLXx");
   }
 
-  if (OP1_State == OP1_STATE_DISTANCE) {
+  if (BH1750_exists) {
+// Output("DB:OBS_BH1750");
+    float lux=bh1750_lux.readLightLevel();
+    lux = (isnan(lux) || (lux < QC_MIN_BLX)  || (lux > QC_MAX_BLX))  ? QC_ERR_BLX  : lux;
+
+    // DFR BLUX30 Auto Lux Value
+    strcpy (obs[oidx].sensor[sidx].id, "bhlx");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = lux;
+    obs[oidx].sensor[sidx++].inuse = true;
+// Output("DB:OBS_BH1750x");
+  }
+
+  if (scv.op1 == OP1_STATE_DISTANCE) {
 // Output("DB:OBS_OP1D");
     // Distance Guage
     strcpy (obs[oidx].sensor[sidx].id, "sg"); // sg = snow or stream
@@ -775,7 +750,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx].f_obs = DistanceGauge_Median();
     obs[oidx].sensor[sidx++].inuse = true;
   }
-  if (OP1_State == OP1_STATE_RAW) {
+  if (scv.op1 == OP1_STATE_RAW) {
 // Output("DB:OBS_OP1R");
     // OP1 Raw
     strcpy (obs[oidx].sensor[sidx].id, "op1r");
@@ -784,9 +759,9 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
   }
   
-  else if (OP1_State == OP1_STATE_RAIN) {
+  else if (scv.op1 == OP1_STATE_RAIN) {
 // Output("DB:OBS_OP1R");
-    if (!AQS_Enabled) {
+    if (!scv.aqs) {
       // Rain Guage 2
       strcpy (obs[oidx].sensor[sidx].id, "rg2");
       obs[oidx].sensor[sidx].type = F_OBS;
@@ -807,7 +782,7 @@ void OBS_Do() {
     }
   }
 
-  if (OP2_State == OP2_STATE_RAW) {
+  if (scv.op2 == OP2_STATE_RAW) {
 // Output("DB:OBS_OP2R");
     // OP2 Raw
     strcpy (obs[oidx].sensor[sidx].id, "op2r");
@@ -816,7 +791,7 @@ void OBS_Do() {
     obs[oidx].sensor[sidx++].inuse = true;
   }
 
-  if (OP2_State == OP2_STATE_VOLTAIC) {
+  if (scv.op2 == OP2_STATE_VOLTAIC) {
     // OP2 Voltaic Battery Voltage
     float vbv = VoltaicVoltage(OP2_PIN);
     strcpy (obs[oidx].sensor[sidx].id, "vbv");
@@ -869,7 +844,7 @@ void OBS_Do() {
   }
 
   if (MSLP_exists) {
-    float mslp = (float) mslp_calculate(sht1_temp, sht1_humid, bmx_1_pressure, cf_elevation);
+    float mslp = (float) mslp_calculate(sht1_temp, sht1_humid, bmx_1_pressure, scv.elevation);
     strcpy (obs[oidx].sensor[sidx].id, "mslp");
     obs[oidx].sensor[sidx].type = F_OBS;
     obs[oidx].sensor[sidx].f_obs = (float) mslp;
@@ -979,6 +954,9 @@ void OBS_Do() {
   // Dallas Sensors Temperature on mux
   dsmux_obs_do(oidx, sidx);
 
+  // TF02Pro TOF Distance Sensor
+  tf02pro_obs_do(oidx, sidx);
+
   // Set this after we read all sensors. So we capture if their state changes 
   obs[oidx].hth = SystemStatusBits;
 
@@ -988,7 +966,7 @@ void OBS_Do() {
   lastOBS = System.millis();
 
   // Lets force a publish if not doing 1 minute samples
-  if (obs_interval != DEFAULT_OBS_INTERVAL) {
+  if (scv.obi != DEFAULT_OBS_INTERVAL) {
     LastTransmitTime = 0; 
   }
 // Output("DB:OBS_Exit");

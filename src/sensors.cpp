@@ -10,6 +10,7 @@
 #include "include/main.h"
 #include "include/wrda.h"
 #include "include/cf.h"
+#include "include/nvcf.h"
 #include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
 
@@ -60,12 +61,7 @@ bool MCP_2_exists = false;
 bool MCP_3_exists = false;
 bool MCP_4_exists = false;
 
-/*
- * ======================================================================================================================
- *  HIH8 - I2C - Temperature & Humidity sensor (HIH8000)  - 
- * ======================================================================================================================
- */
-bool HIH8_exists = false;
+
 
 /*
  * ======================================================================================================================
@@ -108,18 +104,18 @@ float si_last_uv = 0.0;
 
 /*
  * ======================================================================================================================
- *  VEML7700 - I2C - Lux Sensor
- * ======================================================================================================================
- */
-Adafruit_VEML7700 veml = Adafruit_VEML7700();
-bool VEML7700_exists = false;
-
-/*
- * ======================================================================================================================
  *  B_LUX_V30B - I2C - Lux Sensor
  * ======================================================================================================================
  */
 bool BLX_exists = false;
+
+/*
+ * ======================================================================================================================
+ *  DFRobot SEN0562 Ambient Light Sensor 1-65535lx - BH1750 (via BH1750.h)
+ * ======================================================================================================================
+ */
+bool BH1750_exists = false;
+BH1750 bh1750_lux;
 
 /*
  * ======================================================================================================================
@@ -183,7 +179,6 @@ bool PMTS_exists = false;
  *  AQS
  * ======================================================================================================================
  */
-bool AQS_Enabled = false;               // if file found this is set
 int AQSWarmUpTime = 35;                 // Seconds to wait wile sensor warms up from sleep
 int AQS_Correction = 0;                 // This will set to 30500ms for time we wait for sensor to initialize
 
@@ -625,76 +620,7 @@ void sht_initialize() {
   Output (msgp);
 }
 
-/* 
- *=======================================================================================================================
- * hih8_initialize() - HIH8000 sensor initialize
- *=======================================================================================================================
- */
-void hih8_initialize() {
-  Output("HIH8:INIT");
 
-  if (I2C_Device_Exist(HIH8000_ADDRESS)) {
-    HIH8_exists = true;
-    msgp = (char *) "HIH8 OK";
-  }
-  else {
-    msgp = (char *) "HIH8 NF";
-    HIH8_exists = false;
-  }
-  Output (msgp);
-}
-
-/* 
- *=======================================================================================================================
- * hih8_getTempHumid() - Get Temp and Humidity
- *   Call example:  status = hih8_getTempHumid(&t, &h);
- *=======================================================================================================================
- */
-bool hih8_getTempHumid(float *t, float *h) {
-  if (HIH8_exists) {
-    uint16_t humidityBuffer    = 0;
-    uint16_t temperatureBuffer = 0;
-  
-    Wire.begin();
-    Wire.beginTransmission(HIH8000_ADDRESS);
-
-    Wire.write(0x00); // set the register location for read request
-
-    delayMicroseconds(200); // give some time for sensor to process request
-
-    if (Wire.requestFrom(HIH8000_ADDRESS, 4) == 4) {
-
-      // Get raw humidity data
-      humidityBuffer = Wire.read();
-      humidityBuffer <<= 8;
-      humidityBuffer |= Wire.read();
-      humidityBuffer &= 0x3FFF;   // 14bit value, get rid of the upper 2 status bits
-
-      // Get raw temperature data
-      temperatureBuffer = Wire.read();
-      temperatureBuffer <<= 8;
-      temperatureBuffer |= Wire.read();
-      temperatureBuffer >>= 2;  // Remove the last two "Do Not Care" bits (shift left is same as divide by 4)
-
-      Wire.endTransmission();
-
-      *h = humidityBuffer * 6.10e-3;
-      *t = temperatureBuffer * 1.007e-2 - 40.0;
-
-      // QC Check
-      *h = (isnan(*h) || (*h < QC_MIN_RH) || (*h >QC_MAX_RH)) ? QC_ERR_RH : *h;
-      *t = (isnan(*t) || (*t < QC_MIN_T)  || (*t >QC_MAX_T))  ? QC_ERR_T  : *t;
-      return (true);
-    }
-    else {
-      Wire.endTransmission();
-      return(false);
-    }
-  }
-  else {
-    return (false);
-  }
-}
 
 /* 
  *=======================================================================================================================
@@ -939,50 +865,6 @@ void si1145_initialize() {
   }
 }
 
-/* 
- *=======================================================================================================================
- * vlx_initialize() - VEML7700 sensor initialize
- * 
- * SEE https://learn.microsoft.com/en-us/windows/win32/sensorsapi/understanding-and-interpreting-lux-values
- * 
- * This data set is for illustration and may not be completely accurate for all users or situations.
- * 
- * Lighting condition     From (lux)     To (lux)     Mean value (lux)     Lighting step
- * Pitch Black            0              10           5                    1
- * Very Dark              11             50           30                   2
- * Dark Indoors           51             200          125                  3
- * Dim Indoors            201            400          300                  4
- * Normal Indoors         401            1000         700                  5
- * Bright Indoors         1001           5000         3000                 6
- * Dim Outdoors           5001           10,000       7500                 7
- * Cloudy Outdoors        10,001         30,000       20,000               8
- * Direct Sunlight        30,001         100,000      65,000               9
- * 
- * From www.vishay.com - Designing the VEML7700 Into an Application
- * 1    lx Full moon overhead at tropical latitudes
- * 3.4  lx Dark limit of civil twilight under a clear sky
- * 50   lx Family living room
- * 80   lx Hallway / bathroom
- * 100  lx Very dark overcast day
- * 320  lx to 500 lx Office lighting
- * 400  lx Sunrise or sunset on a clear day
- * 1000 lx Overcast day; typical TV studio lighting
- * 
- *=======================================================================================================================
- */
-void vlx_initialize() {
-  Output("VLX:INIT");
-
-  if (veml.begin()) {
-    VEML7700_exists = true;
-    msgp = (char *) "VLX OK";
-  }
-  else {
-    msgp = (char *) "VLX NF";
-    VEML7700_exists = false;
-  }
-  Output (msgp);
-}
 
 /* 
  *=======================================================================================================================
@@ -1075,6 +957,25 @@ float blx_takereading() {
   // sprintf (msgbuf, "BLUX30 LUX %f RAW %lu\n", lux, raw);
   // Output (msgbuf);
   return(lux);
+}
+
+/* 
+ *=======================================================================================================================
+ * BH1750_init() - initialize DFRobot SEN0562 Ambient Light Sensor 1-65535lx - BH1750 (via BH1750.h)
+ *=======================================================================================================================
+ */
+void BH1750_init() {
+  Output("BH1750:INIT");
+
+  if (bh1750_lux.begin()) {
+    BH1750_exists=true;
+    msgp = (char *) "BH1750:OK";
+  }
+  else {
+    BH1750_exists=false;
+    msgp = (char *) "BH1750:NF";
+  }
+  Output (msgp);
 }
 
 /* 
@@ -1424,7 +1325,7 @@ void pmts_initialize() {
  *    Surface air temperature Ts (deg C)  sht1_temp       Ts
  *    Relative humidity RH (%%)           sht1_humid      RH
  *    Station pressure ps (hPa)           bmx_1_pressure  ps
- *    Station height (m)                  cf_elevation    station_height
+ *    Station height (m)                  scv.elevation    station_height
  * 
  * Testing Information
  *   https://www.airnav.com/airport/KEIK - Provides Elevation
@@ -1433,7 +1334,7 @@ void pmts_initialize() {
  */
 void mslp_initialize() {
   Output("MSLP:INIT");
-  if ((cf_elevation != QC_ERR_ELEV) &&  BMX_1_exists && SHT_1_exists) {
+  if ((scv.elevation != QC_ERR_ELEV) &&  BMX_1_exists && SHT_1_exists) {
     MSLP_exists = true;
     Output ("MSLP:OK");
   }
@@ -1449,7 +1350,7 @@ void mslp_initialize() {
  *    Surface air temperature Ts (deg C)  sht1_temp       Ts
  *    Relative humidity RH (%%)           sht1_humid      RH
  *    Station pressure ps (hPa)           bmx_1_pressure  ps
- *    Station height (m)                  cf_elevation    station_height
+ *    Station height (m)                  scv.elevation    station_height
  *=======================================================================================================================
  */
 double mslp_calculate(float Ts, float RH, float ps, int station_height) {

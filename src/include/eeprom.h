@@ -3,6 +3,7 @@
  *  eeprom.h - EEPROM Definations
  * ======================================================================================================================
  */
+#include <Particle.h>
 
   /*
     Assume about 100,000 effective write/erase cycles for the flash region used for emulated EEPROM.
@@ -14,7 +15,6 @@
 
     With Particle’s built‑in wear‑leveling on the Boron, writing your EEPROM_NVM struct once per minute is very 
     likely to last many years—probably far longer than the device’s practical field life.
-
  */
 
 /*
@@ -71,7 +71,7 @@ You never “see” the raw QSPI chip; you touch it only through LittleFS, User 
 
 On the Boron (and other Gen‑3 Particle devices), Particle does allocate a LittleFS‑based file system by default in the external QSPI flash, and that partition is enabled and ready to use in normal Device OS builds.
 
-The QSPI flash is pre‑partitioned at manufacture, and one of the partitions is a 2 MB LittleFS area starting at 0x00000000 in the QSPI layout.
+The QSPI flash is pre‑partitioned at manufacture, and one of the partitions is a 2 MB LittleFS arae starting at 0x00000000 in the QSPI layout.
 
 Particle’s OS uses that same LittleFS area internally for:
     emulated EEPROM (the EEPROM object is implemented as a file in LittleFS),

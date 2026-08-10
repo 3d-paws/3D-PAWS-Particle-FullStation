@@ -20,6 +20,8 @@ extern char SD_n2s_file[];
 extern uint32_t SD_n2s_max_filesz;
 extern char SD_sim_file[];
 extern char SD_simold_file[];
+extern char SD_cnv_file[]; 
+extern char SD_crt_file[];
 extern char SD_wifi_file[];
 extern char SD_TX5M_FILE[];
 extern char SD_TX10M_FILE[];

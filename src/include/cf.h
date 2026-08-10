@@ -3,7 +3,7 @@
  *  cf.h - Configuration File Definations
  * ======================================================================================================================
  */
-#include "include/evt.h"
+// #include "include/evt.h"
 
 /* 
  * ======================================================================================================================
@@ -64,64 +64,17 @@ sr_dark_offset=0.0
 #define VALUE_MAX_LENGTH  30                // Config File Value Length
 #define LINE_MAX_LENGTH   VALUE_MAX_LENGTH+KEY_MAX_LENGTH+3   // =, CR, LF 
 
-// Extern variables
-extern char *cf_aes_pkey;
-extern long cf_aes_myiv;
-extern int cf_lora_unitid;
-extern int cf_lora_txpower;
-extern int cf_lora_freq;
-
-extern int cf_elevation;
-
-// Rain total rollover offset
-extern int cf_rtro_hour;
-extern int cf_rtro_minute;
-
-#ifdef ENABLE_Evapotranspiration
-// Used for Evapotranspiration
-extern float cf_lat_deg;
-extern float cf_lon_deg;
-
- /*
-  * ======================================================================================================================
-  * Crop coefficient (crop_kc) is a dimensionless factor used in evapotranspiration (ET) calculations that represents the 
-  * ratio of the evapotranspiration of a specific crop (ETc) to the reference evapotranspiration (ETo), typically for a 
-  * well-watered reference crop like grass or alfalfa. The crop coefficient incorporates the effects of the crop type, 
-  * growth stage, and canopy characteristics on water use. It adjusts the reference ET to reflect the actual water use 
-  * of the crop, including both transpiration by the crop and evaporation from the soil. Crop_kc varies with crop type 
-  * and growth stage, increasing as the crop canopy develops and then decreasing at maturity.​
-  * 
-  * A crop coefficient (crop_kc) value of 1.0 represents a situation where the evapotranspiration of the crop (ETc) is 
-  * equal to the reference evapotranspiration (ETo). This means the crop is using water at the same rate as the reference 
-  * crop, typically well-watered grass or alfalfa, which serves as a standard baseline. In practical terms, 
-  * a crop_kc of 1.0 indicates full crop canopy coverage with optimal growth and water use, neither less nor more than 
-  * the reference crop's evapotranspiration demand.
-  *
-  * Values less than 1.0 indicate less water use than the reference crop, possibly due to less canopy cover or drought 
-  * stress, whereas values greater than 1.0 show the crop is using more water than the reference, often due to factors 
-  * like crop type or growing conditions that increase water 
-  * ======================================================================================================================
-  */
-extern float cf_crop_kc;
-
- /*
-  * ======================================================================================================================
-  * Albedo, in the context of evapotranspiration, is the fraction of incoming solar radiation that is reflected by the 
-  * surface back to the atmosphere. It is a dimensionless value ranging from 0 (no reflection, total absorption) to 
-  * 1 (total reflection). For reference crop evapotranspiration calculations, a typical albedo value around 0.23 is used, 
-  * representing the canopy reflection coefficient of the reference surface like grass. Albedo influences the net 
-  * radiation available for evapotranspiration because reflected radiation is not available for heating or 
-  * vaporizing water.
-  * ======================================================================================================================
-  */
-extern float cf_albedo;
-
-// Used for Irradiance Calibration
-extern float cf_sr_cal;
-extern float cf_sr_dark_offset;
-#endif
-
 // Function prototypes
 void SD_ReadConfigFile();
 void SD_ReadElevationFile();
 void SD_Read_RTRO_File();
+void SD_CheckNoWindFile();
+void SD_CheckNoRainFile();
+void SD_CheckAQSFile();
+void SD_CheckOP1Files();
+void SD_CheckOP15MFile();
+void SD_CheckOP2Files();
+void SD_CheckN2SandSetSSB();
+void SD_CheckOBITXIFiles();
+void SD_GetSystemVariables();
+bool SD_CheckClearRainTotals();

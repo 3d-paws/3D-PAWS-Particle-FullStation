@@ -9,6 +9,7 @@ After doing these commands you should do a REBOOT and then look at the INFO mess
 * SEND - Send queued observations.
 * INFO - Trigger station to send station information. Event type "INFO".
 * CRT - Clear rain totals that are stored in nvram.
+* CNV - Clear Config Files from Non Volatile memory
 * SETELEV:xxxx - Set station elevation. Replace xxxx with elevation in meters. Creates file ELEV.TXT
 * SETRTRO:H(:MM)   - Set Rain Total Rollover Offset, valid values are where H = (0-23) with optional : and MM = (00,15,30,45). Creates file RTRO.TXT
 ```

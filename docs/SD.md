@@ -33,6 +33,9 @@
 | `/NORAIN.TXT`     | Disable main rain gauge observations.                                                   |
 | `/NOWIND.TXT`     | Disable wind observations.                                                              |
 | `/OPTAQS.TXT`     | Enable Air Quality Station.                                                             |
+|||
+| `/CRT.TXT`        | Clear Rain Totals. File is deleted after                                                |
+| `/CNV.TXT`        | Clear NV Configuration files. File is deleted after and system halts                    |
 
 ---
 

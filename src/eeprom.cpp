@@ -17,6 +17,7 @@
 #include "include/main.h"
 #include "include/output.h"
 #include "include/wrda.h"
+#include "include/nvcf.h"
 #include "include/eeprom.h"
 
 /*
@@ -153,7 +154,7 @@ bool EEPROM_TimeToRollOver() {
     time32_t current_time        = Time.now();
     time32_t seconds_today       = current_time % 86400;
     time32_t seconds_at_0000     = current_time - seconds_today;
-    time32_t seconds_at_rollover = seconds_at_0000 + (cf_rtro_hour * 3600) + (cf_rtro_minute * 60);
+    time32_t seconds_at_rollover = seconds_at_0000 + (scv.rtro_hour * 3600) + (scv.rtro_minute * 60);
 
     // If no rain in 24 hours. Then rgts will be time of last rollover. 
     // Or rgts will be the eeprom initialized time.
@@ -183,9 +184,18 @@ void EEPROM_Initialize() {
       EEPROM_ClearRainTotals(current_time);
     }
     else {
+      // If n2sfp is not 0 and there is no n2s file then reset the file offset
+      if (eeprom.n2sfp) {
+        if (!SD.exists(SD_n2s_file)) {
+          eeprom.n2sfp=0;
+          EEPROM_ChecksumUpdate();
+          EEPROM.put(eeprom_address, eeprom);
+        }
+      }
+
       time32_t seconds_today                 = current_time % 86400;
       time32_t seconds_at_0000               = current_time - seconds_today;
-      time32_t seconds_at_rollover           = seconds_at_0000 + (cf_rtro_hour * 3600) + (cf_rtro_minute * 60);
+      time32_t seconds_at_rollover           = seconds_at_0000 + (scv.rtro_hour * 3600) + (scv.rtro_minute * 60);
       time32_t seconds_yesterday_at_rollover = seconds_at_rollover - 86400;
 
       // RT = Rain Total
@@ -259,7 +269,7 @@ void EEPROM_UpdateRainTotals(float rgt1, float rgt2) {
     time32_t current_time        = Time.now();
     time32_t seconds_today       = current_time % 86400;
     time32_t seconds_at_0000     = current_time - seconds_today;
-    time32_t seconds_at_rollover = seconds_at_0000 + (cf_rtro_hour * 3600) + (cf_rtro_minute * 60);
+    time32_t seconds_at_rollover = seconds_at_0000 + (scv.rtro_hour * 3600) + (scv.rtro_minute * 60);
 
     // If no rain in 24 hours. Then rgts will be time of last rollover. 
     // Or rgts will be the eeprom initialized time.

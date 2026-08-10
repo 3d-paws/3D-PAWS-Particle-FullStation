@@ -99,7 +99,7 @@ typedef struct {
 
 /*
  * ======================================================================================================================
- *  raingauge1_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
+ *  raingauge1_interrupt_handler() - This function is called whenever a magnet/interrupt is detected
  * ======================================================================================================================
  */
 #if (PLATFORM_ID == PLATFORM_MSOM)
@@ -110,7 +110,7 @@ typedef struct {
 
 /*
  * ======================================================================================================================
- *  raingauge2_interrupt_handler() - This function is called whenever a magnet/interrupt is detected by the arduino
+ *  raingauge2_interrupt_handler() - This function is called whenever a magnet/interrupt is detected
  * ======================================================================================================================
  */
 #define RAINGAUGE2_IRQ_PIN OP1_PIN
@@ -135,13 +135,7 @@ extern volatile uint64_t raingauge2_interrupt_ltime; // Last Time
 extern uint64_t raingauge2_interrupt_toi;   // Time of Interrupt
 
 extern bool ws_refresh;
-extern int OP1_State;
-extern int OP2_State;
-
 extern float dg_adjustment;
-
-extern bool DoWind;
-extern bool DoRain;
 
 // Function prototype
 void anemometer_interrupt_handler();
@@ -150,8 +144,6 @@ float raingauge1_sample();
 void raingauge2_interrupt_handler();
 float raingauge2_sample();
 void as5600_initialize();
-void CheckNoWindFile();
-void CheckNoRainFile();
 bool RainEnabled();
 void OP1_Initialize();
 void OP2_Initialize();

@@ -19,6 +19,7 @@
 #include "include/main.h"
 #include "include/sdcard.h"
 #include "include/output.h"
+#include "include/nvcf.h"
 #include "include/lora.h"
 
 /*
@@ -178,35 +179,35 @@ void lora_device_initialize() {
  *=======================================================================================================================
  */
 bool lora_cf_validate() {
-  if (cf_aes_pkey == NULL) {
+  if (scv.aes_pkey == NULL) {
     Output ("AES PKEY !SET");
     return (false);
   }
-  else if (strlen (cf_aes_pkey) != 16) {
+  else if (strlen (scv.aes_pkey) != 16) {
     Output ("AES PKEY !16 Bytes");
     return (false);    
   }
-  else if (cf_aes_myiv == 0) {
+  else if (scv.aes_myiv == 0) {
     Output ("AES MYIV !SET");
     return (false);
   }
-  else if ((cf_lora_txpower<5) || (cf_lora_txpower>23)) {
+  else if ((scv.lora_txpower<5) || (scv.lora_txpower>23)) {
     Output ("LORA PWR ERR");
     return (false);
   }
-  else if ((cf_lora_freq!=915) && (cf_lora_freq!=866) && (cf_lora_freq!=433)) {
+  else if ((scv.lora_freq!=915) && (scv.lora_freq!=866) && (scv.lora_freq!=433)) {
     Output ("LORA FREQ ERR");
     return (false);        
   }
-  else if ((cf_lora_unitid<0) || (cf_lora_unitid>254)) {
+  else if ((scv.lora_unitid<0) || (scv.lora_unitid>254)) {
     Output ("LORA ADDR ERR");
     return (false);
   }
   else { 
-    memcpy ((char *)AES_KEY, cf_aes_pkey, 16);
-    sprintf(msgbuf, "AES_KEY[%s]", cf_aes_pkey); Output (msgbuf);
+    memcpy ((char *)AES_KEY, scv.aes_pkey, 16);
+    sprintf(msgbuf, "AES_KEY[%s]", scv.aes_pkey); Output (msgbuf);
 
-    AES_MYIV=cf_aes_myiv;
+    AES_MYIV=scv.aes_myiv;
     sprintf(msgbuf, "AES_MYIV[%llu]", AES_MYIV); Output (msgbuf);
 
     Output ("LORA CFV OK");
@@ -235,7 +236,7 @@ void lora_initialize() {
       // The default transmitter power is 13dBm, using PA_BOOST.
       // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then 
       // you can set transmitter powers from 5 to 23 dBm:
-      rf95.setTxPower(cf_lora_txpower, false);
+      rf95.setTxPower(scv.lora_txpower, false);
 
       // If you are using Modtronix inAir4 or inAir9,or any other module which uses the
       // transmitter RFO pins and not the PA_BOOST pins
@@ -243,11 +244,11 @@ void lora_initialize() {
       // Failure to do that will result in extremely low transmit powers.
       //  driver.setTxPower(14, true);
 
-      rf95.setFrequency(cf_lora_freq);
+      rf95.setFrequency(scv.lora_freq);
 
       // If we need to send something
-      rf95.setThisAddress(cf_lora_unitid);
-      rf95.setHeaderFrom(cf_lora_unitid);
+      rf95.setThisAddress(scv.lora_unitid);
+      rf95.setHeaderFrom(scv.lora_unitid);
 
       // Be sure to grab all node packet 
       rf95.setPromiscuous(true);

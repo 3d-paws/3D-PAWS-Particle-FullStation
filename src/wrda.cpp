@@ -13,6 +13,7 @@
 #include "include/lora.h"
 #include "include/sensors.h"
 #include "include/main.h"
+#include "include/nvcf.h"
 #include "include/wrda.h"
 
 /*
@@ -27,7 +28,6 @@ volatile bool TurnLedOff = false;      // Set true in rain gauge interrupt
  *  Wind Direction - AS5600 Sensor
  * ======================================================================================================================
  */
-bool DoWind = true;
 WIND_STR wind;
 bool      AS5600_exists     = true;   // This will toggle based on sensor being able to respond.
 #if PLATFORM_ID == PLATFORM_MSOM
@@ -48,19 +48,7 @@ float ws_radius = 0.079;           // In meters
 
 bool ws_refresh = false;           // Set to true when we have delayed too long sending observations
 
-/*
- * ======================================================================================================================
- *  Pin OP1 State Setup
- * ======================================================================================================================
- */
-int OP1_State = OP1_STATE_NULL;                  // Default is not used
 
-/*
- * ======================================================================================================================
- *  Pin OP2 State Setup
- * ======================================================================================================================
- */
-int OP2_State = OP2_STATE_NULL;                  // Default is not used
 
 /*
  * =======================================================================================================================
@@ -99,7 +87,6 @@ void anemometer_interrupt_handler()
  *  Optipolar Hall Effect Sensor SS451A - Rain Gauge
  * ======================================================================================================================
  */
-bool DoRain = true;
 volatile unsigned int raingauge1_interrupt_count=0;
 uint64_t raingauge1_interrupt_stime; // Send Time
 volatile uint64_t raingauge1_interrupt_ltime; // Last Time
@@ -213,53 +200,11 @@ void as5600_initialize() {
 
 /* 
  * =======================================================================================================================
- * CheckNoWindFile()
- * =======================================================================================================================
- */
-void CheckNoWindFile() {
-
-  if (SD_exists) {
-    if (SD.exists(SD_NOWIND_FILE)) {
-      Output ("WIND: Disabled");
-      DoWind=false;
-    }
-    else {
-      Output ("WIND: Enabled");
-    }
-  }
-  else {
-    Output("WIND: Enabled, SD NF"); 
-  }     
-}
-
-/* 
- * =======================================================================================================================
- * CheckNoRainFile()
- * =======================================================================================================================
- */
-void CheckNoRainFile() {
-
-  if (SD_exists) {
-    if (SD.exists(SD_NORAIN_FILE)) {
-      Output ("RAIN: Disabled");
-      DoRain=false;
-    }
-    else {
-      Output ("RAIN: Enabled");
-    }
-  }
-  else {
-    Output("RAIN: Enabled, SD NF"); 
-  }     
-}
-
-/* 
- * =======================================================================================================================
  * RainEnabled()
  * =======================================================================================================================
  */
 bool RainEnabled() {
-  if (DoRain || (OP1_State == OP1_STATE_RAIN)) {
+  if (scv.rg1 || (scv.op1 == OP1_STATE_RAIN)) {
     return (true);
   }
   else {
@@ -274,42 +219,34 @@ bool RainEnabled() {
  */
 void OP1_Initialize() {
   Output ("OP1:INIT");
-  if (SD_exists) {
-    if (SD.exists(SD_OP1_DIST_FILE)) {
-      pinMode(OP1_PIN, INPUT);
-      Output ("OP1=DIST");
-      OP1_State = OP1_STATE_DISTANCE;
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        dg_adjustment = 1.25;
-        Output ("DIST=5M");
-      }
-      else {
-        dg_adjustment = 2.5;
-        Output ("DIST=10M");
-      }
-    }
-    else if (SD.exists(SD_OP1_RAIN_FILE)) {
-      // pinMode(RAINGAUGE2_IRQ_PIN, INPUT_PULLUP);
-      Output ("OP1=RAIN");
-      OP1_State = OP1_STATE_RAIN;
-      // Optipolar Hall Effect Sensor SS451A - Rain Gauge 2
-      pinMode(RAINGAUGE2_IRQ_PIN, INPUT);
-      raingauge2_interrupt_count = 0;
-      raingauge2_interrupt_stime = System.millis();
-      raingauge2_interrupt_ltime = 0;  // used to debounce the tip
-      attachInterrupt(RAINGAUGE2_IRQ_PIN, raingauge2_interrupt_handler, FALLING);
-    }
-    else if (SD.exists(SD_OP1_RAW_FILE)) {
-      Output ("OP1=RAW");
-      pinMode(OP1_PIN, INPUT);
-      OP1_State = OP1_STATE_RAW;
+  if (scv.op1 == OP1_STATE_DISTANCE) {
+    pinMode(OP1_PIN, INPUT);
+    Output ("OP1=DIST");
+
+    if (scv.op1d5m) {
+      dg_adjustment = 1.25;
+      Output ("DIST=5M");
     }
     else {
-      Output ("OP1=NULL");
+      dg_adjustment = 2.5;
+      Output ("DIST=10M");
     }
   }
+  else if (scv.op1 == OP1_STATE_RAIN) {
+    Output ("OP1=RAIN");
+    // Optipolar Hall Effect Sensor SS451A - Rain Gauge 2
+    pinMode(RAINGAUGE2_IRQ_PIN, INPUT);
+    raingauge2_interrupt_count = 0;
+    raingauge2_interrupt_stime = System.millis();
+    raingauge2_interrupt_ltime = 0;  // used to debounce the tip
+    attachInterrupt(RAINGAUGE2_IRQ_PIN, raingauge2_interrupt_handler, FALLING);
+  }
+  else if (scv.op1 == OP1_STATE_RAW) {
+    Output ("OP1=RAW");
+    pinMode(OP1_PIN, INPUT);
+  }
   else {
-    Output ("OP1=NULL,SD NF");
+    Output ("OP1=NULL");
   }
 }
 
@@ -320,23 +257,16 @@ void OP1_Initialize() {
  */
 void OP2_Initialize() {
   Output ("OP2:INIT");
-  if (SD_exists) {
-    if (SD.exists(SD_OP2_RAW_FILE)) {
-      pinMode(OP2_PIN, INPUT);
-      Output ("OP2=RAW");
-      OP2_State = OP2_STATE_RAW;
-    }
-    else if (SD.exists(SD_OP2_VBV_FILE)) {
-      pinMode(OP2_PIN, INPUT);
-      Output ("OP2=VBV");
-      OP2_State = OP2_STATE_VOLTAIC;
-    }
-    else {
-      Output ("OP2=NULL");
-    }
+  if (scv.op2 == OP2_STATE_RAW) {
+    pinMode(OP2_PIN, INPUT);
+    Output ("OP2=RAW");
+  }
+  else if (scv.op2 == OP2_STATE_VOLTAIC) {
+    pinMode(OP2_PIN, INPUT);
+    Output ("OP2=VBV");
   }
   else {
-    Output ("OP2=NULL,SD NF");
+    Output ("OP2=NULL");
   }
 }
 
@@ -711,17 +641,17 @@ void Wind_Distance_Air_Initialize() {
   wind.bucket_idx = 0;
 
   // Check if we need to do this
-  if (DoWind || PM25AQI_exists || (OP1_State == OP1_STATE_DISTANCE)) {
+  if (scv.wind || PM25AQI_exists || (scv.op1 == OP1_STATE_DISTANCE)) {
     Output ("WindDistAQInit(Do)");
 
     // Take N 1s samples of wind speed and direction and fill arrays with values.
     for (int i=0; i< WIND_READINGS; i++) {
       lora_msg_poll(); // 750ms Second Delay
       HeartBeat();     // Provides a 250ms delay
-      if (!AQS_Enabled) {
+      if (!scv.aqs) {
         Wind_TakeReading();
       }
-      if (OP1_State == OP1_STATE_DISTANCE) {
+      if (scv.op1 == OP1_STATE_DISTANCE) {
         DistanceGauge_TakeReading();
       }
       if (PM25AQI_exists) {
@@ -734,12 +664,12 @@ void Wind_Distance_Air_Initialize() {
 
     // Now we have N readings we can compute other wind related global varibles
 
-    if (!AQS_Enabled) {
+    if (!scv.aqs) {
       Wind_TakeReading();
       ws_refresh = false; // Set to false since we have just initialized wind speed data.
     }
 
-    if (OP1_State == OP1_STATE_DISTANCE) {
+    if (scv.op1 == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
     }
 
@@ -768,26 +698,16 @@ void Wind_Distance_Air_Initialize() {
  *=======================================================================================================================
  */
 void OPT_AQS_Initialize() {
-  Output ("OBSAQS:INIT");
-  if (SD_exists) {
-    if (SD.exists(SD_OPTAQS_FILE)) {
-      Output ("OPTAQS Enabled");
+  if (scv.aqs) {
+    Output ("OBSAQS:INIT");
+    // Ware are a Air Quality Station so Clear Rain Totals from EEPROM
+    time32_t current_time = Time.now();
+    EEPROM_ClearRainTotals(current_time);
 
-      // Ware are a Air Quality Station so Clear Rain Totals from EEPROM
-      time32_t current_time = Time.now();
-      EEPROM_ClearRainTotals(current_time);
+    pinMode (OP2_PIN, OUTPUT);
+    digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
 
-      pinMode (OP2_PIN, OUTPUT);
-      digitalWrite(OP2_PIN, HIGH); // Turn on Air Quality Sensor
-
-      // We will only go in AQS mode if the sensor is truely there
-      AQS_Enabled = true;
-      AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
+    AQS_Correction = (AQSWarmUpTime + 10) * 1000;  // In ms. Correction to be subtracted from mainloop poll interval 
                                                      // to account for the AQS warmup time and 10s for sampling
-    }
-    else {
-      Output ("OPTAQS NF");
-      AQS_Enabled = false;
-    }
   }
 }

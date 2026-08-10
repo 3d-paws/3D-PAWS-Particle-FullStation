@@ -24,7 +24,7 @@
 | A2   | Wind Speed IRQ                                                                   |
 | A3   | Rain Gauge IRQ                                                                   |
 | A4   | Secondary Rain Gauge or Distance Gauge (based on SD card presence or raw pin)    |
-| A5   | Reserved for future use                                                          |
+| A5   | Various optional sensors, see SD and Particle DoActions documents                |
 | D13  | SPI0 SCK – SD Card                                                               |
 | D12  | SPI0 MOSI – SD Card                                                              |
 | D11  | SPI0 MISO – SD Card                                                              |

@@ -19,6 +19,7 @@
 #include "include/dsmux.h"
 #include "include/sensors_i2c_44_47.h"
 #include "include/sensors.h"
+#include "include/tf02pro.h"
 #include "include/evt.h"
 #include "include/wrda.h"
 #include "include/sdcard.h"
@@ -29,6 +30,7 @@
 #include "include/ps.h"
 #include "include/obs.h"
 #include "include/main.h"
+#include "include/nvcf.h"
 #include "include/info.h"
 
  /*
@@ -83,7 +85,7 @@ bool INFO_Do() {
   writer.name("type").value("muon");
 #endif
 
-  if (AQS_Enabled) {
+  if (scv.aqs) {
     writer.name("mode").value("AQS");
   }
   else {
@@ -102,14 +104,14 @@ bool INFO_Do() {
   sprintf (Buffer32Bytes,"%d-%d", (int) System.resetReason(), (int) System.resetReasonData());
   writer.name("rr").value(Buffer32Bytes);
 
-  sprintf (Buffer32Bytes,"%dm", (int) obs_interval);
+  sprintf (Buffer32Bytes,"%dm", (int) scv.obi);
   writer.name("obsi").value(Buffer32Bytes);
   
-  sprintf (Buffer32Bytes,"%dm", (int) obs_tx_interval);
+  sprintf (Buffer32Bytes,"%dm", (int) scv.txi);
   writer.name("obsti").value(Buffer32Bytes);
 
   // Time 2 Next Transmit in Seconds
-  sprintf (Buffer32Bytes, "%ds", (int) ((obs_tx_interval * 60) - ((System.millis() - LastTransmitTime)/1000)));
+  sprintf (Buffer32Bytes, "%ds", (int) ((scv.txi * 60) - ((System.millis() - LastTransmitTime)/1000)));
   writer.name("t2nt").value(Buffer32Bytes);
 
   // Daily Reboot Countdown Timer
@@ -213,6 +215,15 @@ bool INFO_Do() {
   }
 #endif
 
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+if (getCellularGlobalIdentity(Buffer32Bytes, sizeof(Buffer32Bytes))) {
+  writer.name("cgi").value(Buffer32Bytes); //  mcc-mnc-lac-cid
+}
+else {
+  // writer.name("cgi").nullValue();
+}
+#endif
+
 #if PLATFORM_ID == PLATFORM_BORON
   SimType simType = Cellular.getActiveSim();
   if (simType == INTERNAL_SIM) {
@@ -235,14 +246,14 @@ bool INFO_Do() {
 #endif
 
   // Station Elevation
-  writer.name("elev").value(cf_elevation);
+  writer.name("elev").value(scv.elevation);
   // Rain total rollover offset
-  sprintf(Buffer32Bytes, "%d:%02d", cf_rtro_hour, cf_rtro_minute);
+  sprintf(Buffer32Bytes, "%d:%02d", scv.rtro_hour, scv.rtro_minute);
   writer.name("rtro").value(Buffer32Bytes);
   
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     // How WIND is set
-    if (DoWind) {
+    if (scv.wind) {
       writer.name("wind").value("ENABLED");
       comma=",";
     }
@@ -251,7 +262,7 @@ bool INFO_Do() {
       comma=","; 
     }
     // How RAIN is set
-    if (DoRain) {
+    if (scv.rg1) {
       writer.name("rain").value("ENABLED");
       comma=",";
     }
@@ -261,7 +272,7 @@ bool INFO_Do() {
     }
   
     // How Option 1 is Configured
-    if (OP1_State == OP1_STATE_DISTANCE) {
+    if (scv.op1 == OP1_STATE_DISTANCE) {
       if (dg_adjustment == 1.25) {
         writer.name("op1").value("DIST 5M");
       }
@@ -269,20 +280,20 @@ bool INFO_Do() {
         writer.name("op1").value("DIST 10M");
       }
     }
-    else if (OP1_State == OP1_STATE_RAIN){
+    else if (scv.op1 == OP1_STATE_RAIN){
       writer.name("op1").value("RG2");
     }
-    else if (OP1_State == OP1_STATE_RAW){
+    else if (scv.op1 == OP1_STATE_RAW){
       writer.name("op1").value("RAW");
     }
     else {
       writer.name("op1").value("NS"); // Not Set
     }
 
-    if (OP2_State == OP2_STATE_RAW){
+    if (scv.op2 == OP2_STATE_RAW){
       writer.name("op2").value("RAW");
     }
-    else if (OP2_State == OP2_STATE_VOLTAIC){
+    else if (scv.op2 == OP2_STATE_VOLTAIC){
       writer.name("op2").value("VBV");
     }
     else {
@@ -314,7 +325,7 @@ bool INFO_Do() {
     comma=",";    
   }
   if (LORA_exists) {
-    sprintf (buf+strlen(buf), ",lora(%d,%d,%dMHz)", cf_lora_unitid, cf_lora_txpower, cf_lora_freq);  
+    sprintf (buf+strlen(buf), ",lora(%d,%d,%dMHz)", scv.lora_unitid, scv.lora_txpower, scv.lora_freq);  
   }
   if (oled_type) {
     sprintf (buf+strlen(buf), ",oled(%s)", OLED32 ? "32" : "64");  
@@ -360,20 +371,16 @@ bool INFO_Do() {
     sprintf (buf+strlen(buf), "%sLPS2", comma);
     comma=",";
   }
-  if (HIH8_exists) {
-    sprintf (buf+strlen(buf), "%sHIH8", comma);
-    comma=",";
-  }
   if (SI1145_exists) {
     sprintf (buf+strlen(buf), "%sSI", comma);
     comma=",";
   }
-  if (VEML7700_exists) {
-    sprintf (buf+strlen(buf), "%sVEML", comma);
-    comma=",";
-  }
   if (BLX_exists) {
     sprintf (buf+strlen(buf), "%sBLX", comma);
+    comma=",";
+  }
+  if (BH1750_exists) {
+    sprintf (buf+strlen(buf), "%sBHLX", comma);
     comma=",";
   }
   if (AS5600_exists) {
@@ -386,6 +393,10 @@ bool INFO_Do() {
     comma=",";
   }
 #endif
+  if (tf02pro_exists) {
+    sprintf (buf+strlen(buf), "%sTF02", comma);
+    comma=",";   
+  }
 
 #ifdef ENABLE_Evapotranspiration
   if (ADS_exists) {
@@ -466,12 +477,12 @@ bool INFO_Do() {
     comma=",";
   }
 
-  if (!AQS_Enabled) {
-    if (DoRain) {
+  if (!scv.aqs) {
+    if (scv.rg1) {
       GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
       sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
     }
-    if (DoWind) { // Wind Sensor
+    if (scv.wind) { // Wind Sensor
       GetPinName(ANEMOMETER_IRQ_PIN, Buffer32Bytes);
       sprintf (buf+strlen(buf), "%sWS(%s)", comma, Buffer32Bytes);
     }
@@ -549,7 +560,7 @@ bool INFO_Do() {
   }
 
   // Deal with how long this took. More than likely we will always need to do a refresh of wind
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     time_t endTime = Time.now();
     unsigned long delta = (unsigned long)endTime-(unsigned long)ts;
     if (delta) { // More than a second
