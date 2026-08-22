@@ -5,7 +5,7 @@
 This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and after. See [README_v39.md](docs/README_v39.md) for prior releases.
 
 Major changes as of Version 49. 
-- When he configuration file is read and if entry "aqs" is not found in the file; a configuration migration takes place. The .TXT files are read in and a new CONFIG.TXT file is written to the SD card. Then the same file is written to non volatile memory.  After which, if the SD card is not detected, the non volatile config is used.
+- When the configuration file is read and if entry "aqs" is not found in the file; a configuration migration takes place. The .TXT files are read in and a new CONFIG.TXT file is written to the SD card. Then the same file is written to non volatile memory.  After which, if the SD card is not detected, the non volatile config is used.
 - Cloud updates are disabled by default. When a firmware update is configured on the Particle Device Console. The device is notified that there is a update pending. It then stops taking observations, update rain totals in non volotile memory, enables updates, disconnects from Particle. Then reconnects to Particle. At which point Particle Cloud services will see the device has update enabled and will start the update. If nothing happens for 5 minutes, the device will reboot. If the device is updated, the device reboots as a result. Controling the update process protects from unexpected reboot corruption if files are being written.
 - Sensor Changes
     - DFRobot SEN0562 - BH1750 LUX Added. Reports as bhlx.
