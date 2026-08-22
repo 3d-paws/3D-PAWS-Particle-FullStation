@@ -1,8 +1,10 @@
-# 3D-PAWS Particle Full Station
+# 3D-Printed Automatic Weather Stations (3D-PAWS) Particle Full Station Code
 
 ## Description
 
-This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. Support a Air Quality Sensor mode. This document supports Version 40 and after. See [README_v39.md](docs/README_v39.md) for prior releases.
+This software is supported on a Particle Boron, Argon band Muon boards. It provides full weather station features. This document supports Version 40 and after. See [README_v39.md](docs/README_v39.md) for prior releases. 
+
+For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
 Major changes as of Version 49. 
 - When the configuration file is read and if entry "aqs" is not found in the file; a configuration migration takes place. The .TXT files are read in and a new CONFIG.TXT file is written to the SD card. Then the same file is written to non volatile memory.  After which, if the SD card is not detected, the non volatile config is used.
