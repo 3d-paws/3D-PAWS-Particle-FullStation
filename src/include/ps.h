@@ -32,11 +32,11 @@ void DeviceReset();
 int Function_DoAction(String s);
 
 #if PLATFORM_ID == PLATFORM_ARGON
-void WiFiChangeCheck();
+void ARGON_network_initialize();
 #endif
 
 #if PLATFORM_ID == PLATFORM_MSOM
-void network_initialize();
+void MUON_network_initialize();
 #endif
 
 #if (PLATFORM_ID == PLATFORM_ARGON) || (PLATFORM_ID == PLATFORM_MSOM)

@@ -12,13 +12,12 @@ Sensors
 | Adafruit_BMP5xx               | Temp/Pressure           | BMP5xx series (BMP581) is a high-precision barometric pressure sensors from Bosch Sensortec | [Adafruit BMP5xx](hhttps://www.adafruit.com/product/6407) |
 | Adafruit SHT31                | Temp/Humidity           | High accuracy, ±2% RH, ±0.3°C, I2C, fast response, 2.4–5.5V.                                             | [Adafruit SHT31](https://www.adafruit.com/product/2857)     |
 | Adafruit_SHT4x                | Temp/Humidity           | Adafruit Sensirion SHT45 Precision Temp & Humidity with PTFE                                | [Adafruit SHT45](https://www.adafruit.com/product/5665)     |
-| Adafruit VEML7700             | Ambient Light           | Precise lux (0–120klux), I2C, auto-range, digital output, 3.3/5V.                                        | [Adafruit VEML7700](https://www.adafruit.com/product/4162)  |
 | Adafruit SI1145               | Light/UV/Proximity      | I2C, measures visible, IR, and digital UV index, 3-5V.                                                   | [Adafruit SI1145](https://www.adafruit.com/product/1777)    |
 | Adafruit PM25AQI              | PM2.5 Air Quality       | Measures particulate (0.3–10um), I2C (fixed 0x12), 0-500μg/m³ range, 5V.                                 | [PM25AQI](https://www.adafruit.com/product/4632)            |
 | Adafruit HDC302x              | Temp/Humidity           | High-accuracy I2C digital sensor (variant of HDC3021, HDC3022).                                          | [Adafruit HDC302x](https://www.adafruit.com)                |
-| Adafruit LPS35HW              | Pressure                | Robust water-resistant MEMS pressure sensor, I2C/SPI, oil/water resistant.                               | [LPS35HW](https://www.adafruit.com)                        |
+| Adafruit LPS35HW              | Pressure                | Robust water-resistant MEMS pressure sensor, I2C/SPI, oil/water resistant.                               | [LPS35HW](https://www.adafruit.com)   |
 | DFRobot_B_LUX_V30B            | Ambient Light           | Measures up to 200klx, wide range, digital I2C, 3.3-5V.                                                  | [DFRobot Wiki](https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390) |
-| Honeywell HIH8000             | Temp/Humidity           | Reliable, digital I2C, ±3% RH, ±0.5°C, industrial grade.                                                | [Honeywell HIH8000](https://sensing.honeywell.com)          |
+| DFRobot SEN0562 - BH1750      | Ambient Light           | DFRobot claims a measurement range of 1 to 65,535 lx with 1.2 lx accuracy and IP68 waterproofing         | [DFRobot SEN0562](https://www.dfrobot.com/product-2664.html) |
 | Tinovi LeafSens               | Leaf Wetness/Temp       | Non-contact capacitive leaf wetness + temperature, digital.                                              | [Tinovi LeafSens](https://www.tinovi.com/leafsens)          |
 | Tinovi i2cArduino             | Soil Moisture/Temp      | Capacitive soil moisture + temperature, I2C.                                                             | [Tinovi i2cArduino](https://www.tinovi.com/i2carduino)      |
 | Tinovi i2cMultiSm             | Multi Soil/Temp         | 5-point capacitive moisture + temperature, I2C, multi-depth.                                             | [Tinovi i2cMultiSm](https://www.tinovi.com/i2cmultism)      |
@@ -31,6 +30,9 @@ Sensors
 | MB7363, MB7366, MB7383, MB7386| 10m Distance            | Maxbotix Ultrasonic Distance Sensor                                                                      | [Maxbotix](https://maxbotix.com/products)        |
 | SP Lite2 Pyranometer          | Shortwave Radiation     | SP Lite2 Pyranometer from Kipp & Zonen                                                                   | [SP Lite2 Pyranometer](https://www.kippzonen.com/Product/9/SP-Lite2-Pyranometer)        |
 | Dallas DS18B20                | Temperature             | Connectes to DS2482S-800 8 Channel I2C to 1-Wire Bus Adapter                                             | [Dallas DS18B20](https://www.adafruit.com/product/381)|
+| TF02-Pro | LiDAR Distance  | Benewake TF02-Pro I²C LiDAR Sensor | [Benewake TF02-Pro](https://www.mouser.com/ProductDetail/Benewake/TF02-Pro-I2C) |
+
+
 
 ---
 ### Tags Names sent to Particle
@@ -63,10 +65,6 @@ Sensors
 | bp4      | BMP4XX Pressure        | hectopascal hPa |
 | bt4      | BMP4XX Temperature     | degree celsius |
 | bh4      | BMP4XX Humidity        | percent|
-| hh1      | HIH8000 Humidity                     | percent|
-| ht1      | HIH8000 Temperature                  | degree celsius |
-| hh2      | HIH8000 Humidity                     | percent|
-| ht2      | HIH8000 Temperature                  | degree celsius |
 | st1      | SHT31,SHT45 Temperature                    | degree celsius |
 | sh1      | SHT31,SHT45 Humidity                       | percent|
 | st2      | SHT31,SHT45 Temperature                    | degree celsius |
@@ -90,8 +88,8 @@ Sensors
 | mt2      | MCP9808 Temperature                  | degree celsius |
 | gt1      | MCP9808 Black Globe Temperature      | degree celsius |
 | gt2      | MCP9808 Black Globe Temperature      | degree celsius |
-| vlx      | VEML7700 LUX                         | lux |
 | blx      | DFRobot_B_LUX_V30B                   | lux |
+| bhlx     | DFRobot SEN0562 - BH1750             | lux |
 | sg       | Option 1 Maxbotix Distance Guage snow or stream |  millimeter |
 | op1r     | Option 1 analog pin raw reading      | float |
 | rg2      | Option 1 2nd rain gauge              | millimeter|
@@ -104,6 +102,9 @@ Sensors
 | wbt      | MCP9808 & SHT31 Wet Bulb Temperature | degree celsius |
 | wbgt     | MCP9808 & SHT31 Wet Bulb Globe Temperature | degree celsius |
 | mslp     | Mean Sea Level Pressure              | hectopascal hPa |
+| t02d     | TF02Pro TOF distance                 | 10–4000 cm |
+| t02s     | TF02Pro TOF strength                 | 0–65535 |
+| t02t     | TF02Pro TOF temperature              | degree celsius|
 | tlww     | Tinovi LeafSens Wetness              | dimensionless wetness index/reading |
 | tlwt     | Tinovi LeafSens Temp                 | degree celsius |
 | tsmt     | Tinovi Soil Moisture Temperature     | degree celsius |

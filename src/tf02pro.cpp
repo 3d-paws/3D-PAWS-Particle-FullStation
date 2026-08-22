@@ -52,6 +52,11 @@ bool tf02pro_readAvg(float &d, float &s, float &t) {
   d = d / TF02PRO_SAMPLES;
   s = s / TF02PRO_SAMPLES;
   t = t / TF02PRO_SAMPLES;
+
+  d = (isnan(d) || (d < 5.0F)     || (d > 4000.0F))  ? -999.9F  : d;
+  s = (isnan(s) || (s < .0F)      || (s > 65535.0F)) ? -999.9F  : s;
+  t = (isnan(t) || (t < QC_MIN_T) || (t > QC_MAX_T)) ? QC_ERR_T : t;
+
   return (true);
 }
 

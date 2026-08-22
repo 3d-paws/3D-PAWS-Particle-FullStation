@@ -179,11 +179,11 @@ void lora_device_initialize() {
  *=======================================================================================================================
  */
 bool lora_cf_validate() {
-  if (scv.aes_pkey == NULL) {
+  if (scv.aes_pkey.length() == 0) {
     Output ("AES PKEY !SET");
     return (false);
   }
-  else if (strlen (scv.aes_pkey) != 16) {
+  else if (scv.aes_pkey.length() != 16) {
     Output ("AES PKEY !16 Bytes");
     return (false);    
   }
@@ -204,14 +204,15 @@ bool lora_cf_validate() {
     return (false);
   }
   else { 
-    memcpy ((char *)AES_KEY, scv.aes_pkey, 16);
-    sprintf(msgbuf, "AES_KEY[%s]", scv.aes_pkey); Output (msgbuf);
+    memcpy (AES_KEY, scv.aes_pkey.c_str(), 16);
+    sprintf(msgbuf, "AES_KEY[%s]", scv.aes_pkey.c_str()); Output (msgbuf);
 
     AES_MYIV=scv.aes_myiv;
     sprintf(msgbuf, "AES_MYIV[%llu]", AES_MYIV); Output (msgbuf);
 
     Output ("LORA CFV OK");
     return (true);
+
   }
 }
 

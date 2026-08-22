@@ -16,11 +16,17 @@ This process configures the Wi-Fi credentials, which are saved to non-volatile m
 - If the initial setup is complete, setup is finished.  
 - To change the saved Wi-Fi credentials later, you can:  
   1. Use the Particle mobile app, **or**  
-  2. Place a file on the SD card with the new Wi-Fi information.
+  2. Set configuration on the SD card with the new Wi-Fi information.
 
 ---
-
 ### Wi-Fi Credentials via SD Card
+With the Release of version 49. WiFi configuration moved from SD file WIFI.TXT to CONFIG.TXT. With the below variables.
+
+- wifi_auth=
+- wifi_ssid=
+- wifi_pw=
+
+### Wi-Fi Credentials via SD Card (Prior to Version 49)
 
 At the **top level of the SD card**, create a file named `WIFI.TXT`.
 
@@ -51,10 +57,10 @@ WIFI:PW[NotMyPassword]
 WIFI:Credentials Cleared  
 WIFI:Credentials Set [WPA2]
 
-#### When Wi-Fi file not found:
+#### When Wi-Fi file WIFI.TXT not found:
 WIFI:NOFILE USING NVAUTH
 
-**Note:** If Wi-Fi credentials cannot be obtained from the SD card, the Argon uses the credentials stored in **non-volatile memory**.
+**Note:** If Wi-Fi credentials cannot be obtained from the SD card, the Argon uses the credentials stored in **Particle's non-volatile memory**.
 
 ---
 

@@ -39,6 +39,7 @@ void enterOTAState(OTAState s) {
     ota_stateStarted = millis();
 }
 
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
  * getCellularGlobalIdentity() - 
@@ -70,6 +71,7 @@ bool getCellularGlobalIdentity(char *buf, size_t buf_len) {
     cgi.cell_id);
   return true;
 }
+#endif
 
 
 /*
@@ -281,105 +283,28 @@ int Function_DoAction(String s) {
     Output("DoAction:NOWIND");
     ws_refresh = false;
     scv.wind=false;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_NOWIND_FILE)) {
-        Output ("NOWIND EXISTS");
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_NOWIND_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("NOWIND SET");
-          
-        }
-        else {
-          Output ("NOWIND OPEN ERR");
-          return(-3);
-        }
-      }
-    }
-    else {
-      Output("DOWIND, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);  
   }
 
   else if (s.equals("DOWIND")) {
     Output("DoAction:DOWIND");
     scv.wind=true;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_NOWIND_FILE)) {
-        if (SD.remove (SD_NOWIND_FILE)) {
-          Output ("NOWIND DEL OK");
-        }
-        else {
-          Output ("NOWIND DEL ERR");
-          return(-2);
-        }
-      }
-    }
-    else {
-      Output("DOWIND, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);  
   }
 
   else if (s.equals("NORAIN")) { 
     Output("DoAction:NORAIN");
     scv.rg1=false;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_NORAIN_FILE)) {
-        Output ("NORAIN EXISTS");
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_NORAIN_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("NORAIN SET");
-        }
-        else {
-          Output ("NORAIN OPEN ERR");
-          return(-3);
-        }
-      }
-    }
-    else {
-      Output("DORAIN, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);  
   }
 
   else if (s.equals("DORAIN")) { 
     Output("DoAction:DORAIN");
     scv.rg1=true;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_NORAIN_FILE)) {
-        if (SD.remove (SD_NORAIN_FILE)) {
-          Output ("NORAIN DEL OK");
-        }
-        else {
-          Output ("NORAIN DEL ERR");
-          return(-2);
-        }
-      }
-    }
-    else {
-      Output("DORAIN, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);  
   }
 
@@ -389,56 +314,15 @@ int Function_DoAction(String s) {
     scv.op1d5m = false;
     dg_adjustment = 2.5;
     pinMode(OP1_PIN, INPUT);
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+    return(0);
+  }
 
-    if (SD_exists) {
-      if (SD.exists(SD_OP1_RAIN_FILE)) {
-        EEPROM_ClearRain2Totals();
-        if (SD.remove (SD_OP1_RAIN_FILE)) {
-          Output ("OP1=DIST, DEL RAIN:OK");
-        }
-        else {
-          Output ("OP1=DIST, DEL RAIN:ERR");
-          return(-2);
-        }
-      }
-
-      if (SD.exists(SD_OP1_DIST_FILE)) {
-        Output ("OP1=DIST, ALREADY EXISTS");    
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OP1_DIST_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OP1=DIST, SET");
-        }
-        else {
-          Output ("OP1=DIST, OPEN ERR");
-          return(-3);
-        }
-      }
-
-      // Set Distance Sensor Divisor to that of 10m
-
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        if (SD.remove (SD_OP1_D5M_FILE)) {
-          Output ("OP1=DIST, DEL 5M:OK, 10M SET");
-        }
-        else {
-          Output ("OP1=DIST, DEL 5M:ERR");
-          return(-4);
-        }
-      }
-      else {
-        Output ("OP1=DIST, 10M");
-      }
-    }
-    else {
-      Output("OP1=DIST, SD NF"); 
-      return(-1);      
-    }
- 
+  else if (s.equals("OP1D5M")) { // Set 5M Distance Sensor State File
+    Output("DoAction:OP1D5M");
+    scv.op1d5m = true;
+    dg_adjustment = 1.25;
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -447,79 +331,7 @@ int Function_DoAction(String s) {
     scv.op1 = OP1_STATE_RAIN;
     scv.op1d5m = false;
     dg_adjustment = 2.5;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OP1_DIST_FILE)) {
-        if (SD.remove (SD_OP1_DIST_FILE)) {
-          Output ("OP1=RAIN, DEL DIST:OK");
-        }
-        else {
-          Output ("OP1=RAIN, DEL DIST:ERR");
-          return(-2);
-        }
-      }
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        if (SD.remove (SD_OP1_D5M_FILE)) {
-          Output ("OP1=RAIN, DEL 5M:OK");
-        }
-        else {
-          Output ("OP1=RAIN, DEL 5M:ERR");
-          return(-4);
-        }
-      }
-
-      if (SD.exists(SD_OP1_RAIN_FILE)) {
-        Output ("OP1=RAIN, ALREADY EXISTS");      
-      }
-      else {
-        EEPROM_ClearRain2Totals(); // Just a good thing to do.
-        // Touch File
-        File fp = SD.open(SD_OP1_RAIN_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OP1=RAIN, SET");
-        }
-        else {
-          Output ("OP1=RAIN, OPEN ERR");
-          return(-3);
-        }
-      }
-    }
-    else {
-      Output("OP1=RAIN, SD NF"); 
-      return(-1);      
-    }
-    return(0);
-  }
-
-  else if (s.equals("OP1D5M")) { // Set 5M Distance Sensor State File
-    Output("DoAction:OP1D5M");
-    scv.op1d5m = true;
-    dg_adjustment = 1.25;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        Output ("OP1D5M, ALREADY EXISTS");      
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OP1_D5M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OP1D5M SET");
-        }
-        else {
-          Output ("OP1D5M OPEN ERR");
-          return(-5);
-        }
-      }
-    }
-    else {
-      Output("OP1D5M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -529,181 +341,24 @@ int Function_DoAction(String s) {
     scv.op1d5m = false;
     dg_adjustment = 2.5;
     pinMode(OP1_PIN, INPUT);
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      // Remove Rain Configuration
-      if (SD.exists(SD_OP1_RAIN_FILE)) {
-        EEPROM_ClearRain2Totals();
-        if (SD.remove (SD_OP1_RAIN_FILE)) {
-          Output ("OP1=DIST, DEL RAIN:OK");
-        }
-        else {
-          Output ("OP1=DIST, DEL RAIN:ERR");
-          return(-2);
-        }
-      }
-
-      // Remove Distance Configuration
-      if (SD.exists(SD_OP1_DIST_FILE)) {
-        if (SD.remove (SD_OP1_DIST_FILE)) {
-          Output ("OP1=DIST, DEL DIST:OK");
-        }
-        else {
-          Output ("OP1=DIST, DEL DIST:ERR");
-          return(-3);
-        }
-      }
-
-      // Remove Distanve sensor type and reset distance adjustment to default 10m
-      
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        if (SD.remove (SD_OP1_D5M_FILE)) {
-          Output ("OP1=DIST, DEL 5M:OK");
-        }
-        else {
-          Output ("OP1=DIST, DEL 5M:ERR");
-          return(-4);
-        }
-      }
-
-      // Add OP1 Raw configuration
-      if (SD.exists(SD_OP1_RAW_FILE)) {
-        Output ("OP1=RAW, ALREADY EXISTS");    
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OP1_RAW_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OP1=RAW, SET");
-          pinMode(OP1_PIN, INPUT);
-        }
-        else {
-          Output ("OP1=RAW, OPEN ERR");
-          return(-5);
-        }
-      }
-    }
-    else {
-      Output("OP1=RAW, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
-  else if (s.equals("OP1CLR")) { // Clear OP1 State Files !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    int state=0;
+  else if (s.equals("OP1CLR")) {
     Output("DoAction:OP1CLR");
     scv.op1 = OP1_STATE_NULL;
     scv.op1d5m = false;
     dg_adjustment = 2.5;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OP1_DIST_FILE)) {
-        if (SD.remove (SD_OP1_DIST_FILE)) {
-          scv.op1 = OP1_STATE_NULL;
-          Output ("OP1=CLR, DEL DIST:OK");
-        }
-        else {
-          Output ("OP1=CLR, DEL DIST:ERR");
-          state=-2;
-        }
-      }
-      else {
-        Output ("OP1=CLR, DEL RAIN:NF");
-      }
-
-      if (SD.exists(SD_OP1_RAIN_FILE)) {
-        if (SD.remove (SD_OP1_RAIN_FILE)) {
-          scv.op1 = OP1_STATE_NULL;
-          Output ("OP1=CLR, DEL RAIN:OK");
-        }
-        else {
-          Output ("OP1=CLR, DEL RAIN:ERR");
-          state+=-3; // returns a -3 if also failed removing DIST file
-        }
-      }
-      else {
-        Output ("OP1=CLR, DEL RAIN:NF");
-      }
-
-      if (SD.exists(SD_OP1_RAW_FILE)) {
-        if (SD.remove (SD_OP1_RAW_FILE)) {
-          scv.op1 = OP1_STATE_NULL;
-          Output ("OP1=CLR, DEL RAW:OK");
-        }
-        else {
-          Output ("OP1=CLR, DEL RAW:ERR");
-          state+=-4; // returns a -4 if also failed removing RAW file
-        }
-      }
-      else {
-        Output ("OP1=CLR, DEL RAIN:NF");
-      }
-
-      if (SD.exists(SD_OP1_D5M_FILE)) {
-        if (SD.remove (SD_OP1_D5M_FILE)) {
-          Output ("OP1=CLR, DEL 5M:OK");
-        }
-        else {
-          Output ("OP1=CLR, DEL 5M:ERR");
-          state+=-5;
-        }
-      }
-      
-    }
-    else {
-      Output("OP1=CLR, SD NF"); 
-      state=-1;     
-    }
-    return(state);
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+    return(0);
   }
 
   else if (s.equals("OP2RAW")) { // Set OP2 State File to Raw
     Output("DoAction:OP2RAW");
     scv.op2 = OP2_STATE_RAW;
     pinMode(OP2_PIN, INPUT);
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    // Add OP2 Raw configuration
-    if (SD_exists) {
-      if (SD.exists(SD_OP2_RAW_FILE)) {
-        Output ("OP2=RAW, ALREADY EXISTS");    
-      }
-      else {
-
-        // Touch File
-        File fp = SD.open(SD_OP2_RAW_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          scv.op2 = OP2_STATE_RAW;
-          Output ("OP2=RAW, SET");
-        }
-        else {
-          Output ("OP2=RAW, OPEN ERR");
-          return(-2);
-        }
-      }
-
-      if (SD.exists(SD_OP2_VBV_FILE)) {
-        if (SD.remove (SD_OP2_VBV_FILE)) {
-          Output ("OP2=CLR, DEL VBV:OK");
-        }
-        else {
-          Output ("OP2=CLR, DEL VBV:ERR");
-          return(-3);
-        }
-      }
-      else {
-        Output ("OP2=CLR, DEL OP2VBV:NF");
-      }
-    }
-    else {
-      Output("OP2=RAW, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -711,89 +366,15 @@ int Function_DoAction(String s) {
     Output("DoAction:OP2VBV");
     scv.op2 = OP2_STATE_VOLTAIC;
     pinMode(OP2_PIN, INPUT);
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    // Add OP2 Raw configuration
-    if (SD_exists) {
-      if (SD.exists(SD_OP2_VBV_FILE)) {
-        Output ("OP2=VNV, ALREADY EXISTS");    
-      }
-      else {
-
-        // Touch File
-        File fp = SD.open(SD_OP2_VBV_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OP2=VBV, SET");
-        }
-        else {
-          Output ("OP2=VBV, OPEN ERR");
-          return(-2);
-        }
-      }
-
-      if (SD.exists(SD_OP2_RAW_FILE)) {
-        if (SD.remove (SD_OP2_RAW_FILE)) {
-          Output ("OP2=CLR, DEL RAW:OK");
-        }
-        else {
-          Output ("OP2=CLR, DEL RAW:ERR");
-          return(-3);
-        }
-      }
-      else {
-        Output ("OP2=CLR, DEL OP2RAW:NF");
-      }
-
-    }
-    else {
-      Output("OP2=VBV, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
     
   else if (s.equals("OP2CLR")) { // Clear OP2 State Files
-    int state=0;
     Output("DoAction:OP2CLR");
     scv.op2 = OP2_STATE_NULL;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-
-      if (SD.exists(SD_OP2_RAW_FILE)) {
-        if (SD.remove (SD_OP2_RAW_FILE)) {
-          scv.op2 = OP2_STATE_NULL;
-          Output ("OP2=CLR, DEL RAW:OK");
-        }
-        else {
-          Output ("OP2=CLR, DEL RAW:ERR");
-          state=-2;
-        }
-      }
-      else {
-        Output ("OP2=CLR, DEL OP2RAW:NF");
-      }
-
-      if (SD.exists(SD_OP2_VBV_FILE)) {
-        if (SD.remove (SD_OP2_VBV_FILE)) {
-          Output ("OP2=CLR, DEL VBV:OK");
-        }
-        else {
-          Output ("OP2=CLR, DEL VBV:ERR");
-          state=-2;
-        }
-       
-      }
-      else {
-        Output ("OP2=CLR, DEL OP2VBV:NF");
-      }  
-    }
-    else {
-      Output("OP2=CLR, SD NF"); 
-      state=-1;     
-    }
-    return(state);
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+    return(0);
   }
 
   else if (s.equals("TXI5M")) { // Set 1 Minute Observations, Transmit Interval to 5 Minutes
@@ -802,36 +383,7 @@ int Function_DoAction(String s) {
     Output(msgbuf);  
     scv.obi = DEFAULT_OBS_INTERVAL;
     scv.txi = 5;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_TX5M_FILE)) {
-        Output ("TXI5M, ALREADY SET");     
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_TX5M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          //SD_RemoveFile (SD_TX5M_FILE);
-          SD_RemoveFile (SD_TX10M_FILE);
-          SD_RemoveFile (SD_OB5M_FILE);
-          SD_RemoveFile (SD_OB10M_FILE);
-          SD_RemoveFile (SD_OB15M_FILE);
-          Output ("TXI5M SET");
-        }
-        else {
-          Output ("TXI5M OPEN ERR");
-          return(-2);
-        }
-        sprintf (msgbuf, "NEW: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-        Output(msgbuf);
-      }
-    }
-    else {
-      Output("TXI5M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -841,36 +393,7 @@ int Function_DoAction(String s) {
     Output(msgbuf);  
     scv.obi = DEFAULT_OBS_INTERVAL;
     scv.txi = 10;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_TX10M_FILE)) {
-        Output ("TXI10M, ALREADY SET");  
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_TX10M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("TXI10M SET");
-          SD_RemoveFile (SD_TX5M_FILE);
-          //SD_RemoveFile (SD_TX10M_FILE);
-          SD_RemoveFile (SD_OB5M_FILE);
-          SD_RemoveFile (SD_OB10M_FILE);
-          SD_RemoveFile (SD_OB15M_FILE);
-        }
-        else {
-          Output ("TXI10M OPEN ERR");
-          return(-2);
-        }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-        Output(msgbuf);
-      }
-    }
-    else {
-      Output("TXI10M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -880,22 +403,7 @@ int Function_DoAction(String s) {
     Output(msgbuf);
     scv.obi = DEFAULT_OBS_INTERVAL;
     scv.txi = DEFAULT_OBS_TRANSMIT_INTERVAL;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      SD_RemoveFile (SD_TX5M_FILE);
-      SD_RemoveFile (SD_TX10M_FILE);
-      SD_RemoveFile (SD_OB5M_FILE);
-      SD_RemoveFile (SD_OB10M_FILE);
-      SD_RemoveFile (SD_OB15M_FILE);
-
-      sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-      Output(msgbuf);
-    }
-    else {
-      Output("TXI15M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -904,36 +412,7 @@ int Function_DoAction(String s) {
     sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf); 
     scv.obi = scv.txi = 5;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
-
-    if (SD_exists) {
-      if (SD.exists(SD_OB5M_FILE)) {
-        Output ("OBI5M, ALREADY SET");  
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OB5M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OBI5M SET");
-          SD_RemoveFile (SD_TX5M_FILE);
-          SD_RemoveFile (SD_TX10M_FILE);
-          // SD_RemoveFile (SD_OB5M_FILE);
-          SD_RemoveFile (SD_OB10M_FILE);
-          SD_RemoveFile (SD_OB15M_FILE);
-        }
-        else {
-          Output ("OBI5M OPEN ERR");
-          return(-2);
-        }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-        Output(msgbuf);
-      }
-    }
-    else {
-      Output("OBI5M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
     return(0);
   }
 
@@ -942,36 +421,7 @@ int Function_DoAction(String s) {
     sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf); 
     scv.obi = scv.txi = 10;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
-
-    if (SD_exists) {
-      if (SD.exists(SD_OB10M_FILE)) {
-        Output ("OBI10M, ALREADY SET");  
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OB10M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OBI10M SET");
-          SD_RemoveFile (SD_TX5M_FILE);
-          SD_RemoveFile (SD_TX10M_FILE);
-          SD_RemoveFile (SD_OB5M_FILE);
-          // SD_RemoveFile (SD_OB10M_FILE);
-          SD_RemoveFile (SD_OB15M_FILE);
-        }
-        else {
-          Output ("OBI10M OPEN ERR");
-          return(-2);
-        }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-        Output(msgbuf);
-      }
-    }
-    else {
-      Output("OBI10M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR"); 
     return(0);
   }
 
@@ -980,65 +430,14 @@ int Function_DoAction(String s) {
     sprintf (msgbuf, "CUR: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
     Output(msgbuf);  
     scv.obi = scv.txi = 15;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OB15M_FILE)) {
-        Output ("OBI15M, ALREADY SET");  
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OB15M_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OBI15M SET");
-          SD_RemoveFile (SD_TX5M_FILE);
-          SD_RemoveFile (SD_TX10M_FILE);
-          SD_RemoveFile (SD_OB5M_FILE);
-          SD_RemoveFile (SD_OB10M_FILE);
-          //SD_RemoveFile (SD_OB15M_FILE);
-        }
-        else {
-          Output ("OBI15M OPEN ERR");
-          return(-2);
-        }
-        sprintf (msgbuf, "SET: OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-        Output(msgbuf);
-      }
-    }
-    else {
-      Output("OBI15M, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
   else if (s.equals("OPTAQS")) { // Enable Air Quality Station
     Output("DoAction:OPTAQS");
     scv.aqs = true;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OPTAQS_FILE)) {
-        Output ("OPTAQS, ALREADY SET");  
-      }
-      else {
-        // Touch File
-        File fp = SD.open(SD_OPTAQS_FILE, FILE_WRITE);
-        if (fp) {
-          fp.close();
-          Output ("OPTAQS SET");
-        }
-        else {
-          Output ("OPTAQS OPEN ERR");
-          return(-2);
-        }
-      }
-    }
-    else {
-      Output("OPTAQS, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -1047,22 +446,7 @@ int Function_DoAction(String s) {
     time32_t current_time = Time.now();
     EEPROM_ClearRainTotals(current_time);
     scv.aqs = false;
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-    if (SD_exists) {
-      if (SD.exists(SD_OPTAQS_FILE)) {
-        SD_RemoveFile (SD_OPTAQS_FILE);
-        // Switching to Full Station Clear Rain Totals from EEPROM
-        Output ("OPTFS SET");
-      }
-      else {
-        Output ("OPTFS, ALREADY SET");  
-      }
-    }
-    else {
-      Output("OPTAQS, SD NF"); 
-      return(-1);      
-    }
+    (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
     return(0);
   }
 
@@ -1072,36 +456,15 @@ int Function_DoAction(String s) {
     long elevation = rest.toInt();  // convert to integer
 
     if ((String(elevation) == rest) && (elevation >= QC_MIN_ELEV) && (elevation <= QC_MAX_ELEV)) {
-      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
       scv.elevation = elevation; // Set running value of elevation
       mslp_initialize(); // Set flags so we don't need to reboot.
-      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-      if (SD_exists) {
-        if (SD.exists(SD_ELEV_FILE)) { 
-          SD_RemoveFile (SD_ELEV_FILE);
-        }
-        File file = SD.open(SD_ELEV_FILE, FILE_WRITE);
-        if (file) {
-          file.print(elevation);  // write the elevation to the file
-          file.close();           // save and close the file
-          sprintf (Buffer32Bytes, "SETELEV:%ld OK", elevation);
-        } 
-        else {
-          sprintf (Buffer32Bytes, "SETELEV:%ld FAIL", elevation); 
-        }
-        Output (Buffer32Bytes);
-      }
-      else {
-        Output("SETELEV, SD NF"); 
-        return(-1);      
-      }
+      (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+      return(0);
     }
     else {
       Output("SETELEV, INVALID ELEV#"); 
-      return(-2);           
+      return(-1);           
     }
-    return(0);
   }
 
   else if (s.startsWith("SETRTRO:")) { // Pattern start of string aka 0 offset
@@ -1130,36 +493,13 @@ int Function_DoAction(String s) {
         valid=true;
       }
     } 
-    
 
     // Save to SD and set config values
     if (valid) {
       scv.rtro_hour = hour;
       scv.rtro_minute = minute;
-      (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-
-      if (SD_exists) {
-        if (SD.exists(SD_RTRO_FILE)) { 
-          SD_RemoveFile (SD_RTRO_FILE);
-        }
-        File file = SD.open(SD_RTRO_FILE, FILE_WRITE);
-        if (file) {
-          file.print(rest);  // write the elevation to the file
-          file.close();      // save and close the file
-          sprintf(Buffer32Bytes, "SETRTRO:%d:%02d OK", hour, minute);
-          Output (Buffer32Bytes);
-          return(0);
-        } 
-        else {
-          sprintf(Buffer32Bytes, "SETRTRO:%d:%02d FAIL", hour, minute);
-          Output (Buffer32Bytes);
-          return(-4);
-        }
-      }
-      else {
-        Output("SETRTRO, SD NF"); 
-        return(-3);      
-      }
+      (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+      return (0);
     } 
     else {
       sprintf(Buffer32Bytes, "SETRTRO:%d:%02d INVALID", hour, minute);
@@ -1176,156 +516,92 @@ int Function_DoAction(String s) {
 #if PLATFORM_ID == PLATFORM_ARGON
 /*
  * ======================================================================================================================
- * WiFiChangeCheck() - Check for WIFI.TXT file and set Wireless SSID, Password            
+ * ARGON_network_initialize() - Set Wireless SSID, Password            
  * ======================================================================================================================
  */
-void WiFiChangeCheck() {
-  File fp;
-  int i=0;
-  char *p, *auth, *ssid, *pw;
-  char ch, buf[128];
-  bool changed = false;
+void ARGON_network_initialize() { 
+  if (scv.wifi_auth == "") {
+    Output("WIFI:AUTH=Null Err");
+    Output("WIFI:Credentials NOT Set");
+    Output("WIFI:Use Existing");
+  }
+  else if ((scv.wifi_auth != "WEP") &&
+           (scv.wifi_auth != "WPA") &&
+           (scv.wifi_auth != "WPA2") &&
+           (scv.wifi_auth != "UNSEC")) {
+    sprintf (msgbuf, "WIFI:AUTH[%s] Error", scv.wifi_auth.c_str());          
+    Output(msgbuf);
+    Output("WIFI:Credentials NOT Set");
+    Output("WIFI:Use Existing");
+  }
+  else if (scv.wifi_ssid == "") {
+    Output("WIFI:SID NotSet");
+    Output("WIFI:Credentials NOT Set");
+    Output("WIFI:Use Existing");
+  }
+  else if ((scv.wifi_auth != "UNSEC") && (scv.wifi_pw == "")) {
+    // UNSEC is allowed to have no password just a ssid, but non of the others
+    Output("WIFI:PW NotSet");
+    Output("WIFI:Credentials NOT Set");
+    Output("WIFI:Use Existing");
+  }
+  else {
+    sprintf (msgbuf, "WIFI:AUTH[%s]", scv.wifi_auth.c_str()); Output(msgbuf);
+    sprintf (msgbuf, "WIFI:SSID[%s]", scv.wifi_ssid.c_str()); Output(msgbuf);
+    sprintf (msgbuf, "WIFI:PW[%s]",   scv.wifi_pw.c_str());   Output(msgbuf);
 
-  if (SD_exists) {
-    // Test for file WIFI.TXT
-    if (SD.exists(SD_wifi_file)) {
-      fp = SD.open(SD_wifi_file, FILE_READ); // Open the file for reading, starting at the beginning of the file.
-
-      if (fp) {
-        // Deal with too small or too big of file
-        if (fp.size()<=7 || fp.size()>127) {
-          fp.close();
-          Output ("WIFI:Invalid SZ");
-        }
-        else {
-          Output ("WIFI:Open");
-          // Read one line from file
-          while (fp.available() && (i < 127 )) {
-            ch = fp.read();
-
-            // sprintf (msgbuf, "%02X : %c", ch, ch);
-            // Output (msgbuf);
-
-            if ((ch == 0x0A) || (ch == 0x0D) ) {  // newline or linefeed
-              break;
-            }
-            else {
-              buf[i++] = ch;
-            }
-          }
-          fp.close();
-
-          // At this point we have encountered EOF, CR, or LF
-          // Now we need to terminate array with a null to make it a string
-          buf[i] = (char) NULL;
-
-          // Parse string for the following
-          //   WIFI ssid password
-          p = &buf[0];
-          auth = strtok_r(p, ",", &p);
-
-          if (auth == NULL) {
-            Output("WIFI:ID=Null Err");
-          }
-          else if ( (strcmp (auth, "WEP") != 0)  &&
-                    (strcmp (auth, "WPA") != 0)  &&
-                    (strcmp (auth, "WPA2") != 0) &&
-                    (strcmp (auth, "UNSEC") != 0)) {
-            sprintf (msgbuf, "WIFI:ATYPE[%s] Err", auth);          
-            Output(msgbuf);
-          }
-          else {
-            ssid = strtok_r(p, ",", &p);
-            pw  = strtok_r(p, ",", &p);
-            
-            if (pw == NULL) {
-              pw = (char *) "";  // Handle the case when nothing is after the ","
-            }
-
-            if (ssid == NULL) {
-              Output("WIFI:SSID=Null Err");
-            }
-
-            // UNSEC is allowed to have no password just a ssid, but non of the others
-            else if ((strcmp (auth, "UNSEC") != 0)  && (pw == NULL)) {
-              Output("WIFI:PW=Null Err");
-            }
-            else {
-              sprintf (msgbuf, "WIFI:ATYPE[%s]", auth);          
-              Output(msgbuf);
-              sprintf (msgbuf, "WIFI:SSID[%s]", ssid);
-              Output(msgbuf);
-              sprintf (msgbuf, "WIFI:PW[%s]", pw);
-              Output(msgbuf);
-
-              // Connects to a network secured with WPA2 credentials.
-              // https://docs.particle.io/reference/device-os/api/wifi/securitytype-enum/
-              if (strcmp (auth, "UNSEC") == 0) {
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                if (strcmp (pw, "") == 0) {
-                  Output("WIFI:Credentials Set UNSEC NO PW");
-                  WiFi.setCredentials(ssid);
-                }
-                else {
-                  Output("WIFI:Credentials Set UNSEC");
-                  WiFi.setCredentials(ssid, pw);                 
-                }
-              }
-              else if (strcmp (auth, "WEP") == 0) {
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                Output("WIFI:Credentials Set WEP");
-                WiFi.setCredentials(ssid, pw, WEP);
-              }
-              else if (strcmp (auth, "WPA") == 0) {
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                Output("WIFI:Credentials Set WPA");
-                WiFi.setCredentials(ssid, pw, WPA);
-              }
-              else if (strcmp (auth, "WPA2") == 0) {
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                Output("WIFI:Credentials Set WPA2");
-                WiFi.setCredentials(ssid, pw, WPA2);
-              }
-              else if (strcmp (auth, "WPA_ENTERPRISE") == 0) {
-                // WPA Enterprise is only supported on the Photon and P1.
-                // It is not supported on the Argon, P2, and Photon 2.
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                Output("WIFI:Credentials Set WPAE");
-                WiFi.setCredentials(ssid, pw, WPA_ENTERPRISE);
-              }
-              else if (strcmp (auth, "WPA2_ENTERPRISE") == 0) {
-                // WPA Enterprise is only supported on the Photon and P1.
-                // It is not supported on the Argon, P2, and Photon 2.
-                Output("WIFI:Credentials Cleared");
-                WiFi.clearCredentials();
-                Output("WIFI:Credentials Set WPAE2");
-                WiFi.setCredentials(ssid, pw, WPA2_ENTERPRISE);
-              }
-              else { 
-                Output("WIFI:Credentials NOT Set");
-                Output("WIFI:USING NVAUTH");
-              }
-            }
-          }
-        }
+    // Connects to a network secured with WPA2 credentials.
+    // https://docs.particle.io/reference/device-os/api/wifi/securitytype-enum/
+    if (scv.wifi_auth == "UNSEC") {
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      if (scv.wifi_pw == "") {
+        Output("WIFI:Credentials Set UNSEC NO PW");
+        WiFi.setCredentials(scv.wifi_ssid.c_str());
       }
       else {
-        sprintf (msgbuf, "WIFI:Open[%s] Err", SD_wifi_file);          
-        Output(msgbuf);
-        Output ("WIFI:USING NVAUTH");
+        Output("WIFI:Credentials Set UNSEC");
+        WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str());                 
       }
-    } 
-    else {
-      Output ("WIFI:NOFILE USING NVAUTH");
     }
-  } // SD enabled
-  else {
-    Output ("WIFI:NOSD USING NVAUTH");
+    else if (scv.wifi_auth == "WEP") {
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      Output("WIFI:Credentials Set WEP");
+      WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str(), WEP);
+    }
+    else if (scv.wifi_auth == "WPA") {
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      Output("WIFI:Credentials Set WPA");
+      WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str(), WPA);
+    }
+    else if (scv.wifi_auth == "WPA2") {
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      Output("WIFI:Credentials Set WPA2");
+      WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str(), WPA2);
+    }
+    else if (scv.wifi_auth == "WPA_ENTERPRISE") {
+      // WPA Enterprise is only supported on the Photon and P1.
+      // It is not supported on the Argon, P2, and Photon 2.
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      Output("WIFI:Credentials Set WPA ENT");
+      WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str(), WPA_ENTERPRISE);
+    }
+    else if (scv.wifi_auth == "WPA2_ENTERPRISE") {
+      // WPA Enterprise is only supported on the Photon and P1.
+      // It is not supported on the Argon, P2, and Photon 2.
+      Output("WIFI:Credentials Cleared");
+      WiFi.clearCredentials();
+      Output("WIFI:Credentials Set WPA ENT2");
+      WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str(), WPA2_ENTERPRISE);
+    }
+    else { 
+      Output("WIFI:Credentials NOT Set");
+      Output("WIFI:Use Existing");
+    }
   }
 }
 #endif
@@ -1333,121 +609,52 @@ void WiFiChangeCheck() {
 #if PLATFORM_ID == PLATFORM_MSOM
 /*
  * ======================================================================================================================
- * network_initialize() - Setup WiFi if WIFI.TXT exists. Else setup Cellular            
+ * MUON_network_initialize() - Setup WiFi if WIFI.TXT exists. Else setup Cellular            
  * ======================================================================================================================
  */
-void network_initialize() {
-  File fp;
-  int i=0;
-  char *p, *id, *ssid, *pw;
-  char ch, buf[128];
+void MUON_network_initialize() {
+  MuonWifiEnabled = false;
 
-  if (SD_exists) {
-    // Test for file WIFI.TXT
-    if (SD.exists(SD_wifi_file)) {
-      fp = SD.open(SD_wifi_file, FILE_READ); // Open the file for reading, starting at the beginning of the file.
+  if (scv.wifi_ssid == "") {
+    Output("WIFI:SID NotSet");
+    Output ("WIFO:USING CELLULAR");
+  }
+  else if (scv.wifi_pw == "") {
+    Output("WIFI:PW NotSet");
+    Output ("WIFO:USING CELLULAR");
+  }
+  else {
+    Output("NETWORK:SET WIFI");
+    MuonWifiEnabled = true;
+    sprintf (msgbuf, "WIFI:SSID[%s]", scv.wifi_ssid.c_str()); Output(msgbuf);
+    sprintf (msgbuf, "WIFI:PW[%s]",   scv.wifi_pw.c_str());   Output(msgbuf);
 
-      if (fp) {
-        // Deal with too small or too big of file
-        if (fp.size()<=7 || fp.size()>127) {
-          fp.close();
-          Output ("WIFI:Invalid SZ");
-        }
-        else {
-          Output ("WIFI:Open");
+    Output("WIFI:Particle Cloud Disconnect");  // We should no be connected, but do anyway
+    Particle.disconnect();
 
-          // Read one line from file
-          while (fp.available() && (i < 127 )) {
-            ch = fp.read();
+    Output("WIFI:Turning Off Cellular");
+    Cellular.off();    // Turn off cellular modem
+    waitUntil(Cellular.isOff);  // Optional: wait for cellular modem to power down
 
-            // sprintf (msgbuf, "%02X : %c", ch, ch);
-            // Output (msgbuf);
-
-            if ((ch == 0x0A) || (ch == 0x0D) ) {  // newline or linefeed
-              break;
-            }
-            else {
-              buf[i++] = ch;
-            }
-          }
-          fp.close();
-
-          // At this point we have encountered EOF, CR, or LF
-          // Now we need to terminate array with a null to make it a string
-          buf[i] = (char) NULL;
-
-          // Parse string for the following
-          //   WIFI ssid password
-          p = &buf[0];
-          id = strtok_r(p, ",", &p);
-
-          if (id == NULL) {
-            Output("WIFI:ID=Null Err");
-          }
-          else if (strcmp (id, "MUON") != 0) { 
-            sprintf (msgbuf, "WIFI:ID[%s] Err", id);          
-            Output(msgbuf);
-          }
-          else {
-            ssid = strtok_r(p, ",", &p);
-            pw  = strtok_r(p, ",", &p);
-            
-            if (ssid == NULL) {
-              Output("WIFI:SSID=Null Err");
-            }
-            else if (pw == NULL) {
-              Output("WIFI:PW=Null Err");
-            }
-            else {
-              Output("NETWORK:SET WIFI");
-              MuonWifiEnabled = true;
-
-              sprintf (msgbuf, "WIFI:SSID[%s]", ssid);
-              Output(msgbuf);
-              sprintf (msgbuf, "WIFI:PW[%s]", pw);
-              Output(msgbuf);
-
-              Output("WIFI:Particle Cloud Disconnect");  // We should no be connected, but do anyway
-              Particle.disconnect();
-
-              Output("WIFI:Turning Off Cellular");
-              Cellular.off();    // Turn off cellular modem
-              waitUntil(Cellular.isOff);  // Optional: wait for cellular modem to power down
-
-              Output("WIFI:Turning On Wifi");
-              WiFi.on();
+    Output("WIFI:Turning On Wifi");
+    WiFi.on();
               
-              if (WiFi.clearCredentials()) {
-                Output("WIFI:Cleared Wifi Creds");
-              } else {
-                Output("WIFI:Clear Wifi Creds Err");
-              }
-
-              if (WiFi.setCredentials(ssid, pw)) {
-                Output("WIFI:Credentials Set");
-              } else {
-                Output("WIFI:Credentials Set Err");
-              }
-
-              Output("WIFI:Connect Called");
-              WiFi.connect();
-              // waitUntil(WiFi.ready);  // No we want to move on with out network
-            }
-          }
-        }
-      }
-      else {
-        sprintf (msgbuf, "WIFI:OPENERR[%s]", SD_wifi_file);          
-        Output(msgbuf);
-        Output ("WIFI:USING CELLULAR");
-      }
+    if (WiFi.clearCredentials()) {
+      Output("WIFI:Cleared Wifi Creds");
     } 
     else {
-      Output ("WIFO:NOFILE USING CELLULAR");
+      Output("WIFI:Clear Wifi Creds Err");
     }
-  } // SD enabled
-  else {
-    Output ("WIFI:NOSD USING CELLULAR");
+
+    if (WiFi.setCredentials(scv.wifi_ssid.c_str(), scv.wifi_pw.c_str())) {
+      Output("WIFI:Credentials Set");
+    } else {
+      Output("WIFI:Credentials Set Err");
+    }
+
+    Output("WIFI:Connect Called");
+    WiFi.connect();
+    // waitUntil(WiFi.ready);  // No we want to move on with out network
   }
 
   if (MuonWifiEnabled == false) {

@@ -1339,7 +1339,7 @@ void mslp_initialize() {
     Output ("MSLP:OK");
   }
   else {
-    Output ("MSLP:NF");
+    Output ("MSLP:ERR");
   }
 }
 

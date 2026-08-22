@@ -16,8 +16,14 @@ A microSD card must be connected to the GPIO pins for certain functionality.
 ## Wi-Fi Support
 
 To enable Muon Wi-Fi:  
+With the Release of version 49. WiFi configuration moved from SD file WIFI.TXT to CONFIG.TXT. With the below variables.
 
-At the **top level of the SD card**, create a file named `WIFI.TXT`.  
+- wifi_ssid=
+- wifi_pw=
+
+If the above aet not set, cellular connectivity is enabled instead.
+
+Prior to the Release of version 49. At the **top level of the SD card**, create a file named `WIFI.TXT`.  
 Add one line with three comma-separated items:  
 
 MUON,ssid,password

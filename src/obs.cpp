@@ -731,8 +731,12 @@ void OBS_Do() {
 
   if (BH1750_exists) {
 // Output("DB:OBS_BH1750");
+
+    // Light level in lux (0.0 ~ 54612,5 [117758,203]) Bracket is global max
+  	// -1 : no valid return value
+  	// -2 : sensor not configured 
     float lux=bh1750_lux.readLightLevel();
-    lux = (isnan(lux) || (lux < QC_MIN_BLX)  || (lux > QC_MAX_BLX))  ? QC_ERR_BLX  : lux;
+    lux = (isnan(lux) || (lux < QC_MIN_BHLX)  || (lux > QC_MAX_BHLX))  ? QC_ERR_BHLX  : lux;
 
     // DFR BLUX30 Auto Lux Value
     strcpy (obs[oidx].sensor[sidx].id, "bhlx");

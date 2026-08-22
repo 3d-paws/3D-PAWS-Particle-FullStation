@@ -5,13 +5,16 @@
 #include "Particle.h"
 #line 1 "/Users/rjbubon/Documents/Particle/3D-PAWS-Particle-FullStation/src/FullStation.ino"
 void HeartBeat();
+void DoReboot();
+void DoLowPower();
 void BackGroundWork();
+void MainWork();
 void setup();
 void loop();
 #line 1 "/Users/rjbubon/Documents/Particle/3D-PAWS-Particle-FullStation/src/FullStation.ino"
-PRODUCT_VERSION (48);
+PRODUCT_VERSION (49);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260426v48"
+#define VERSION_INFO "FS-260822v49"
 
 /*
  *======================================================================================================================
@@ -270,7 +273,7 @@ PRODUCT_VERSION (48);
  *          2025-11-19  RJB Bug Fix in SD_TouchFile() touch not using passed file name
  *          2025-12-24  RJB Minor code cleanups. Moved some things around
  *          2026-01-05  RJB Modified Wind_Distance_Air_Initialize() to not do Wind if AQS Station
- *          2026-01-29  RJB evt_initialize() now check cf_sr_cal != 0.0 to prevent divide by zero in evt_readIrradiance()
+ *          2026-01-29  RJB evt_initialize() now check scv.sr_cal != 0.0 to prevent divide by zero in evt_readIrradiance()
  *          2026-02-02  RJB Bug Fix evt_do() now set the acc.hour_key for the next hourly period Reverted on 2/4
  * 
  *          Version 45 Released on 2026-03-12
@@ -307,9 +310,18 @@ PRODUCT_VERSION (48);
  *                         Add BMP581 and SMT45 - rework the i2c 0x44 - 0x47 sensore handling
  *                         Cleaned up the printing of floating point numbers to use %.2f
  * 
- *          Version 49 Released on 2026-XX-XX
+ *          Version 49 Release on 2026-08-22
  *          2026-04-29 RJB Blocked ISRs while in Wind_SampleSpeed()'s critical region
  *          2026-04-30 RJB Added SHT Serial Number to initialization output and INFO. Also heater info.
+ *          2026-07-19 RJB Controlled firmware updates - reworked the loop()
+ *                         Config in NV Memory
+ *                         New Distance Sensor
+ *                         EEPROM Init check if n2sfp is not 0 and there is no n2s file then reset the file offset
+ *                         Added CRT.TXT and CNV.TXT
+ *                         Added DoAction CNV - Clear NV
+ *                         Removed VEML and HIH8 support
+ *                         Now supporting WiFi Variables in NC config file and System Configuration Variables SCV data structure
+ *                         Moving to CONFIG.TXT on SD away from individual TXT files.
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -379,7 +391,6 @@ PRODUCT_VERSION (48);
  *  Adafruit_Sensor         https://github.com/adafruit/Adafruit_Sensor - 1.1.4
  *  Adafruit_SHT31          https://github.com/adafruit/Adafruit_SHT31 - 2.2.0 I2C ADDRESS 0x44 and 0x45 when ADR Pin High
  *  Adafruit_SHT4x          https://github.com/adafruit/Adafruit_SHT4x           - I2C ADDRESS 0x44
- *  Adafruit_VEML7700       https://github.com/adafruit/Adafruit_VEML7700/ - 2.1.2 I2C ADDRESS 0x10
  *  Adafruit_SI1145         https://github.com/adafruit/Adafruit_SI1145_Library - 1.1.1 - I2C ADDRESS 0x60
  *  Adafruit_SSD1306        https://github.com/adafruit/Adafruit_SSD1306 - 2.4.6 - I2C ADDRESS 0x3C  
  *  Adafruit_PM25AQI        https://github.com/adafruit/Adafruit_PM25AQI - 1.0.6 I2C ADDRESS 0x12 - Modified to Compile, Adafruit_PM25AQI.cpp" line 104
@@ -396,7 +407,6 @@ PRODUCT_VERSION (48);
  *  RF9X-RK-SPI1            https://github.com/rickkas7/AdafruitDataLoggerRK - 0.2.0 - Modified RadioHead LoRa for SPI1
  *  AES-master              https://github.com/spaniakos/AES - 0.0.1 - Modified to make it compile
  *  CryptoLW-RK             https://github.com/rickkas7/CryptoLW-RK - 0.2.0
- *  HIH8000                 No Library, Local functions hih8_initialize(), hih8_getTempHumid() - rjb
  *  SENS0390                https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390 - DFRobot_B_LUX_V30B - 1.0.1 I2C ADDRESS 0x94
  *  EEPROM                  https://docs.particle.io/reference/device-os/api/eeprom/eeprom/
  *                          On Gen 3 devices (Argon, Boron, B Series SoM, Tracker SoM, and E404X) 
@@ -711,6 +721,7 @@ PRODUCT_VERSION (48);
 #include "include/support.h"        // Support Functions
 #include "include/sdcard.h"         // SD Card Functions
 #include "include/cf.h"             // Configuration File Variables
+#include "include/nvcf.h"           // Non Volitile Configuration File
 #include "include/eeprom.h"         // EEPROM Functions
 #include "include/lora.h"           // LoRa Functions    
 #include "include/output.h"         // Serial and OLED Output Functions  
@@ -720,6 +731,7 @@ PRODUCT_VERSION (48);
 #include "include/time.h"           // Time Management Functions
 #include "include/ps.h"             // Particle Support Functions
 #include "include/sensors_i2c_44_47.h" // Handle i2c Sensors in this address range
+#include "include/tf02pro.h"        // TF02Pro TOF Distance Sensor
 
 #include "include/sensors.h"        // I2C Based Sensor Functions
 #include "include/evt.h"            // Evapotranspiration Functions
@@ -753,12 +765,7 @@ int countdown = 600;          // Exit station monitor/mode - when countdown reac
 uint64_t LastTimeUpdate = 0;
 uint64_t LastTransmitTime = 0;
 
-int  cf_reboot_countdown_timer = 79200; // There is overhead transmitting data so take off 2 hours from 86400s
-                                        // Set to 0 to disable feature
 int DailyRebootCountDownTimer;
-
-uint64_t obs_interval = DEFAULT_OBS_INTERVAL;  // Default OBS interval 1 Minute
-uint64_t obs_tx_interval = DEFAULT_OBS_TRANSMIT_INTERVAL;  // Default OBS Transmit interval 15 Minutes
 
 
 #if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
@@ -766,7 +773,6 @@ PMIC pmic; // Power Management IC (bq24195) I2C 0x6B
 #else
 // FuelGauge fuel;  // Fuel Gauge IC (MAX17043) I2C 0x36
 #endif
-
 
 /*
  * ======================================================================================================================
@@ -787,20 +793,130 @@ void HeartBeat() {
 
 /*
  * ======================================================================================================================
- * BackGroundWork() - Take Sensor Reading, Check LoRa for Messages, Delay 1 Second for use as timming delay            
+ * DoReboot() - 
+ * ======================================================================================================================
+ */
+void DoReboot() {
+  if (Particle.connected()) {
+    OBS_PublishAll();
+  }
+
+  EEPROM_SaveUnreportedRain();
+  delay(1000);
+
+  // Lets not rip the rug out from the modem. Do a graceful shutdown.
+  Particle.disconnect();
+  waitFor(Particle.disconnected, 1000);  // Returns true when disconnected from the Cloud.
+
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+  // Be kind to the cell modem and try to shut it down
+  Cellular.disconnect();
+  delay(1000);
+  Cellular.off();
+#endif
+
+  Output("Rebooting");  
+  delay(1000);
+   
+  DeviceReset();
+
+  // We should never get here, but just incase 
+  Output("I'm Alive! Why?");  
+
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+		  Cellular.on();
+      delay(1000);
+#endif
+
+	Particle.connect();
+
+  DailyRebootCountDownTimer = scv.rcdt; // Reset count incase reboot fails
+
+  // We need to reinitialize our wind readings before we can move on.
+  if (!scv.aqs) {
+     Wind_Distance_Air_Initialize();
+  }
+}
+
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+/*
+ * ======================================================================================================================
+ * DoLowPower() - 
+ * ======================================================================================================================
+ */
+void DoLowPower() {
+  if (Particle.connected()) {
+    OBS_PublishAll(); 
+    INFO_Do();
+  }
+
+  // While this function will disconnect from the Cloud, it will keep the connection to the network.
+  Particle.disconnect();
+  waitFor(Particle.disconnected, 1000);  // Returns true when disconnected from the Cloud.
+      
+  Cellular.disconnect();
+  delay(1000);
+  Cellular.off();
+       
+  if (LORA_exists) {
+    rf95.sleep(); // Power Down LoRa. Note: it turn on when accessed
+  }
+
+  Output("Powering Down");
+
+  OLED_sleepDisplay();
+  delay(5000);
+
+  // Disabling the BATFET disconnects the battery from the PMIC. Since there
+	// is no longer external power, this will turn off the device.
+	pmic.disableBATFET();
+
+	// This line should not be reached. When power is applied again, the device
+	// will cold boot starting with setup().
+
+	// However, there is a potential for power to be re-applied while we were in
+	// the process of shutting down so if we're still running, enable the BATFET
+	// again and reconnect to the cloud. Wait a bit before doing this so the
+	// device has time to actually power off.
+	delay(2000);
+
+  OLED_wakeDisplay();   // May need to toggle the Display reset pin.
+	delay(2000);
+	Output("Power Re-applied");
+
+  // WakeUp LoRa
+  // May need to toggle LoRa Reset
+
+	pmic.enableBATFET();
+
+	Cellular.on();
+
+	Particle.connect();
+
+  // We need to reinitialize our wind readings before we can move on.
+  if (!scv.aqs) {
+    Wind_Distance_Air_Initialize();
+  }
+}
+#endif
+
+/*
+ * ======================================================================================================================
+ * BackGroundWork() - Take Sensor Reading, Check LoRa for Messages, Delay 1 Second for use as timing delay            
  * ======================================================================================================================
  */
 void BackGroundWork() {
   // Anything that needs sampling every second add below. Example Wind Speed and Direction, StreamGauge
+  // Do not do anything that can be corrupted by a reboot/firmware update, aka writing to SD card.
 
   uint64_t OneSecondFromNow = System.millis() + 1000;
 
-  if (!AQS_Enabled) {
-    if (DoWind) {
+  if (!scv.aqs) {
+    if (scv.wind) {
       Wind_TakeReading();
     }
 
-    if (OP1_State == OP1_STATE_DISTANCE) {
+    if (scv.op1 == OP1_STATE_DISTANCE) {
       DistanceGauge_TakeReading();
     }
 
@@ -820,7 +936,7 @@ void BackGroundWork() {
     delay (TimeRemaining);
   }
 
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     if (TurnLedOff) {   // Turned on by rain gauge interrupt handler
       digitalWrite(LED_PIN, LOW);  
       TurnLedOff = false;
@@ -828,16 +944,137 @@ void BackGroundWork() {
   }
 }
 
+/*
+ * ======================================================================================================================
+ * MainWork() - 
+ * ======================================================================================================================
+ */
+void MainWork() {
+  // This will be invalid if the RTC was bad at poweron and we have not connected to Cell network
+  // Upon connection to cell network system Time is set and this becomes valid
+  if (Time.isValid()) {  
+ 
+    // Set RTC from Cell network time.
+    RTC_UpdateCheck();
+
+    if (!eeprom_valid) {
+      // We now a a valid clock so we can initialize the EEPROM
+      EEPROM_Initialize();
+      SD_CheckClearRainTotals(); // If CRT.TXT exists then Clear Rain Totals
+    }
+
+    if (SendSystemInformation && Particle.connected()) {
+      INFO_Do(); // Function sets SendSystemInformation back to false.
+    }
+
+    // If we waited too long for acks while publishing and this threw off our wind observations.
+    // In that code ws_refresh was set to true for us to reinit wind data.
+    if (!scv.aqs) {
+      if (scv.wind && ws_refresh) {
+        Output ("WS Refresh Required");
+        Wind_Distance_Air_Initialize();
+      }
+    }
+
+    // Perform an Observation, save in OBS structure, Write to SD
+    // We want to check rollover time every minute, so not misplace any collected rain in the wrong day total
+    if ( (System.millis() - lastOBS) > (static_cast<uint64_t>(scv.obi*60*1000)-AQS_Correction) || EEPROM_TimeToRollOver() || (lastOBS == 0) ) {
+       OBS_Do();
+    }
+
+    // Time to Send Observations we have collected
+    if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > static_cast<uint64_t>(scv.txi * 60 * 1000)) ) {
+      if (Particle.connected()) {
+        Output ("Connected");
+        LastTransmitTime = System.millis();
+
+        // Every 4 Hours
+        // Request time synchronization from the Cell network
+        if ((System.millis() - LastTimeUpdate) > (4*3600*1000)) {
+          // Note that this function sends a request message to the Cloud and then returns. 
+          // The time on the device will not be synchronized until some milliseconds later when 
+          // the Cloud responds with the current time between calls to your loop.
+          Particle.syncTime();
+          LastTimeUpdate = System.millis();
+        }
+
+        OBS_PublishAll();
+
+        // Update OLED and Console
+        stc_timestamp();
+        Output(timestamp);
+        Output_CellBatteryInfo();
+
+        // Shutoff System Status Bits related to initialization after we have logged first observation 
+        JPO_ClearBits();
+      }
+    }
+
+#ifdef ENABLE_Evapotranspiration
+    // Samples once a minute and reports on the hour 
+    evt_do();
+#endif
+
+#if PLATFORM_ID == PLATFORM_ARGON
+    // See if it's been an hour without a network connection and transmission of data
+    // With Argon WiFi we have seen it stuck in Breathing Green - Trying to connect
+    if (System.millis() - LastTransmitTime > (3600 * 1000)) {  
+      // Been too long with out a network connection, lets reboot
+      Output("1HR W/O NW: Rebooting");
+      delay(5000);
+      System.reset();
+    }
+#endif
+    // Do background work, delays 1 Second
+    BackGroundWork();
+  }
+  else {
+
+    stc_timestamp();
+     Output(timestamp);
+    Output("ERR: No Clock");
+    delay (DELAY_NO_RTC);
+  }
+
+  // ========================================================================================
+  // Reboot Boot Every 22+ hours - Not using time but a loop counter.
+  // ========================================================================================
+  if ((scv.rcdt>0) && (--DailyRebootCountDownTimer<=0)) {
+    Output ("Daily Reboot");
+    DoReboot();
+  }   
+
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
+  // ========================================================================================
+  // Low Power Check and Power Off
+  // ========================================================================================
+
+  // Before we go do an observation and transmit, check our power status.
+  // If we are not connected to a charging source and our battery is at a low level
+  // then power down the display and board. Wait for power to return.
+  // Do this at a high enough battery level to avoid the board from powering
+  // itself down out of our control. Also when power returns to be able to charge
+  // the battery and transmit with out current drops causing the board to reset or 
+  // power down out of our control.
+
+  if ((System.powerSource() == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 15.0)) {
+    Output("Low Power!");
+    DoLowPower();
+  }
+#endif
+}
+
 // You must use SEMI_AUTOMATIC or MANUAL mode so the battery is properly reconnected on
 // power-up. If you use AUTOMATIC, you may be unable to connect to the cloud, especially
 // on a 2G/3G device without the battery.
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
-// https://docs.particle.io/cards/firmware/system-thread/system-threading-behavior/
-SYSTEM_THREAD(ENABLED);
-
 // Ensures FEATURE_RESET_INFO is set before setup(), fixing garbage data.
 STARTUP(System.enableFeature(FEATURE_RESET_INFO));
+
+
+// Enable Particle debug logging
+// SerialLogHandler logHandler(LOG_LEVEL_INFO);
 
 /*
  * ======================================================================================================================
@@ -895,34 +1132,32 @@ void setup() {
 
   HeartBeat(); // Lets refresh Watchdog - just because we can
 
-  // Set Daily Reboot Timer
-  DailyRebootCountDownTimer = cf_reboot_countdown_timer;
-
   // Initialize SD card if we have one.
   SD_initialize();
 
-  // Report if we have Need to Send Observations
-  if (SD_exists && SD.exists(SD_n2s_file)) {
-    SystemStatusBits |= SSB_N2S; // Turn on Bit
-    Output("N2S:Exists");
+  if (SD_exists) {
+    SD_GetSystemVariables();  // Read in main and individual configuration files and set system variables
+
+    if (!nv_config_enabled) {
+      // There was no aqs config line in the config file, so we have not converted to using just a config file.
+      // The below save the system config variable to the config file and thus converting us.
+      (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
+    }
+    // No matter what we should update the NV config file with what was read from SD.
+    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
   }
   else {
-    SystemStatusBits &= ~SSB_N2S; // Turn Off Bit
-    Output("N2S:None");
+    nv_loadConfig();
   }
+  nv_printCfg();
 
-  // Rename A4 and A5 files used in releases prior to release 40. 
-  // Remove function this when we determine all sites are at release 40 or greater
-  SD_A4A5_Rename();
-
-  // If config file exists it is opened and read
-  SD_ReadConfigFile();
-
-  // If elevation file exists it is opened, read and elevation set, else 0
-  SD_ReadElevationFile();
-
-  // If offset file exists it is opened, read and rain total rollover offset set, else 0
-  SD_Read_RTRO_File();
+  // Check Daily Reboot Timer, we do not want to allow rebooting under an hour
+  if ((scv.rcdt > 0) && (scv.rcdt < 3600)) {
+    // Override the config file.
+    scv.rcdt = 79200;
+    Output ("RCDT:79200");
+  }
+  DailyRebootCountDownTimer = scv.rcdt;
 
   // Display EEPROM Information 
   EEPROM_Dump();
@@ -963,7 +1198,7 @@ void setup() {
 #endif
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
-  network_initialize();
+  MUON_network_initialize();
   WiFiPrintCredentials();
 
   // Turn on GPS
@@ -980,7 +1215,7 @@ void setup() {
   // Check if we need to program for WiFi change
   //==================================================
   WiFiPrintCredentials();
-  WiFiChangeCheck();
+  ARGON_network_initialize(); 
   WiFiPrintCredentials();
 #endif
 
@@ -992,17 +1227,16 @@ void setup() {
 #endif
 
   // Check SD Card for file to determine if we are a Air Quality Station
-  OPT_AQS_Initialize(); // Sets AQS_Enabled to true
+  OPT_AQS_Initialize();
 
   //==================================================
   // Wind Speed and Rain Gauge Interrupt Based Sensors
   //==================================================
-  if (!AQS_Enabled) {
+  if (!scv.aqs) {
     OP1_Initialize(); // Check for files to determine OP1 Pin Configuration (DIST, 2nd Rain Gauge or Raw)
     OP2_Initialize(); // Check for files to determine OP2 Pin Configuration (Raw, Voltaic Voltage)
 
-    CheckNoWindFile(); // if NOWIND.TXT found then DoWind is set false
-    if (DoWind) {
+    if (scv.wind) {
       // Optipolar Hall Effect Sensor SS451A - Wind Speed
       pinMode(ANEMOMETER_IRQ_PIN, INPUT);
       anemometer_interrupt_count = 0;
@@ -1011,9 +1245,7 @@ void setup() {
 
       as5600_initialize();
     }
-
-    CheckNoRainFile(); // if NORAIN.TXT found then DoRain is set false
-    if (DoRain) {
+    if (scv.rg1) {
       // Optipolar Hall Effect Sensor SS451A - Rain Gauge
       pinMode(RAINGAUGE1_IRQ_PIN, INPUT);
       raingauge1_interrupt_count = 0;
@@ -1024,15 +1256,10 @@ void setup() {
   }
   else {
     // Air Quality Station Enabled
-    DoWind = false; // Make sure wind is off (it's on by default)
-    DoRain = false; // Make sure rain is off (it's on by default)
+    scv.wind = false; // Make sure wind is off (it's on by default)
+    scv.rg1 = false; // Make sure rain is off (it's on by default)
   }
-
-  // Check SD Card for files to determine Observation and Transmit Intervals
-  OBI_TXI_Initialize();
   
-
-
 #if (PLATFORM_ID == PLATFORM_MSOM)
   pmts_initialize();  // Particle Muon on board temperature sensor (TMP112A)
 #endif
@@ -1055,14 +1282,12 @@ void setup() {
 #if (PLATFORM_ID != PLATFORM_MSOM)
   htu21d_initialize();  // This sensor has same i2c address as AS5600L
 #endif
+
   mcp9808_initialize();
-  // sht_initialize();
-  hih8_initialize();
   si1145_initialize();
-  vlx_initialize();
   blx_initialize();
+  BH1750_init();
   pm25aqi_initialize();
-  // hdc_initialize();
   lps_initialize();
 
   // Tinovi Mositure Sensors
@@ -1070,6 +1295,8 @@ void setup() {
   tlw_initialize();
 #endif
   tmsm_initialize();
+
+  tf02pro_initialize();
   
   // Derived Observations
   wbt_initialize();
@@ -1098,6 +1325,10 @@ void setup() {
 
   // Note if we call Particle.connect() and are not truely connected to the Cell network, Code blocks in particle call
   Particle.setDisconnectOptions(CloudDisconnectOptions().graceful(true).timeout(5s));
+
+  // Let us control when a update is applied
+  System.disableUpdates();
+
   Particle.connect();
   
   // Setup Remote Function to DoAction, Expects a parameter to be passed from Particle to control what action
@@ -1125,7 +1356,7 @@ void setup() {
   }
 
   // Lets force a publish if not doing 1 minute observations
-  if (obs_interval != DEFAULT_OBS_INTERVAL) {
+  if (scv.obi != DEFAULT_OBS_INTERVAL) {
     lastOBS = 0;
     LastTransmitTime = 0; 
   }
@@ -1138,219 +1369,81 @@ void setup() {
  * ======================================================================================================================
  */
 void loop() {
-  // If Serial Console Pin LOW then Display Station Information
-  // if (0 && countdown && digitalRead(SCE_PIN) == LOW) {     // !!!!!!!!!!!! Remove the 0
-  if (countdown && digitalRead(SCE_PIN) == LOW) {     
-    StationMonitor();
-    BackGroundWork();
-    countdown--;
-  }
-  else { // Normal Operation - Main Work
-
-    // This will be invalid if the RTC was bad at poweron and we have not connected to Cell network
-    // Upon connection to cell network system Time is set and this becomes valid
-    if (Time.isValid()) {  
- 
-      // Set RTC from Cell network time.
-      RTC_UpdateCheck();
-
-      if (!eeprom_valid) {
-        // We now a a valid clock so we can initialize the EEPROM
-        EEPROM_Initialize();
-      }
-
-      if (SendSystemInformation && Particle.connected()) {
-        INFO_Do(); // Function sets SendSystemInformation back to false.
-      }
-
-      // If we waited too long for acks while publishing and this threw off our wind observations.
-      // In that code ws_refresh was set to true for us to reinit wind data.
-      if (!AQS_Enabled) {
-        if (DoWind && ws_refresh) {
-          Output ("WS Refresh Required");
-          Wind_Distance_Air_Initialize();
+  switch (ota_state) {
+    case NO_UPDATE:
+        if (System.updatesPending()) { // This is only true while a deferred OTA update is pending and has not yet been delivered.
+                                           // If an OTA update fails, System.updatesPending() will normally be false
+          enterOTAState(UPDATE_PENDING);
         }
-      }
-
-      // Perform an Observation, save in OBS structure, Write to SD
-      // We want to check rollover time every minute, so not misplace any collected rain in the wrong day total
-      if ( (System.millis() - lastOBS) > ((obs_interval*60*1000)-AQS_Correction) || EEPROM_TimeToRollOver() || (lastOBS == 0) ) {
-        OBS_Do();
-      }
-
-      // Time to Send Observations we have collected
-      if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > (obs_tx_interval * 60 * 1000)) ) {
-        if (Particle.connected()) {
-          Output ("Connected");
-          LastTransmitTime = System.millis();
-
-          // Incase we are staying connected to the Cell network
-          // request time synchronization from the Cell network - Every 4 Hours
-          if ((System.millis() - LastTimeUpdate) > (4*3600*1000)) {
-            // Note that this function sends a request message to the Cloud and then returns. 
-            // The time on the device will not be synchronized until some milliseconds later when 
-            // the Cloud responds with the current time between calls to your loop.
-
-            // !!! What if we drop the Cell connection before we get a time update for the Cloud?
-            //     If we have 15 observations to send, that 15s + 5s graceful particle disconnect
-            Particle.syncTime();
-            LastTimeUpdate = System.millis();
+        else {
+          // If Serial Console Pin LOW then Display Station Information
+          if (countdown && digitalRead(SCE_PIN) == LOW) {
+          // if (0) { // !!!!!!!!!!! Remove this and add the above line before release
+            StationMonitor();
+            BackGroundWork();
+            countdown--;
           }
-
-          OBS_PublishAll();
-
-          // Update OLED and Console
-          stc_timestamp();
-          Output(timestamp);
-          Output_CellBatteryInfo();
-
-          // Shutoff System Status Bits related to initialization after we have logged first observation 
-          JPO_ClearBits();
+          else {
+            MainWork(); // This calls BackGroundWork() which provide the 1s delay
+          }
         }
-      }
+        break;
 
-#ifdef ENABLE_Evapotranspiration
-      // Samples once a minute and reports on the hour 
-      evt_do();
-#endif
+    case UPDATE_PENDING:
+        Output("OTA:UPDATE_PENDING");
+        // Send cached observations - Stop normal work and allow OTA to proceed.
+        if (Particle.connected()) {
+            OBS_PublishAll();
+        }
+        EEPROM_SaveUnreportedRain();
 
-#if PLATFORM_ID == PLATFORM_ARGON
-      // See if it's been an hour without a network connection and transmission of data
-      // With Argon WiFi we have seen it stuck in Breathing Green - Trying to connect
-      if (System.millis() - LastTransmitTime > (3600 * 1000)) {  
-        // Been too long with out a network connection, lets reboot
-        Output("1HR W/O NW: Rebooting");
-        delay(5000);
-        System.reset();
-      }
-#endif
-      // Do background work, delays 1 Second
-      BackGroundWork();
-    }
-    else {
+        System.enableUpdates();
+        delay (1000);
 
-      stc_timestamp();
-      Output(timestamp);
-      Output("ERR: No Clock");
-      delay (DELAY_NO_RTC);
-    }
+        // Force a new handshake by reconnecting to start the downaload.
+        Output("OTA:DO_NEW_HANDSHAKE");
+        Particle.disconnect(CloudDisconnectOptions().graceful(true).timeout(3000));
+        waitFor(Particle.disconnected, 5000);
 
-    // ========================================================================================
-    // Reboot Boot Every 22+ hours - Not using time but a loop counter.
-    // ========================================================================================
-    if ((cf_reboot_countdown_timer>0) && (--DailyRebootCountDownTimer<=0)) {
-      Output ("Daily Reboot");
+        Particle.connect();
+        waitFor(Particle.connected, 10000);
 
-      if (Particle.connected()) {
-        OBS_PublishAll();
-      }
+        enterOTAState(WAITING_FOR_UPDATE);
+        Output("OTA:WAITING_FOR_UPDATE");
+        break;
 
-      EEPROM_SaveUnreportedRain();
-      delay(1000);
+    case WAITING_FOR_UPDATE:
+        // Normally the device will reboot for the OTA.
+        // If it does not, time out and recover.
+        if (millis() - ota_stateStarted > UPDATE_WAIT_MS) {
+          enterOTAState(UPDATE_FAILED);
+        }
+        else {
+          BackGroundWork();
+        }
+        break;
 
-      // Lets not rip the rug out from the modem. Do a graceful shutdown.
-      Particle.disconnect();
-      waitFor(Particle.disconnected, 1000);  // Returns true when disconnected from the Cloud.
+    case UPDATE_FAILED:
+        Output("OTA:UPDATE_FAILED");
+        // After a failed update:
+        // The previous pending-update state has been consumed by the failed attempt.
+        // The device is no longer in a “pending but not delivered” state.
+        // So System.updatesPending() returns false again
 
-#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
-      // Be kind to the cell modem and try to shut it down
-      Cellular.disconnect();
-      delay(1000);
-      Cellular.off();
-#endif
+        // Particle’s OTA troubleshooting docs say the cloud backs off failed OTAs: 
+        // first retry after 5 minutes, then doubling each time up to 1 hour.
 
-      Output("Rebooting");  
-      delay(1000);
-   
-      DeviceReset();
+        DoReboot();
 
-      // We should never get here, but just incase 
-      Output("I'm Alive! Why?");  
+        // The other option is to continue on with normal operation
+        // System.disableUpdates();
+        // enterOTAState(NO_UPDATE);
+        break;
 
-#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
-		  Cellular.on();
-      delay(1000);
-#endif
-
-		  Particle.connect();
-
-      DailyRebootCountDownTimer = cf_reboot_countdown_timer; // Reset count incase reboot fails
-
-      // We need to reinitialize our wind readings before we can move on.
-      if (!AQS_Enabled) {
-        Wind_Distance_Air_Initialize();
-      }
-    }   
-
-#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
-    // ========================================================================================
-    // Low Power Check and Power Off
-    // ========================================================================================
-
-    // Before we go do an observation and transmit, check our power status.
-    // If we are not connected to a charging source and our battery is at a low level
-    // then power down the display and board. Wait for power to return.
-    // Do this at a high enough battery level to avoid the board from powering
-    // itself down out of our control. Also when power returns to be able to charge
-    // the battery and transmit with out current drops causing the board to reset or 
-    // power down out of our control.
-
-    if ((System.powerSource() == POWER_SOURCE_BATTERY) && (System.batteryCharge() <= 15.0)) {
-      Output("Low Power!");
-
-      if (Particle.connected()) {
-        OBS_PublishAll(); 
-        INFO_Do();
-      }
-
-      // While this function will disconnect from the Cloud, it will keep the connection to the network.
-      Particle.disconnect();
-      waitFor(Particle.disconnected, 1000);  // Returns true when disconnected from the Cloud.
-      
-      Cellular.disconnect();
-      delay(1000);
-      Cellular.off();
-       
-      if (LORA_exists) {
-        rf95.sleep(); // Power Down LoRa. Note: it turn on when accessed
-      }
-
-      Output("Powering Down");
-
-      OLED_sleepDisplay();
-      delay(5000);
-
-      // Disabling the BATFET disconnects the battery from the PMIC. Since there
-		  // is no longer external power, this will turn off the device.
-		  pmic.disableBATFET();
-
-		  // This line should not be reached. When power is applied again, the device
-		  // will cold boot starting with setup().
-
-		  // However, there is a potential for power to be re-applied while we were in
-		  // the process of shutting down so if we're still running, enable the BATFET
-		  // again and reconnect to the cloud. Wait a bit before doing this so the
-		  // device has time to actually power off.
-		  delay(2000);
-
-      OLED_wakeDisplay();   // May need to toggle the Display reset pin.
-		  delay(2000);
-		  Output("Power Re-applied");
-
-      // WakeUp LoRa
-      // May need to toggle LoRa Reset
-
-		  pmic.enableBATFET();
-
-		  Cellular.on();
-
-		  Particle.connect();
-
-      // We need to reinitialize our wind readings before we can move on.
-      if (!AQS_Enabled) {
-        Wind_Distance_Air_Initialize();
-      }
-    }
-#endif
-  }
+    default:
+        // Should never get here
+        Output("OTA:DEFAULT-REBOOTING");
+        DoReboot();
+        break;
+  } // end switch
 }

@@ -30,7 +30,6 @@
  * =======================================================================================================================
  */
 SdFat SD;                               // File system object.
-File SD_fp;
 char SD_obsdir[] = "/OBS";              // Store our observations in this directory. At Poewer on it is created if not exist
 bool SD_exists = false;                 // Set to true if SD card found at boot
 char SD_n2s_file[] = "N2SOBS.TXT";      // Need To Send Observation file
@@ -43,20 +42,21 @@ char SD_crt_file[] = "CRT.TXT";         // File used to clear NV Rain Totals. Fi
 
 char SD_simold_file[] = "SIMOLD.TXT";   // SIM.TXT renamed to this after sim configuration set
 
-char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
+char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
 
-                                        
+// The below files are used in setting system configuration variables. 
+// ================================================================================
+// As of Version 49 the below are depricated. Settings will be saved in CONFIG.TXT
+// ================================================================================
+char SD_wifi_file[] = "WIFI.TXT";       // File used to set WiFi configuration
+char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
+                                  
 char SD_TX5M_FILE[]  = "TXI5M.TXT";     // Transmit Interval every 5 Minutes with 1 Minute Observations
 char SD_TX10M_FILE[] = "TXI10M.TXT";    // Transmit Interval every 10 Minutes with 1 Minute Observations
                                         // Transmit Interval every 15 Minutes with 1 Minute Observations Default
-
 char SD_OB5M_FILE[]  = "OBI5M.TXT";     // Observation Interval every 5 Minutes
 char SD_OB10M_FILE[] = "OBI10M.TXT";    // Observation Interval every 10 Minutes
 char SD_OB15M_FILE[] = "OBI15M.TXT";    // Observation Interval every 15 Minutes
-
-char SD_INFO_FILE[] = "INFO.TXT";       // Store INFO information in this file. Every INFO call will overwrite content
-
-char SD_OPTAQS_FILE[] ="OPTAQS.TXT";    // Enable Air Quality Station, Use OP2_PN to contril sensor
 
 char SD_OP1_DIST_FILE[] = "OP1DIST.TXT";// File used to set pin as a Distance Gauge
 char SD_OP1_RAIN_FILE[] = "OP1RAIN.TXT";// File used to set pin as a 2nd Rain Gauge
@@ -392,7 +392,7 @@ void SD_N2S_Publish() {
             // So make the observation and stay in the loop if we have space in the OBS array.
             // We need to avoid a full array that would cause all observations to be saved to N2S file 
             // we currently have open, a bad thing.
-            if ( (System.millis() - lastOBS) > (scv.obi*60*1000)) {
+            if ( (System.millis() - lastOBS) > static_cast<uint64_t>(scv.obi*60*1000)) {
               Output ("N2S:OBS Needed");
               if (OBS_Full()) {
                 // need to get out of this loop and let the main loop make the needed observation

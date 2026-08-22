@@ -33,7 +33,7 @@ SCV scv; // System Configuration Variables
  */
 static const char* NV_CONFIG_FILE = "/CONFIG.TXT";
 static const char* NV_TEMP_FILE   = "/CONFIG.TMP";
-
+bool nv_config_enabled=false;
 
 /*
  * ======================================================================================================================
@@ -60,7 +60,11 @@ bool nv_parseLine(const String& line) {
     String val = s.substring(eq + 1);
     val.trim();
 
-    if (key == "aqs") scv.aqs = val.toInt();
+    if (key == "aqs") {
+      scv.aqs = val.toInt();
+      // If aqs is in the config file then we have already migrated away from individual files 
+      nv_config_enabled=true;
+    }
     else if (key == "wind") scv.wind = val.toInt();
     else if (key == "rg1") scv.rg1 = val.toInt();
     else if (key == "op1") scv.op1 = val.toInt();
@@ -77,6 +81,9 @@ bool nv_parseLine(const String& line) {
     else if (key == "lora_unitid") scv.lora_unitid = val.toInt();
     else if (key == "lora_txpower") scv.lora_txpower = val.toInt();
     else if (key == "lora_freq") scv.lora_freq = val.toInt();
+    else if (key == "wifi_auth") scv.wifi_auth = val;
+    else if (key == "wifi_ssid") scv.wifi_ssid = val;
+    else if (key == "wifi_pw") scv.wifi_pw = val;
 #ifdef ENABLE_Evapotranspiration
     else if (key == "lat_deg") scv.lat_deg = val.toFloat();
     else if (key == "lon_deg") scv.lon_deg = val.toFloat();
@@ -107,6 +114,31 @@ static ssize_t nv_writeAll(int fd, const char* data, size_t len) {
 
 /*
  * ======================================================================================================================
+ * sd_writeAll() -- Use FsFile with SdFat v2 / SdFs.
+ * =======================================================================================================================
+ */
+static ssize_t sd_writeAll(FsFile& fp, const char* data, size_t len) {
+    size_t total = 0;
+
+    while (total < len) {
+        size_t n = fp.write(
+            reinterpret_cast<const uint8_t*>(data + total),
+            len - total
+        );
+
+        // SdFat write() returns the count actually written.
+        // A zero-byte write before completion is a failure/no-progress case.
+        if (n == 0) {
+            return -1;
+        }
+
+        total += n;
+    }
+    return static_cast<ssize_t>(total);
+}
+
+/*
+ * ======================================================================================================================
  * nv_writeLine()
  * =======================================================================================================================
  */
@@ -123,17 +155,35 @@ static bool nv_writeLine(int fd, const char* fmt, ...) {
 
 /*
  * ======================================================================================================================
+ * sd_writeLine()
+ * =======================================================================================================================
+ */
+static bool sd_writeLine(File& fp, const char* fmt, ...) {
+    char buf[160];
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+
+    if (n < 0 || static_cast<size_t>(n) >= sizeof(buf)) {
+        return false;
+    }
+    return sd_writeAll(fp, buf, static_cast<size_t>(n)) == n;
+}
+
+/*
+ * ======================================================================================================================
  * nv_loadConfig()
  * =======================================================================================================================
  */
 bool nv_loadConfig() {
     int fd = open(NV_CONFIG_FILE, O_RDONLY);
     if (fd < 0) {
-      sprintf(msgbuf, "NVCF:%s NF, Using Defaults", NV_CONFIG_FILE);
+      sprintf(msgbuf, "NVLC:%s NF, Using Defaults", NV_CONFIG_FILE);
       Output(msgbuf);
       return false;
     }
-    sprintf(msgbuf, "NVCF:%s Found", NV_CONFIG_FILE);
+    sprintf(msgbuf, "NVLC:%s Found", NV_CONFIG_FILE);
     Output(msgbuf);
 
     String line;
@@ -161,6 +211,52 @@ bool nv_loadConfig() {
 
 /*
  * ======================================================================================================================
+ * sd_loadConfig()
+ * =======================================================================================================================
+ */
+bool sd_loadConfig() {
+  if (SD_exists) {
+    File fp = SD.open(NV_CONFIG_FILE, FILE_READ);
+    if (!fp) {
+        sprintf(msgbuf, "SDLC:%s NF, Using Defaults", NV_CONFIG_FILE);
+        Output(msgbuf);
+        return false;
+    }
+    sprintf(msgbuf, "SDLC:%s Found", NV_CONFIG_FILE);
+    Output(msgbuf);
+
+    String line;
+
+    while (true) {
+        int c = fp.read();
+        if (c < 0) {
+            break;
+        }
+
+        char ch = static_cast<char>(c);
+
+        if (ch == '\n') {
+            nv_parseLine(line);
+            line = "";
+        } else if (ch != '\r') {
+            line += ch;
+        }
+    }
+
+    if (line.length() > 0) {
+        nv_parseLine(line);
+    }
+
+    fp.close();
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+/*
+ * ======================================================================================================================
  * nv_saveConfig()
  * =======================================================================================================================
  */
@@ -178,8 +274,8 @@ bool nv_saveConfig() {
     ok &= nv_writeLine(fd, "op1d5m=%d\n", scv.op1d5m);
     ok &= nv_writeLine(fd, "op2=%d\n", scv.op2);
     ok &= nv_writeLine(fd, "elevation=%d\n", scv.elevation);
-    ok &= nv_writeLine(fd, "rtro_hour=%s\n", scv.rtro_hour);
-    ok &= nv_writeLine(fd, "rtro_minute=%s\n", scv.rtro_minute);
+    ok &= nv_writeLine(fd, "rtro_hour=%d\n", scv.rtro_hour);
+    ok &= nv_writeLine(fd, "rtro_minute=%d\n", scv.rtro_minute);
     ok &= nv_writeLine(fd, "rcdt=%d\n", scv.rcdt);
     ok &= nv_writeLine(fd, "txi=%d\n", scv.txi);
     ok &= nv_writeLine(fd, "obi=%d\n", scv.obi);
@@ -188,6 +284,9 @@ bool nv_saveConfig() {
     ok &= nv_writeLine(fd, "lora_unitid=%d\n", scv.lora_unitid);
     ok &= nv_writeLine(fd, "lora_txpower=%d\n", scv.lora_txpower);
     ok &= nv_writeLine(fd, "lora_freq=%d\n", scv.lora_freq);
+    ok &= nv_writeLine(fd, "wifi_auth=%s\n", scv.wifi_auth.c_str());
+    ok &= nv_writeLine(fd, "wifi_ssid=%s\n", scv.wifi_ssid.c_str());
+    ok &= nv_writeLine(fd, "wifi_pw=%s\n", scv.wifi_pw.c_str());
 #ifdef ENABLE_Evapotranspiration
     ok &= nv_writeLine(fd, "lat_deg=%.6f\n", scv.lat_deg);
     ok &= nv_writeLine(fd, "lon_deg=%.6f\n", scv.lon_deg);
@@ -207,6 +306,77 @@ bool nv_saveConfig() {
 
     remove(NV_CONFIG_FILE);
     return rename(NV_TEMP_FILE, NV_CONFIG_FILE) == 0;
+}
+
+/*
+ * ======================================================================================================================
+ * sd_saveConfig()
+ * =======================================================================================================================
+ */
+bool sd_saveConfig() {
+  if (SD_exists) {
+    File fp = SD.open(NV_TEMP_FILE, O_WRONLY | O_CREAT | O_TRUNC);
+
+    if (!fp) {
+        return false;
+    }
+
+    bool ok = true;
+
+    ok &= sd_writeLine(fp, "aqs=%d\n", scv.aqs);
+    ok &= sd_writeLine(fp, "nowind=%d\n", scv.wind);
+    ok &= sd_writeLine(fp, "rg1_enable=%d\n", scv.rg1);
+    ok &= sd_writeLine(fp, "op1=%d\n", scv.op1);
+    ok &= sd_writeLine(fp, "op1d5m=%d\n", scv.op1d5m);
+    ok &= sd_writeLine(fp, "op2=%d\n", scv.op2);
+    ok &= sd_writeLine(fp, "elevation=%d\n", scv.elevation);
+    ok &= sd_writeLine(fp, "rtro_hour=%d\n", scv.rtro_hour);
+    ok &= sd_writeLine(fp, "rtro_minute=%d\n", scv.rtro_minute);
+    ok &= sd_writeLine(fp, "rcdt=%d\n", scv.rcdt);
+    ok &= sd_writeLine(fp, "txi=%d\n", scv.txi);
+    ok &= sd_writeLine(fp, "obi=%d\n", scv.obi);
+    ok &= sd_writeLine(fp, "aes_pkey=%s\n", scv.aes_pkey.c_str());
+    ok &= sd_writeLine(fp, "aes_myiv=%ld\n", scv.aes_myiv);
+    ok &= sd_writeLine(fp, "lora_unitid=%d\n", scv.lora_unitid);
+    ok &= sd_writeLine(fp, "lora_txpower=%d\n", scv.lora_txpower);
+    ok &= sd_writeLine(fp, "lora_freq=%d\n", scv.lora_freq);
+    ok &= sd_writeLine(fp, "wifi_auth=%s\n", scv.wifi_auth.c_str());
+    ok &= sd_writeLine(fp, "wifi_ssid=%s\n", scv.wifi_ssid.c_str());
+    ok &= sd_writeLine(fp, "wifi_pw=%s\n", scv.wifi_pw.c_str());
+
+#ifdef ENABLE_Evapotranspiration
+    ok &= sd_writeLine(fp, "lat_deg=%.6f\n", scv.lat_deg);
+    ok &= sd_writeLine(fp, "lon_deg=%.6f\n", scv.lon_deg);
+    ok &= sd_writeLine(fp, "albedo=%.3f\n", scv.albedo);
+    ok &= sd_writeLine(fp, "crop_kc=%.3f\n", scv.crop_kc);
+    ok &= sd_writeLine(fp, "sr_cal=%.3f\n", scv.sr_cal);
+    ok &= sd_writeLine(fp, "sr_dark_offset=%.3f\n", scv.sr_dark_offset);
+#endif
+
+    // Commit buffered file data and filesystem metadata.
+    ok &= fp.sync();
+    fp.close();
+
+    if (!ok) {
+        SD.remove(NV_TEMP_FILE);
+        return false;
+    }
+
+    SD.remove(NV_CONFIG_FILE);
+    return SD.rename(NV_TEMP_FILE, NV_CONFIG_FILE);
+  }
+  else {
+    return false;
+  }
+}
+
+/*
+ * ======================================================================================================================
+ * saveConfig() - save system config variables to nv and sd 
+ * =======================================================================================================================
+ */
+bool saveConfig() {
+    return nv_saveConfig() && sd_saveConfig();
 }
 
 /*
@@ -239,6 +409,9 @@ void nv_printCfg() {
         {"lora_unitid", "%d", &scv.lora_unitid},
         {"lora_txpower", "%d", &scv.lora_txpower},
         {"lora_freq", "%d", &scv.lora_freq},
+        {"wifi_auth", "%s", scv.wifi_auth.c_str()},
+        {"wifi_ssid", "%s", scv.wifi_ssid.c_str()},
+        {"wifi_pw", "%s", scv.wifi_pw.c_str()},
 #ifdef ENABLE_Evapotranspiration
         {"lat_deg", "%f", &scv.lat_deg},
         {"lon_deg", "%f", &scv.lon_deg},

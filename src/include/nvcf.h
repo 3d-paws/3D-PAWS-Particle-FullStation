@@ -7,71 +7,6 @@
  * https://docs.particle.io/reference/device-os/file-system/
  * ======================================================================================================================
  */
-
-/* NV CONFIG.TXT
- * ======================================================================================================================
-aqs=0                        // 0 = fullstation, 1 = air quality
-nowind=0
-rg1_enable=0
-op1=0
-op2=0
-op1d5m=0                     // 0= 10m 1=5m Sensor
-elevation=0                  // Station elevation. File contents is elevation in meters
-rtro=0                       // H(:MM) - valid values are where H = (0-23) with optional ":" and MM = (00,15,30,45)
-rcdt=79200                   // Reboot Countdown Timer Seconds
-txi=15                       // [5,10,15]
-obi=1                        // [1,5,10,15]
-
-# Private Key - 128 bits (16 bytes of ASCII characters)
-aes_pkey=10FE2D3C4B5A6978
-
-# Initialization Vector must be and always will be 128 bits (16 bytes.)
-# The real iv is actually myiv repeated twice
-# 1234567 -> 0x12D687 = 0x00 0x12 0xD6 0x87 0x00 0x12 0xD6 0x87 
-aes_myiv=1234567
-
-# This unit's LoRa ID for Receiving and Sending Messages
-lora_unitid=1
-
-# You can set transmitter power from 5 to 23 dBm
-lora_txpower=5
-
-# Valid entries are 433, 866, 915
-lora_freq=915
-
-lat_deg=40.02
-lon_deg=-105.26
-
-# Value 0.23 (grass)
-albedo=0.23
-
-# Value 1.0 sets to baseline crop grass 
-crop_kc=1.0
-
-# Irradiance
-# Replace with your Irradiance sensor's calibration constant (µV per W/m² from the label/certificate)
-# Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
-sr_cal=75.0 
-
-# With the Irradiance sensor covered, log the raw readings, set that as dark offset.
-sr_dark_offset=0.0
- * ======================================================================================================================
- */
-
-/* SIM.TXT
- Since setting up an exterm sim is a one time thing, there is no support in the nv_cfg file
-
- sim=AUP,apn,username,passwd       // Option 1: Connect to a cellular network using APN, USERNAME and PASSWORD
-        UP,username,password       // Option 2: Connect to a cellular network using USERNAME and PASSWORD
-        APN,apn                    // Option 3: Connect to a cellular network using only APN
-*/
-
-/* WIFI.TXT
-Since WiFi is a one time set and a check there after if the file exists, there is no support in the nv_cfg file
-
-wifi=AuthType,ssid,password
-*/
-
 #include "include/evt.h"
 
 /*
@@ -83,18 +18,21 @@ wifi=AuthType,ssid,password
 #define DEFAULT_OBS_TRANSMIT_INTERVAL   15       // Transmit observations every N minutes Set to 15 for 15min Transmits
 #define DEFAULT_REBOOT_COUNTDOWN_TIMER  79200    // Set to 0 to disable feature, approx every 22 hours
 
+// The below shows what is in the CONFIG.TXT file
  typedef struct {
-    int     aqs       = 0;
-    int     wind      = 1;
-    int     rg1       = 1;
-    int     op1       = 0;
-    int     op1d5m    = 0;
-    int     op2       = 0;
+    int     aqs       = 0;  // 0=Full Station, 1=Aquality Station
+    int     wind      = 1;  // 0=Disabled, 1=Enabled
+    int     rg1       = 1;  // 0=Disabled, 1=Enabled
+    int     op1       = 0;  // 0=Null, 1=Distance, 2=Rain (rg2), 3=Raw
+    int     op1d5m    = 0;  // 0=10m Distance, 1=5m Distance Sensor
+    int     op2       = 0;  // 0=Null, 1=Raw, 2=Voltaic
     
-    int     rtro_hour   = 0;
-    int     rtro_minute = 0;
+    int     rtro_hour   = 0;  // Rain Total Rollover Hour 0-23
+    int     rtro_minute = 0;  // Rain Total Rollover Minute 0,15,30,45
 
-    int     elevation = 0;
+    // Used for MSLP and setable via Particle console DoAction
+    int     elevation = 0;    // Station Elevation in m
+
     float   lat_deg = 0.0f;
     float   lon_deg = 0.0f;
 
@@ -102,11 +40,26 @@ wifi=AuthType,ssid,password
     int     txi       = DEFAULT_OBS_TRANSMIT_INTERVAL;
     int     obi       = DEFAULT_OBS_INTERVAL;
 
+    // Private Key - 128 bits (16 bytes of ASCII characters)
     String  aes_pkey;
+
+    // Initialization Vector must be and always will be 128 bits (16 bytes.)
+    // The real iv is actually myiv repeated twice
+    // 1234567 -> 0x12D687 = 0x00 0x12 0xD6 0x87 0x00 0x12 0xD6 0x87 
     long    aes_myiv;
+
+    // This unit's LoRa ID for Receiving and Sending Messages
     int     lora_unitid   = 1;
+
+    // You can set transmitter power from 5 to 23 dBm
     int     lora_txpower  = 5;
+
+    // Valid entries are 433, 866, 915
     int     lora_freq     = 915;
+
+    String  wifi_auth;    // WEP WPA WPA2 UNSEC, Not used for MUON
+    String  wifi_ssid;
+    String  wifi_pw;
 
 #ifdef ENABLE_Evapotranspiration
     /*
@@ -140,18 +93,26 @@ wifi=AuthType,ssid,password
     float   crop_kc         = 1.0f;
 
     // Used for Irradiance Calibration
+
+    // Replace with your Irradiance sensor's calibration constant (µV per W/m² from the label/certificate)
+    // Check the calibration sticker on your SP Lite2 — it will say something like: Sensitivity: 74.8 µV per W/m²
     float   sr_cal          = 75.0f;
+
+    // With the Irradiance sensor covered, log the raw readings, set that as dark offset.
     float   sr_dark_offset  = 0.0f;
 #endif
 } SCV; // System Configuration Variables
 
-
 // Extern variables
 extern SCV scv;
+extern bool nv_config_enabled;
 
 // Function prototypes
 bool nv_loadConfig();
 bool nv_saveConfig();
+bool sd_loadConfig();
+bool sd_saveConfig();
+bool saveConfig();
 void nv_printCfg();
 bool nv_deleteConfigFiles();
 bool nv_deleteConfigIfCnvFileExists();

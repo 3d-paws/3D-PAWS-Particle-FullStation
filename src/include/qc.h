@@ -36,10 +36,10 @@
 #define QC_MAX_UV      1000.0    // unitless
 #define QC_ERR_UV      -999.9    // UV Light Error
 
-// Sensor VEML7700 - Ambient Light Sensor
-#define QC_MIN_VLX     0         // lx
-#define QC_MAX_VLX     120000    // lx - based on sensor spec
-#define QC_ERR_VLX     -999      // Ambient Light Error
+// Sensor BH1750 - DFRobot SEN0562 Ambient Light Sensor
+#define QC_MIN_BHLX    1.0       // lx
+#define QC_MAX_BHLX    65535.0   // lx - based on sensor spec
+#define QC_ERR_BHLX    -999.9    // Ambient Light Error
 
 // Sensor BLUX30 - Ambient Light Sensor
 #define QC_MIN_BLX      0.0       // lx

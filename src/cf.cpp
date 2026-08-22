@@ -37,249 +37,6 @@
  * =======================================================================================================================
  */
 
- /* 
- * =======================================================================================================================
- * Support functions for Config file
- * 
- *  https://arduinogetstarted.com/tutorials/arduino-read-config-from-sd-card
- *  
- *  myInt_1    = SD_findInt(F("myInt_1"));
- *  myFloat_1  = SD_findFloat(F("myFloat_1"));
- *  myString_1 = SD_findString(F("myString_1"));
- *  
- *  CONFIG.TXT content example
- *  myString_1=Hello
- *  myInt_1=2
- *  myFloat_1=0.74
- * =======================================================================================================================
- */
-
-int SD_findKey(const __FlashStringHelper * key, char * value) {
-  
-  // Disable LoRA SPI0 Chip Select
-  pinMode(LORA_SS, OUTPUT);
-  digitalWrite(LORA_SS, HIGH);
-  
-  File configFile = SD.open(CF_NAME);
-
-  if (!configFile) {
-    Serial.print(F("SD Card: error on opening file "));
-    Serial.println(CF_NAME);
-    return(0);
-  }
-
-  char key_string[KEY_MAX_LENGTH];
-  char SD_buffer[KEY_MAX_LENGTH + VALUE_MAX_LENGTH + 1]; // 1 is = character
-  int key_length = 0;
-  int value_length = 0;
-
-  // Flash string to string
-  PGM_P keyPoiter;
-  keyPoiter = reinterpret_cast<PGM_P>(key);
-  byte ch;
-  do {
-    ch = pgm_read_byte(keyPoiter++);
-    if (ch != 0)
-      key_string[key_length++] = ch;
-  } while (ch != 0);
-
-  // check line by line
-  while (configFile.available()) {
-    // UNIX uses LF = \n
-    // WINDOWS uses CFLF = \r\n
-    int buffer_length = configFile.readBytesUntil('\n', SD_buffer, LINE_MAX_LENGTH);
-    if (SD_buffer[buffer_length - 1] == '\r')
-      buffer_length--; // trim the \r
-
-    if (buffer_length > (key_length + 1)) { // 1 is = character
-      if (memcmp(SD_buffer, key_string, key_length) == 0) { // equal
-        if (SD_buffer[key_length] == '=') {
-          value_length = buffer_length - key_length - 1;
-          memcpy(value, SD_buffer + key_length + 1, value_length);
-          break;
-        }
-      }
-    }
-  }
-
-  configFile.close();  // close the file
-  return value_length;
-}
-
-int HELPER_ascii2Int(char *ascii, int length) {
-  int sign = 1;
-  int number = 0;
-
-  for (int i = 0; i < length; i++) {
-    char c = *(ascii + i);
-    if (i == 0 && c == '-')
-      sign = -1;
-    else {
-      if (c >= '0' && c <= '9')
-        number = number * 10 + (c - '0');
-    }
-  }
-
-  return number * sign;
-}
-
-long HELPER_ascii2Long(char *ascii, int length) {
-  int sign = 1;
-  long number = 0;
-
-  for (int i = 0; i < length; i++) {
-    char c = *(ascii + i);
-    if (i == 0 && c == '-')
-      sign = -1;
-    else {
-      if (c >= '0' && c <= '9')
-        number = number * 10 + (c - '0');
-    }
-  }
-
-  return number * sign;
-}
-
-float HELPER_ascii2Float(char *ascii, int length) {
-  int sign = 1;
-  int decimalPlace = 0;
-  float number  = 0;
-  float decimal = 0;
-
-  for (int i = 0; i < length; i++) {
-    char c = *(ascii + i);
-    if (i == 0 && c == '-')
-      sign = -1;
-    else {
-      if (c == '.')
-        decimalPlace = 1;
-      else if (c >= '0' && c <= '9') {
-        if (!decimalPlace)
-          number = number * 10 + (c - '0');
-        else {
-          decimal += ((float)(c - '0') / pow(10.0, decimalPlace));
-          decimalPlace++;
-        }
-      }
-    }
-  }
-
-  return (number + decimal) * sign;
-}
-
-String HELPER_ascii2String(char *ascii, int length) {
-  String str;
-  str.reserve(length);
-  str = "";
-
-  for (int i = 0; i < length; i++) {
-    char c = *(ascii + i);
-    str += String(c);
-  }
-  return str;
-}
-
-char* HELPER_ascii2CharStr(char *ascii, int length) {
-  char *str;
-  str = (char *) malloc (length+1);
-  str[0] = 0;
-  for (int i = 0; i < length; i++) {
-    char c = *(ascii + i);
-    str[i] = c;
-    str[i+1] = 0;
-  }
-  return str;
-}
-
-bool SD_available(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return value_length > 0;
-}
-
-int SD_findInt(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return HELPER_ascii2Int(value_string, value_length);
-}
-
-float SD_findFloat(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return HELPER_ascii2Float(value_string, value_length);
-}
-
-String SD_findString(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return HELPER_ascii2String(value_string, value_length);
-}
-
-char* SD_findCharStr(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return HELPER_ascii2CharStr(value_string, value_length);
-}
-
-long SD_findLong(const __FlashStringHelper * key) {
-  char value_string[VALUE_MAX_LENGTH];
-  int value_length = SD_findKey(key, value_string);
-  return HELPER_ascii2Long(value_string, value_length);
-}
-
-
-/* 
- * =======================================================================================================================
- * SD_ReadConfigFile()
- * =======================================================================================================================
- */
-void SD_ReadConfigFile() {
-
-  if (SD_exists && SD.exists(CF_NAME)) {
-    sprintf(msgbuf, "CF:%s Found", CF_NAME);
-    Output(msgbuf);
-
-    scv.aes_pkey     = SD_findCharStr(F("aes_pkey"));
-    sprintf(msgbuf, "CF:aes_pkey=[%s]", scv.aes_pkey.c_str()); Output (msgbuf);
-
-    scv.aes_myiv     = SD_findLong(F("aes_myiv"));
-    sprintf(msgbuf, "CF:aes_myiv=[%lu]", scv.aes_myiv);   Output (msgbuf);
-
-    scv.lora_unitid  = SD_findInt(F("lora_unitid"));
-    sprintf(msgbuf, "CF:lora_unitid=[%d]", scv.lora_unitid); Output (msgbuf);
-
-    scv.lora_txpower = SD_findInt(F("lora_txpower"));
-    sprintf(msgbuf, "CF:lora_txpower=[%d]", scv.lora_txpower); Output (msgbuf);
-
-    scv.lora_freq   = SD_findInt(F("lora_freq"));
-    sprintf(msgbuf, "CF:lora_freq=[%d]", scv.lora_freq); Output (msgbuf);
-
-    scv.lat_deg   = SD_findFloat(F("lat_deg"));
-    sprintf(msgbuf, "CF:lat_deg=[%.f]", scv.lat_deg);
-    Output (msgbuf); 
-    
-    scv.lon_deg   = SD_findFloat(F("lon_deg"));
-    sprintf(msgbuf, "CF:lon_deg=[%.f]", scv.lon_deg);
-    Output (msgbuf);  
-
-#ifdef ENABLE_Evapotranspiration
-    scv.sr_cal   = SD_findFloat(F("sr_cal"));
-    sprintf(msgbuf, "CF:sr_cal=[%d.%02d]", 
-      (int)scv.sr_cal, (int)(scv.sr_cal*100)%100); 
-    Output (msgbuf);
-
-    scv.sr_dark_offset   = SD_findFloat(F("sr_dark_offset"));
-    sprintf(msgbuf, "CF:sr_dark_offset=[%d.%02d]", 
-      (int) scv.sr_dark_offset, (int)(scv.sr_dark_offset*100)%100); 
-    Output (msgbuf);
-#endif
-  }
-  else {
-    sprintf(msgbuf, "CF:%s NF", CF_NAME);
-    Output(msgbuf);
-  }
-}
-
 /* 
  * =======================================================================================================================
  * SD_ReadElevationFile()
@@ -587,21 +344,77 @@ void SD_CheckOBITXIFiles() {
       scv.txi = DEFAULT_OBS_TRANSMIT_INTERVAL;
     }
   }
+}
 
-  // Do a check and make sure OBS and Transmit is at least 5m or greater when AQS is enabled
-  if (scv.aqs) {
-    if (scv.obi<5) {
-      Output ("OBI Corrected 5M");
-      scv.obi = 5;
+/*
+ * ======================================================================================================================
+ * SD_Read_WiFiFile() - Read WIFI.TXT file      
+ * ======================================================================================================================
+ */
+void SD_Read_WiFiFile() {
+  File fp;
+  int i=0;
+  char *p, *auth, *ssid, *pw;
+  char ch, buf[128];
+
+  if (SD_exists) {
+    // Test for file WIFI.TXT
+    if (SD.exists(SD_wifi_file)) {
+      fp = SD.open(SD_wifi_file, FILE_READ); // Open the file for reading, starting at the beginning of the file.
+
+      if (fp) {
+        // Deal with too small or too big of file
+        if (fp.size()<=7 || fp.size()>127) {
+          fp.close();
+          Output ("WIFI:Invalid SZ");
+        }
+        else {
+          Output ("WIFI:Open");
+          // Read one line from file
+          while (fp.available() && (i < (sizeof(buf) - 1))) {
+            ch = fp.read();
+
+            // sprintf (msgbuf, "%02X : %c", ch, ch);
+            // Output (msgbuf);
+
+            if ((ch == 0x0A) || (ch == 0x0D) ) {  // newline or linefeed
+              break;
+            }
+            else {
+              buf[i++] = ch;
+            }
+          }
+          fp.close();
+
+          // At this point we have encountered EOF, CR, or LF
+          // Now we need to terminate array with a null to make it a string
+          buf[i] = '\0';
+
+          // Parse string for the following
+          //   WIFI ssid password
+          p = buf;
+          auth = strtok_r(p, ",", &p);
+          ssid = strtok_r(p, ",", &p);
+          pw   = strtok_r(p, ",", &p);
+
+          scv.wifi_auth = auth ? auth : "";
+          scv.wifi_ssid = ssid ? ssid : "";
+          scv.wifi_pw   = pw   ? pw   : "";
+        }
+      }
+      else {
+        sprintf (msgbuf, "WIFI:Open[%s] Err", SD_wifi_file);          
+        Output(msgbuf);
+        Output ("WIFI:USING NVAUTH");
+      }
+    } 
+    else {
+      Output ("WIFI:NOFILE USING NVAUTH");
     }
-    if (scv.txi<5) {
-      Output ("TXI Corrected 5M");
-      scv.txi = 5;
-    }
+  } // SD enabled
+  else {
+    Output ("WIFI:NOSD USING NVAUTH");
   }
-
-  sprintf (msgbuf, "OBI=%dM, TXI=%dM", (int) scv.obi, (int) scv.txi);
-  Output(msgbuf);  
 }
 
 /* 
@@ -611,36 +424,52 @@ void SD_CheckOBITXIFiles() {
  */
 void SD_GetSystemVariables() {
   if (SD_exists) {
+
     SD_CheckN2SandSetSSB();
 
-    // Rename A4 and A5 files used in releases prior to release 40. 
-    // Remove function this when we determine all sites are at release 40 or greater
-    SD_A4A5_Rename();
+    sd_loadConfig();
+    if (!nv_config_enabled) {
+      // Read old individual files to get the system config variables
 
-    // If config file exists it is opened and read
-    SD_ReadConfigFile();
+      // Rename A4 and A5 files used in releases prior to release 40. 
+      // Remove function this when we determine all sites are at release 40 or greater
+      SD_A4A5_Rename();
+      
+      SD_Read_WiFiFile(); // Read wifi auth, ssid and pw
 
-    // If elevation file exists it is opened, read and elevation set, else 0
-    SD_ReadElevationFile();
+      // If elevation file exists it is opened, read and elevation set, else 0
+      SD_ReadElevationFile();
 
-    // If offset file exists it is opened, read and rain total rollover offset set, else 0
-    SD_Read_RTRO_File();
+     // If offset file exists it is opened, read and rain total rollover offset set, else 0
+      SD_Read_RTRO_File();
 
-    // Are we a Air Quality Station
-    SD_CheckAQSFile();
+      // Are we a Air Quality Station
+      SD_CheckAQSFile();
 
-    // See what has been define for these pins
-    SD_CheckOP1Files();
-    SD_CheckOP15MFile();  // only important if (scv.op1 == OP1_STATE_DISTANCE)
-    SD_CheckOP2Files();
+      // See what has been define for these pins
+      SD_CheckOP1Files();
+      SD_CheckOP15MFile();  // only important if (scv.op1 == OP1_STATE_DISTANCE)
+      SD_CheckOP2Files();
 
-    if (!scv.aqs) {
-      SD_CheckNoWindFile(); // if NOWIND.TXT found then scv.wind is set false
-      SD_CheckNoRainFile(); // if NORAIN.TXT found then scv.rg1 is set false
+      if (!scv.aqs) {
+        SD_CheckNoWindFile(); // if NOWIND.TXT found then scv.wind is set false
+        SD_CheckNoRainFile(); // if NORAIN.TXT found then scv.rg1 is set false
+      }
+      SD_CheckOBITXIFiles();
+    }
+
+    // Do a check and make sure OBS and Transmit Times is at least 5m or greater when AQS is enabled
+    if (scv.aqs) {
+      if (scv.obi<5) {
+        Output ("OBI Corrected 5M");
+        scv.obi = 5;
+      }
+       if (scv.txi<5) {
+        Output ("TXI Corrected 5M");
+        scv.txi = 5;
+      }  
     }
   }
-
-  SD_CheckOBITXIFiles();
 }
 
 

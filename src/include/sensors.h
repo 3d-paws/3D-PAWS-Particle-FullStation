@@ -310,8 +310,6 @@ void bmx1_read(float &p, float &t, float &h);
 void bmx2_read(float &p, float &t, float &h);
 void htu21d_initialize();
 void mcp9808_initialize();
-void hih8_initialize();
-bool hih8_getTempHumid(float *t, float *h);
 void wbt_initialize();
 double wbt_calculate(double T, double RH);
 void hi_initialize();

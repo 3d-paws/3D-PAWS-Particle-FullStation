@@ -1,6 +1,6 @@
 PRODUCT_VERSION (49);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260810v49"
+#define VERSION_INFO "FS-260822v49"
 
 /*
  *======================================================================================================================
@@ -296,17 +296,18 @@ PRODUCT_VERSION (49);
  *                         Add BMP581 and SMT45 - rework the i2c 0x44 - 0x47 sensore handling
  *                         Cleaned up the printing of floating point numbers to use %.2f
  * 
- *          Version 49 Pre Release on 2026-08-10
+ *          Version 49 Release on 2026-08-22
  *          2026-04-29 RJB Blocked ISRs while in Wind_SampleSpeed()'s critical region
  *          2026-04-30 RJB Added SHT Serial Number to initialization output and INFO. Also heater info.
  *          2026-07-19 RJB Controlled firmware updates - reworked the loop()
  *                         Config in NV Memory
  *                         New Distance Sensor
- *                         Added publishCellTower();
  *                         EEPROM Init check if n2sfp is not 0 and there is no n2s file then reset the file offset
  *                         Added CRT.TXT and CNV.TXT
  *                         Added DoAction CNV - Clear NV
  *                         Removed VEML and HIH8 support
+ *                         Now supporting WiFi Variables in NC config file and System Configuration Variables SCV data structure
+ *                         Moving to CONFIG.TXT on SD away from individual TXT files.
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -823,6 +824,7 @@ void DoReboot() {
   }
 }
 
+#if (PLATFORM_ID == PLATFORM_BORON) || (PLATFORM_ID == PLATFORM_MSOM)
 /*
  * ======================================================================================================================
  * DoLowPower() - 
@@ -882,6 +884,7 @@ void DoLowPower() {
     Wind_Distance_Air_Initialize();
   }
 }
+#endif
 
 /*
  * ======================================================================================================================
@@ -961,12 +964,12 @@ void MainWork() {
 
     // Perform an Observation, save in OBS structure, Write to SD
     // We want to check rollover time every minute, so not misplace any collected rain in the wrong day total
-    if ( (System.millis() - lastOBS) > ((scv.obi*60*1000)-AQS_Correction) || EEPROM_TimeToRollOver() || (lastOBS == 0) ) {
+    if ( (System.millis() - lastOBS) > (static_cast<uint64_t>(scv.obi*60*1000)-AQS_Correction) || EEPROM_TimeToRollOver() || (lastOBS == 0) ) {
        OBS_Do();
     }
 
     // Time to Send Observations we have collected
-    if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > (scv.txi * 60 * 1000)) ) {
+    if ( (LastTransmitTime == 0) || ((System.millis() - LastTransmitTime) > static_cast<uint64_t>(scv.txi * 60 * 1000)) ) {
       if (Particle.connected()) {
         Output ("Connected");
         LastTransmitTime = System.millis();
@@ -1115,20 +1118,32 @@ void setup() {
 
   HeartBeat(); // Lets refresh Watchdog - just because we can
 
-  // Set Daily Reboot Timer
-  DailyRebootCountDownTimer = scv.rcdt;
-
   // Initialize SD card if we have one.
   SD_initialize();
 
   if (SD_exists) {
     SD_GetSystemVariables();  // Read in main and individual configuration files and set system variables
+
+    if (!nv_config_enabled) {
+      // There was no aqs config line in the config file, so we have not converted to using just a config file.
+      // The below save the system config variable to the config file and thus converting us.
+      (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
+    }
+    // No matter what we should update the NV config file with what was read from SD.
     (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
   }
   else {
     nv_loadConfig();
   }
   nv_printCfg();
+
+  // Check Daily Reboot Timer, we do not want to allow rebooting under an hour
+  if ((scv.rcdt > 0) && (scv.rcdt < 3600)) {
+    // Override the config file.
+    scv.rcdt = 79200;
+    Output ("RCDT:79200");
+  }
+  DailyRebootCountDownTimer = scv.rcdt;
 
   // Display EEPROM Information 
   EEPROM_Dump();
@@ -1169,7 +1184,7 @@ void setup() {
 #endif
 
 #if (PLATFORM_ID == PLATFORM_MSOM)
-  network_initialize();            // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  MUON_network_initialize();
   WiFiPrintCredentials();
 
   // Turn on GPS
@@ -1186,7 +1201,7 @@ void setup() {
   // Check if we need to program for WiFi change
   //==================================================
   WiFiPrintCredentials();
-  WiFiChangeCheck(); 
+  ARGON_network_initialize(); 
   WiFiPrintCredentials();
 #endif
 
@@ -1348,8 +1363,8 @@ void loop() {
         }
         else {
           // If Serial Console Pin LOW then Display Station Information
-          // if (countdown && digitalRead(SCE_PIN) == LOW) {
-          if (0) {
+          if (countdown && digitalRead(SCE_PIN) == LOW) {
+          // if (0) { // !!!!!!!!!!! Remove this and add the above line before release
             StationMonitor();
             BackGroundWork();
             countdown--;
