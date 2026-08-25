@@ -8,7 +8,11 @@ For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3
 
 Major changes as of Version 49. 
 - When the configuration file is read and if entry "aqs" is not found in the file; a configuration migration takes place. The .TXT files are read in and a new CONFIG.TXT file is written to the SD card. Then the same file is written to non volatile memory.  After which, if the SD card is not detected, the non volatile config is used.
-- Cloud updates are disabled by default. When a firmware update is configured on the Particle Device Console. The device is notified that there is a update pending. It then stops taking observations, update rain totals in non volotile memory, enables updates, disconnects from Particle. Then reconnects to Particle. At which point Particle Cloud services will see the device has update enabled and will start the update. If nothing happens for 5 minutes, the device will reboot. If the device is updated, the device reboots as a result. Controling the update process protects from unexpected reboot corruption of files are being written to the SD card.
+
+- Cloud updates are disabled by default. When a firmware update is configured on the Particle Device Console. The device is notified that there is a update pending. It then stops taking observations, update rain totals in non volotile memory, sends any cached observations, enables updates, disconnects from Particle. Then reconnects to Particle. At which point Particle Cloud services sees the device has updates enabled and will start downloading the update. If nothing happens for 5 minutes, the device will reboot. If the device is updated, the device reboots as a result. Controling the update process protects from unexpected reboot corruption of files are being written to the SD card.
+
+- #### !!! After this release do not use the  "Flash now" option on the Particle Device Console. Let the update happen at its own pace to avoid corruption of the SD card from the update reboot.
+
 - Sensor Changes
     - DFRobot SEN0562 - BH1750 LUX Added. Reports as bhlx.
     - TF02Pro TOF Distance Added. Reports as t02d, t02s, t02dt.
