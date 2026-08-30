@@ -6,6 +6,9 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 
 For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
+Major changes as of Version 50.
+- Added support for the Adafruit LTR390 UV sensor.
+
 Major changes as of Version 49. 
 - When the configuration file is read and if entry "aqs" is not found in the file; a configuration migration takes place. The .TXT files are read in and a new CONFIG.TXT file is written to the SD card. Then the same file is written to non volatile memory.  After which, if the SD card is not detected, the non volatile config is used.
 

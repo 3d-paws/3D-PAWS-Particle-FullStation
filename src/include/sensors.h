@@ -3,13 +3,13 @@
  *  sensors.h - I2C Sensor Definations
  * ======================================================================================================================
  */
-
 #include <Adafruit_BME280.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_BMP3XX.h>
 #include <Adafruit_HTU21DF.h>
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_SI1145.h>
+#include <Adafruit_LTR390.h>
 #include <Adafruit_SHT31.h>
 #include <Adafruit_PM25AQI.h>
 #include <Adafruit_HDC302x.h>
@@ -179,6 +179,30 @@ extern BH1750 bh1750_lux;
 
 /*
  * ======================================================================================================================
+ *  Adafruit LTR390 UV Light Sensor
+ *  UVA sensing with a peak spectral response between 300 and 350nm
+ *  https://www.adafruit.com/product/4831
+ * 
+ *  See OptoElectronics LiteOn https://optoelectronics.liteon.com/upload/download/DS86-2015-0004/LTR-390UV-01_Final_%20DS_V1.7.PDF
+ *  Section 7 ALS/UVI Formula
+ * 
+ *  UVI (UV Index) = UVS counts / 2300F
+ *  Above assumes LTR390_GAIN_18 and LTR390_RESOLUTION_20BIT
+ * 
+ *  SEE https://github.com/adafruit/Adafruit_CircuitPython_LTR390/issues/2
+*  UVI (UV Index) = UVS counts / 95F
+ *  Above assumes LTR390_GAIN_3 and LTR390_RESOLUTION_16BIT
+ * 
+ *  Will report as ltruvc and ltruvi
+ * ======================================================================================================================
+ */
+#define LTR390_ADDRESS   0x53
+extern bool LTR390_exists;
+extern Adafruit_LTR390 ltr390;
+
+
+/*
+ * ======================================================================================================================
  *  PM25AQI - I2C - Air Quality Sensor
  * 
  *  PM25_AQI_Data variables returned are unsigned integers
@@ -321,6 +345,7 @@ void mslp_initialize();
 double mslp_calculate(float Ts, float RH, float ps, int station_height);
 void si1145_initialize();
 void BH1750_init();
+void ltr390_init();
 // bool blx_getconfig()
 void blx_initialize();
 float blx_takereading();

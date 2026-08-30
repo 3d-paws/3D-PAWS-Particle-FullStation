@@ -746,6 +746,26 @@ void OBS_Do() {
 // Output("DB:OBS_BH1750x");
   }
 
+  if (LTR390_exists) {
+// Output("DB:OBS_LTR390");
+    const uint32_t uv_counts=ltr390.readUVS();
+    // No QC check. Rtn vaalue will be 0 through 1,048,575 counts
+
+    // LTR390 Count
+    strcpy (obs[oidx].sensor[sidx].id, "ltruvc");
+    obs[oidx].sensor[sidx].type = I_OBS;
+    obs[oidx].sensor[sidx].i_obs = uv_counts;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+    // LTR390 UVI (UV Index)
+    strcpy (obs[oidx].sensor[sidx].id, "ltruvi");
+    obs[oidx].sensor[sidx].type = F_OBS;
+    obs[oidx].sensor[sidx].f_obs = static_cast<float>(uv_counts) / 95.83f;
+    obs[oidx].sensor[sidx++].inuse = true;
+
+// Output("DB:OBS_LTR390");
+  }
+
   if (scv.op1 == OP1_STATE_DISTANCE) {
 // Output("DB:OBS_OP1D");
     // Distance Guage

@@ -1,6 +1,6 @@
-PRODUCT_VERSION (49);
+PRODUCT_VERSION (50);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260822v49"
+#define VERSION_INFO "FS-260830v50"
 
 /*
  *======================================================================================================================
@@ -308,6 +308,11 @@ PRODUCT_VERSION (49);
  *                         Removed VEML and HIH8 support
  *                         Now supporting WiFi Variables in NC config file and System Configuration Variables SCV data structure
  *                         Moving to CONFIG.TXT on SD away from individual TXT files.
+ * 
+ *          Version 50 Release on 2026-08-30
+ *          2026-08-28 RJB Added LTR390 Support will report as ltruvc and ltruvi
+ *                         Updated dafruit_BusIO=1.8.3 to 1.17.4
+ *                           Note: Needed to flush the cache in ~/.particle/toolchains/deviceOS/6.4.1/build/target/user/platform-13-m for clean compile
  * 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -1273,6 +1278,7 @@ void setup() {
   si1145_initialize();
   blx_initialize();
   BH1750_init();
+  ltr390_init();
   pm25aqi_initialize();
   lps_initialize();
 

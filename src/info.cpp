@@ -383,6 +383,10 @@ else {
     sprintf (buf+strlen(buf), "%sBHLX", comma);
     comma=",";
   }
+  if (LTR390_exists) {
+    sprintf (buf+strlen(buf), "%sLTR390", comma);
+    comma=",";
+  }
   if (AS5600_exists) {
     sprintf (buf+strlen(buf), "%sAS5600", comma);
     comma=",";

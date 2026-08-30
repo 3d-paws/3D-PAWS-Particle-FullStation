@@ -18,6 +18,7 @@ Sensors
 | Adafruit LPS35HW              | Pressure                | Robust water-resistant MEMS pressure sensor, I2C/SPI, oil/water resistant.                               | [LPS35HW](https://www.adafruit.com)   |
 | DFRobot_B_LUX_V30B            | Ambient Light           | Measures up to 200klx, wide range, digital I2C, 3.3-5V.                                                  | [DFRobot Wiki](https://wiki.dfrobot.com/Ambient_Light_Sensor_0_200klx_SKU_SEN0390) |
 | DFRobot SEN0562 - BH1750      | Ambient Light           | DFRobot claims a measurement range of 1 to 65,535 lx with 1.2 lx accuracy and IP68 waterproofing         | [DFRobot SEN0562](https://www.dfrobot.com/product-2664.html) |
+| Adafruit LTR390   | UV Light Sensor          | UVA sensing with a peak spectral response between 300 and 350nm | [Adaafruit LTR390](https://www.adafruit.com/product/4831) |
 | Tinovi LeafSens               | Leaf Wetness/Temp       | Non-contact capacitive leaf wetness + temperature, digital.                                              | [Tinovi LeafSens](https://www.tinovi.com/leafsens)          |
 | Tinovi i2cArduino             | Soil Moisture/Temp      | Capacitive soil moisture + temperature, I2C.                                                             | [Tinovi i2cArduino](https://www.tinovi.com/i2carduino)      |
 | Tinovi i2cMultiSm             | Multi Soil/Temp         | 5-point capacitive moisture + temperature, I2C, multi-depth.                                             | [Tinovi i2cMultiSm](https://www.tinovi.com/i2cmultism)      |
@@ -84,6 +85,8 @@ Sensors
 | sv1      | SI1145 VIS                           | light intensity count |
 | si1      | SI1145 IR                            | light intensity count |
 | su1      | SI1145 UV                            | light intensity count |
+| ltruvc   | LTR390 UV                            | uv count |
+| ltruvi   | LTR390 UV Index                      | uv index |
 | mt1      | MCP9808 Temperature                  | degree celsius |
 | mt2      | MCP9808 Temperature                  | degree celsius |
 | gt1      | MCP9808 Black Globe Temperature      | degree celsius |
@@ -488,7 +491,7 @@ double wbgt_using_hi(double HIc) {
 #### Mean Sea Level Pressure
 - Reported as "mslp" if station elevation is set "ELEV.TXT" and station is configured with a SHT and BMP sensors. 
 
-<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 600px; border: 1px solid black; padding: 10px;">
+<div style="overflow:auto; white-space:pre; font-family: monospace; font-size: 8px; line-height: 1.5; height: 530px; border: 1px solid black; padding: 10px;">
 
 ```C
 /* 
@@ -536,6 +539,40 @@ double mslp_calculate(float Ts, float RH, float ps, int station_height) {
 }
 ```
 </div>
+
+### Adafruit LTR390 UV Light Sensor Index Calculation
+The sensor is configured to to measure ultraviolet (UV) light, specifically in the UVA range (around 300–350 nm). The sensor is set to a 18-bit resolution with a x3 gain. The sensor returns a count value. A count of ~95 with these settings has a rule of thumb of 1 UV Index (UVI). 
+
+The 3×/18-bit configuration is a practical compromise between sensitivity, response time, power consumption, and saturation margin for general outdoor use.
+
+#### UVI calculation
+
+For the recommended settings:
+
+```text
+counts_per_UVI = 2300 × (3 / 18) × (100 / 400)
+               = 95.83
+
+UVI = UVS_counts / 95.83
+```
+
+#### Other 3× gain options
+
+| Resolution | Integration | Approx. divisor |
+|---:|---:|---:|
+| 16-bit | 25 ms | 23.96 |
+| 17-bit | 50 ms | 47.92 |
+| 18-bit | 100 ms | 95.83 |
+| 19-bit | 200 ms | 191.67 |
+| 20-bit | 400 ms | 383.33 |
+
+The divisor must match the active gain and integration time.
+
+#### Calibration
+
+The result is an approximate UVI. The LTR390 spectral response is not identical to the standardized erythemally weighted UV response. Covers, diffusers, enclosure windows, dirt, sensor angle, and mounting can affect readings.
+
+Compare the completed LTR390 assembly with a trusted UVI reference at several sunlight levels. Apply a calibration correction if required:
 
 
 

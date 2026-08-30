@@ -119,6 +119,14 @@ BH1750 bh1750_lux;
 
 /*
  * ======================================================================================================================
+ *  Adaafruit LTR390 UV
+ * ======================================================================================================================
+ */
+bool LTR390_exists = false;
+Adafruit_LTR390 ltr390 = Adafruit_LTR390();
+
+/*
+ * ======================================================================================================================
  *  PM25AQI - I2C - Air Quality Sensor
  * ======================================================================================================================
  */
@@ -976,6 +984,78 @@ void BH1750_init() {
     msgp = (char *) "BH1750:NF";
   }
   Output (msgp);
+}
+
+/* 
+ *=======================================================================================================================
+ * ltr390_detail() - display LTR390 details
+ *=======================================================================================================================
+ */
+void ltr390_detail() {
+
+  Output ("LTR Information");
+
+  if (ltr390.getMode() == LTR390_MODE_ALS) {
+    Output(" In ALS mode"); // default
+  } else {
+    Output(" In UVS mode");
+  }
+
+  switch (ltr390.getGain()) {
+    case LTR390_GAIN_1:  Output (" GAIN: 1"); break;
+    case LTR390_GAIN_3:  Output (" GAIN: 3"); break;
+    case LTR390_GAIN_6:  Output (" GAIN: 6"); break;
+    case LTR390_GAIN_9:  Output (" GAIN: 9"); break;
+    case LTR390_GAIN_18: Output (" GAIN: 18"); break;
+  }
+
+  switch (ltr390.getResolution()) {
+    case LTR390_RESOLUTION_13BIT: Output (" Resolution: 13"); break;
+    case LTR390_RESOLUTION_16BIT: Output (" Resolution: 16"); break; 
+    case LTR390_RESOLUTION_17BIT: Output (" Resolution: 17"); break;
+    case LTR390_RESOLUTION_18BIT: Output (" Resolution: 18"); break;
+    case LTR390_RESOLUTION_19BIT: Output (" Resolution: 19"); break;
+    case LTR390_RESOLUTION_20BIT: Output (" Resolution: 20"); break;
+  }
+}
+
+/* 
+ *=======================================================================================================================
+ * ltr390_init() - initialize LTR390
+ *=======================================================================================================================
+ */
+void ltr390_init() {
+  Output ("LTR:INIT");
+
+  if (!ltr390.begin()) { 
+    Output ("LTR:NF");
+  }
+  else {
+    LTR390_exists=true;
+    Output ("LTR:OK");
+
+    // LTR390_MODE_UVS and LTR390_MODE_ALS are two operational modes for the LTR390 sensor, each targeting a different 
+    // type of light measurement. LTR390_MODE_UVS configures the sensor to measure ultraviolet (UV) light, specifically 
+    // in the UVA range (around 300–350 nm), which is useful for UV index calculations and monitoring UV exposure. 
+    // LTR390_MODE_ALS, on the other hand, sets the sensor to measure ambient light (ALS), which is in the visible 
+    // spectrum (typically 500–600 nm), similar to how the human eye perceives light.
+    ltr390.setMode(LTR390_MODE_UVS); // default ALS mode
+
+    ltr390.setGain(LTR390_GAIN_3); // default 3 - Higher gain values increase sensitivity but may introduce more noise.
+
+    ltr390.setResolution(LTR390_RESOLUTION_18BIT); // default 16 Bits - balances measurement precision and speed.
+                                                // Keeing Gain at 3
+                                                // Set 16 for UVI (UV Index) = UVS counts / 23.96 conversion
+                                                // Set 18 for UVI (UV Index) = UVS counts / 95.83 conversion
+                                                // Set 20 for UVI (UV Index) = UVS counts / 383.22 conversion
+
+    // ltr390.setThresholds(100, 1000); // disabled - defines the lower and upper thresholds for the interrupt. 
+                                     // When the UV reading drops below 100 or exceeds 1000, the interrupt will trigger.
+
+    ltr390.configInterrupt(false, LTR390_MODE_UVS); // disabled - true would enable the interrupt
+
+    ltr390_detail();
+  }
 }
 
 /* 
