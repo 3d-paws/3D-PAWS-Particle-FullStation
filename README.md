@@ -6,6 +6,9 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 
 For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
+Major changes as of Version 51.
+- Bug Fix: Fixed issues with no wind support. 
+
 Major changes as of Version 50.
 - Added support for the Adafruit LTR390 UV sensor.
 
