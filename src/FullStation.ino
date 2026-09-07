@@ -1,6 +1,6 @@
-PRODUCT_VERSION (50);
+PRODUCT_VERSION (51);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260830v50"
+#define VERSION_INFO "FS-260907v51"
 
 /*
  *======================================================================================================================
@@ -313,7 +313,14 @@ PRODUCT_VERSION (50);
  *          2026-08-28 RJB Added LTR390 Support will report as ltruvc and ltruvi
  *                         Updated dafruit_BusIO=1.8.3 to 1.17.4
  *                           Note: Needed to flush the cache in ~/.particle/toolchains/deviceOS/6.4.1/build/target/user/platform-13-m for clean compile
- * 
+ *          Version 51 Release on 2026-09-07
+ *          2026-09-07 RJB Bug Fix. If you reboot the station after using something like NOWIND it re-enables the wind after
+ *                           Resolution: Forcing config and system variable to match using "wind". I had a mix of wind and nowind.
+ *                                       The station defaults to wind.  Version 49 was looking for "wind" in config file, but wind config was saved as nowind
+ *                                       On first boot, Version 50 will look for wind in config, not find it in the config and enable wind by default
+ *                                       It will then write the wind variable to config file. Next boot it will see it.
+ *                                       Only stations with no wind set will need the DoAction NOWIND run. 
+
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
  *     https://github.com/particle-iot/device-os/blob/develop/hal/shared/platforms.h
@@ -1132,8 +1139,15 @@ void setup() {
     if (!nv_config_enabled) {
       // There was no aqs config line in the config file, so we have not converted to using just a config file.
       // The below save the system config variable to the config file and thus converting us.
+
+      // Because of wind bug in Version 49 we want to write the confing. when no boards are running v49, ad the "if" back
       (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
     }
+    else {
+      // Because of wind bug in Version 49 we want to write the confing. When no boards are running v49, remove this else code !!!!!!!!!
+      (sd_saveConfig()) ? Output ("SDSave:OK") : Output ("SDSave:ERR");
+    }
+
     // No matter what we should update the NV config file with what was read from SD.
     (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
   }

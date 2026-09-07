@@ -268,7 +268,7 @@ bool nv_saveConfig() {
 
     bool ok = true;
     ok &= nv_writeLine(fd, "aqs=%d\n", scv.aqs);
-    ok &= nv_writeLine(fd, "nowind=%d\n", scv.wind);
+    ok &= nv_writeLine(fd, "wind=%d\n", scv.wind);
     ok &= nv_writeLine(fd, "rg1_enable=%d\n", scv.rg1);
     ok &= nv_writeLine(fd, "op1=%d\n", scv.op1);
     ok &= nv_writeLine(fd, "op1d5m=%d\n", scv.op1d5m);
@@ -324,7 +324,7 @@ bool sd_saveConfig() {
     bool ok = true;
 
     ok &= sd_writeLine(fp, "aqs=%d\n", scv.aqs);
-    ok &= sd_writeLine(fp, "nowind=%d\n", scv.wind);
+    ok &= sd_writeLine(fp, "wind=%d\n", scv.wind);
     ok &= sd_writeLine(fp, "rg1_enable=%d\n", scv.rg1);
     ok &= sd_writeLine(fp, "op1=%d\n", scv.op1);
     ok &= sd_writeLine(fp, "op1d5m=%d\n", scv.op1d5m);
