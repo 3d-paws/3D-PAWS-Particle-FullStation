@@ -27,6 +27,7 @@ INFO event message from a Boron
   "css": 57.499,
   "csq": 18.7488,
   "imsi": "234103519249568",
+  "cgi":"646-1-10002-11465",
   "actsim": "INTERNAL",
   "elev": 1560,
   "wind": "ENABLED",
@@ -173,3 +174,19 @@ These features require enabling the `FEATURE_RESET_INFO` flag in your firmware.
 |6     | BATTERY_STATE_DISCONNECTED |
 
 ---
+
+### Cell Global Identity (cgi) Breakdown
+
+**CGI String:** 646-1-10002-11465
+
+#### 🌍 1. Mobile Country Code (MCC): 646
+* **Meaning:** This represents the country of **Madagascar**.
+
+#### 📡 2. Mobile Network Code (MNC): 1 (or 01)
+* **Meaning:** This tells us the network carrier is **Airtel Madagascar**. They are one of the primary mobile operators on the island.
+
+#### 🏘️ 3. Location Area Code (LAC): 10002
+* **Meaning:** This is a specific neighborhood or regional grouping of cell towers defined by Airtel. When a phone moves around this specific district, the core network groups them into this single location area.
+
+#### 🆔 4. Cell Identifier (CI): 11465
+* **Meaning:** This is the precise ID of the single, specific antenna sector on a physical radio tower that your device is talking to.
