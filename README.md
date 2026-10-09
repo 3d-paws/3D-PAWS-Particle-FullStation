@@ -6,6 +6,14 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 
 For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
+Major changes as of Version 52.
+- Bug Fix: Fixed issues with Clear NV Configuration files if CNV.TXT exists.
+- Bug Fix: Added / 100.F to bmp5.readPressure() reading.
+- Bug Fix: Changed pi from 3.14156 to 3.14159.
+- Bug Fix: Allow LoRa Freq range of 863.0–928.0 MHz in config file.
+- Made lat_deg lon_deg part of the standard configuration file.
+- If there is no CONFIG.TXT, one is created on the SD card.
+
 Major changes as of Version 51.
 - Bug Fix: Fixed issues with no wind support. 
 
