@@ -195,7 +195,7 @@ bool lora_cf_validate() {
     Output ("LORA PWR ERR");
     return (false);
   }
-  else if ((scv.lora_freq!=915) && (scv.lora_freq!=866) && (scv.lora_freq!=433)) {
+  else if ((scv.lora_freq<863.0) || (scv.lora_freq>928.0)) {
     Output ("LORA FREQ ERR");
     return (false);        
   }

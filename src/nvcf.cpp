@@ -33,7 +33,7 @@ SCV scv; // System Configuration Variables
  */
 static const char* NV_CONFIG_FILE = "/CONFIG.TXT";
 static const char* NV_TEMP_FILE   = "/CONFIG.TMP";
-bool nv_config_enabled=false;
+bool nv_config_converted=false;
 
 /*
  * ======================================================================================================================
@@ -63,7 +63,7 @@ bool nv_parseLine(const String& line) {
     if (key == "aqs") {
       scv.aqs = val.toInt();
       // If aqs is in the config file then we have already migrated away from individual files 
-      nv_config_enabled=true;
+      nv_config_converted=true;
     }
     else if (key == "wind") scv.wind = val.toInt();
     else if (key == "rg1") scv.rg1 = val.toInt();
@@ -80,13 +80,13 @@ bool nv_parseLine(const String& line) {
     else if (key == "aes_myiv") scv.aes_myiv = atol(val.c_str());
     else if (key == "lora_unitid") scv.lora_unitid = val.toInt();
     else if (key == "lora_txpower") scv.lora_txpower = val.toInt();
-    else if (key == "lora_freq") scv.lora_freq = val.toInt();
+    else if (key == "lora_freq") scv.lora_freq = val.toFloat();
     else if (key == "wifi_auth") scv.wifi_auth = val;
     else if (key == "wifi_ssid") scv.wifi_ssid = val;
     else if (key == "wifi_pw") scv.wifi_pw = val;
-#ifdef ENABLE_Evapotranspiration
     else if (key == "lat_deg") scv.lat_deg = val.toFloat();
     else if (key == "lon_deg") scv.lon_deg = val.toFloat();
+#ifdef ENABLE_Evapotranspiration
     else if (key == "albedo") scv.albedo = val.toFloat();
     else if (key == "crop_kc") scv.crop_kc = val.toFloat();
     else if (key == "sr_cal") scv.sr_cal = val.toFloat();
@@ -179,7 +179,7 @@ static bool sd_writeLine(File& fp, const char* fmt, ...) {
 bool nv_loadConfig() {
     int fd = open(NV_CONFIG_FILE, O_RDONLY);
     if (fd < 0) {
-      sprintf(msgbuf, "NVLC:%s NF, Using Defaults", NV_CONFIG_FILE);
+      sprintf(msgbuf, "NVLC:%s NF", NV_CONFIG_FILE);
       Output(msgbuf);
       return false;
     }
@@ -218,7 +218,7 @@ bool sd_loadConfig() {
   if (SD_exists) {
     File fp = SD.open(NV_CONFIG_FILE, FILE_READ);
     if (!fp) {
-        sprintf(msgbuf, "SDLC:%s NF, Using Defaults", NV_CONFIG_FILE);
+        sprintf(msgbuf, "SDLC:%s NF", NV_CONFIG_FILE);
         Output(msgbuf);
         return false;
     }
@@ -269,7 +269,7 @@ bool nv_saveConfig() {
     bool ok = true;
     ok &= nv_writeLine(fd, "aqs=%d\n", scv.aqs);
     ok &= nv_writeLine(fd, "wind=%d\n", scv.wind);
-    ok &= nv_writeLine(fd, "rg1_enable=%d\n", scv.rg1);
+    ok &= nv_writeLine(fd, "rg1=%d\n", scv.rg1);
     ok &= nv_writeLine(fd, "op1=%d\n", scv.op1);
     ok &= nv_writeLine(fd, "op1d5m=%d\n", scv.op1d5m);
     ok &= nv_writeLine(fd, "op2=%d\n", scv.op2);
@@ -283,7 +283,7 @@ bool nv_saveConfig() {
     ok &= nv_writeLine(fd, "aes_myiv=%ld\n", scv.aes_myiv);
     ok &= nv_writeLine(fd, "lora_unitid=%d\n", scv.lora_unitid);
     ok &= nv_writeLine(fd, "lora_txpower=%d\n", scv.lora_txpower);
-    ok &= nv_writeLine(fd, "lora_freq=%d\n", scv.lora_freq);
+    ok &= nv_writeLine(fd, "lora_freq=%.2f\n", scv.lora_freq);
     ok &= nv_writeLine(fd, "wifi_auth=%s\n", scv.wifi_auth.c_str());
     ok &= nv_writeLine(fd, "wifi_ssid=%s\n", scv.wifi_ssid.c_str());
     ok &= nv_writeLine(fd, "wifi_pw=%s\n", scv.wifi_pw.c_str());
@@ -339,7 +339,7 @@ bool sd_saveConfig() {
     ok &= sd_writeLine(fp, "aes_myiv=%ld\n", scv.aes_myiv);
     ok &= sd_writeLine(fp, "lora_unitid=%d\n", scv.lora_unitid);
     ok &= sd_writeLine(fp, "lora_txpower=%d\n", scv.lora_txpower);
-    ok &= sd_writeLine(fp, "lora_freq=%d\n", scv.lora_freq);
+    ok &= sd_writeLine(fp, "lora_freq=%.2f\n", scv.lora_freq);
     ok &= sd_writeLine(fp, "wifi_auth=%s\n", scv.wifi_auth.c_str());
     ok &= sd_writeLine(fp, "wifi_ssid=%s\n", scv.wifi_ssid.c_str());
     ok &= sd_writeLine(fp, "wifi_pw=%s\n", scv.wifi_pw.c_str());
@@ -381,10 +381,10 @@ bool saveConfig() {
 
 /*
  * ======================================================================================================================
- * nv_printCfg()
+ * nv_scv_print()
  * =======================================================================================================================
  */
-void nv_printCfg() {
+void nv_scv_print() {
     struct NvItem {
         const char* key;
         const char* fmt;
@@ -408,7 +408,7 @@ void nv_printCfg() {
         {"aes_myiv", "%ld", &scv.aes_myiv},
         {"lora_unitid", "%d", &scv.lora_unitid},
         {"lora_txpower", "%d", &scv.lora_txpower},
-        {"lora_freq", "%d", &scv.lora_freq},
+        {"lora_freq", "%f", &scv.lora_freq},
         {"wifi_auth", "%s", scv.wifi_auth.c_str()},
         {"wifi_ssid", "%s", scv.wifi_ssid.c_str()},
         {"wifi_pw", "%s", scv.wifi_pw.c_str()},
@@ -422,7 +422,7 @@ void nv_printCfg() {
 #endif
     };
 
-    Output("NV Settings:");
+    Output("SCV Settings:");
 
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
         if (strcmp(items[i].fmt, "%s") == 0) {
@@ -483,12 +483,12 @@ bool nv_deleteConfigFiles() {
 
 /*
  * ======================================================================================================================
- * nv_deleteConfigIfCnvFileExists()
- * If the SD card is available and CNV.TXT exists:
+ * nv_deleteConfigIfCnvFileExists() - 
+ * If the SD card is available and CNV.TXT exists:   (CNV) Claer Non Volitile  
  *   1. Delete CONFIG.TXT and CONFIG.TMP from NV
  *   2. Delete CNV.TXT after successful config deletion
  *
- * Returns true only when CNV.TXT was found and all requested deletes succeeded.
+ * Will hang forever and blink when all requested deletes succeeded.
  * ======================================================================================================================
  */
 bool nv_deleteConfigIfCnvFileExists() {
@@ -499,15 +499,10 @@ bool nv_deleteConfigIfCnvFileExists() {
     }
 
     // CNV.TXT is the trigger file.
-    if (access(SD_cnv_file, F_OK) != 0) {
-        if (errno == ENOENT) {
-            snprintf(msgbuf, sizeof(msgbuf), "CNV:%s Not Found, config files retained", SD_cnv_file);
-        }
-        else {
-            snprintf(msgbuf, sizeof(msgbuf), "CNV:%s Check Failed: %s", SD_cnv_file, strerror(errno));
-        }
-        Output(msgbuf);
-        return false;
+    if (!SD.exists(SD_cnv_file)) {
+      snprintf(msgbuf, sizeof(msgbuf), "CNV:%s NF, NV files retained", SD_cnv_file);
+      Output(msgbuf);
+      return false;
     }
 
     snprintf(msgbuf, sizeof(msgbuf), "CNV:%s Found, deleting config files", SD_cnv_file);
@@ -520,7 +515,7 @@ bool nv_deleteConfigIfCnvFileExists() {
     }
 
     // Config files were successfully deleted; remove the trigger file too.
-    if (unlink(SD_cnv_file) == 0) {
+    if (SD.remove(SD_cnv_file)) {
         snprintf(msgbuf, sizeof(msgbuf), "NVCF:%s Deleted", SD_cnv_file);
         Output(msgbuf);
         Output("CNV: HALT-entering infinite loop");
@@ -534,4 +529,55 @@ bool nv_deleteConfigIfCnvFileExists() {
     Output(msgbuf);
 
     return false;
+}
+
+/*
+ * ======================================================================================================================
+ * nv_scv_init() - address where we are getting our configuration from.
+ * =======================================================================================================================
+ */
+void nv_scv_init() {
+  if (!SD_exists) {
+    // See if we can get configs from NV. If not we run with defaults compiled in.
+    if (!nv_loadConfig()) {
+      Output ("SCV Using Defaults");
+      (nv_saveConfig()) ? Output ("NVSaveNew:OK") : Output ("NVSaveNew:ERR");
+    }
+  }
+  else { // We have SD card enabled 
+    nv_deleteConfigIfCnvFileExists(); // Check if CNV.TXT exists on SD. Delete NV configs and loop forever blinking led
+    SD_CheckN2SandSetSSB();           // If N2S file exists set Health bit.
+
+    bool sd_cfg_found = sd_loadConfig(); // if aqs was found in cfg file then we know we have converted to the nv config file and we set nv_config_converted.
+
+    if (!sd_cfg_found) {
+      // SD is online and no SD CFG File. See if we have NV CFG to use.
+      if (nv_loadConfig()) {
+        // We read the NV config so Make a new SD config file.
+        (sd_saveConfig()) ? Output ("SDSaveNew:OK") : Output ("SDSaveNew:ERR");
+      }
+      else {
+        // We have no SD or NV config file, Lets make one from any individual files on the SD card.
+        // At some point this function call should go away and we go with the defaults.
+        SD_ReadOIndividualCfgFiles();  // Read in main and individual configuration files and set system variables
+        (sd_saveConfig()) ? Output ("SDSaveNew:OK") : Output ("SDSaveNew:ERR");
+        (nv_saveConfig()) ? Output ("NVSaveNew:OK") : Output ("NVSaveNew:ERR");
+      }
+    }
+    else {  // We have a SD CFG file
+      if (!nv_config_converted) { 
+        // SD CFG has not been converted
+        SD_ReadOIndividualCfgFiles();  // Read in main and individual configuration files and set system variables
+        (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
+        (nv_saveConfig()) ? Output ("NVSaveNew:OK")    : Output ("NVSaveNew:ERR");
+      }
+      else {
+        // SD CFG has been converted, but because of wind bug in Version 49 we want to write the SD confing. When no boards are running v49, remove SDSave
+        (sd_saveConfig()) ? Output ("SDSave:OK") : Output ("SDSave:ERR");
+        (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
+      }
+    }
+  }
+  // Show what we are running with
+  nv_scv_print();
 }

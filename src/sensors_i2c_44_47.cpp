@@ -22,7 +22,6 @@ bool SHT_1_exists = false;
 float sht1_humid = 0.0;
 float sht1_temp = 0.0;
 
-
 /*
  * ======================================================================================================================
  * Fuction Definations
@@ -534,7 +533,7 @@ void sensor_i2c_44_47_obs_do(int oidx, int &sidx) {
         float p=0.0;
 
         t = bmp5.readTemperature();
-        p = bmp5.readPressure();
+        p = bmp5.readPressure() / 100.0F;
         t = (isnan(t) || (t < QC_MIN_T)  || (t > QC_MAX_T))  ? QC_ERR_T  : t;
         p = (isnan(p) || (p < QC_MIN_P)  || (p > QC_MAX_P))  ? QC_ERR_P  : p;
 

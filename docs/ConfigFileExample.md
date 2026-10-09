@@ -97,8 +97,8 @@ lora_unitid=1
 # You can set transmitter power from 5 to 23 dBm
 lora_txpower=5
 
-# Valid entries are 433, 866, 915
-lora_freq=915
+# Valid entries are 863.0–928.0 MHz
+lora_freq=915.0
 
 ########################################
 # Evapotranspiration - evt.cpp and evt.h

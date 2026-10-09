@@ -419,55 +419,49 @@ void SD_Read_WiFiFile() {
 
 /* 
  *=======================================================================================================================
- * SD_GetSystemVariables() - Read in main and individual configuration files and set system variables
+ * SD_ReadOIndividualCfgFiles() - Read in main and individual configuration files and set system variables
  *=======================================================================================================================
  */
-void SD_GetSystemVariables() {
+void SD_ReadOIndividualCfgFiles() {
   if (SD_exists) {
+    // Read old individual files to get the system config variables
 
-    SD_CheckN2SandSetSSB();
-
-    sd_loadConfig();
-    if (!nv_config_enabled) {
-      // Read old individual files to get the system config variables
-
-      // Rename A4 and A5 files used in releases prior to release 40. 
-      // Remove function this when we determine all sites are at release 40 or greater
-      SD_A4A5_Rename();
+    // Rename A4 and A5 files used in releases prior to release 40. 
+    // Remove function this when we determine all sites are at release 40 or greater
+    SD_A4A5_Rename();
       
-      SD_Read_WiFiFile(); // Read wifi auth, ssid and pw
+    SD_Read_WiFiFile(); // Read wifi auth, ssid and pw
 
-      // If elevation file exists it is opened, read and elevation set, else 0
-      SD_ReadElevationFile();
+    // If elevation file exists it is opened, read and elevation set, else 0
+    SD_ReadElevationFile();
 
-     // If offset file exists it is opened, read and rain total rollover offset set, else 0
-      SD_Read_RTRO_File();
+    // If offset file exists it is opened, read and rain total rollover offset set, else 0
+    SD_Read_RTRO_File();
 
-      // Are we a Air Quality Station
-      SD_CheckAQSFile();
+    // Are we a Air Quality Station
+    SD_CheckAQSFile();
 
-      // See what has been define for these pins
-      SD_CheckOP1Files();
-      SD_CheckOP15MFile();  // only important if (scv.op1 == OP1_STATE_DISTANCE)
-      SD_CheckOP2Files();
+    // See what has been define for these pins
+    SD_CheckOP1Files();
+    SD_CheckOP15MFile();  // only important if (scv.op1 == OP1_STATE_DISTANCE)
+    SD_CheckOP2Files();
 
-      if (!scv.aqs) {
-        SD_CheckNoWindFile(); // if NOWIND.TXT found then scv.wind is set false
-        SD_CheckNoRainFile(); // if NORAIN.TXT found then scv.rg1 is set false
-      }
-      SD_CheckOBITXIFiles();
+    if (!scv.aqs) {
+      SD_CheckNoWindFile(); // if NOWIND.TXT found then scv.wind is set false
+      SD_CheckNoRainFile(); // if NORAIN.TXT found then scv.rg1 is set false
     }
+    SD_CheckOBITXIFiles();
+  }
 
-    // Do a check and make sure OBS and Transmit Times is at least 5m or greater when AQS is enabled
-    if (scv.aqs) {
-      if (scv.obi<5) {
-        Output ("OBI Corrected 5M");
-        scv.obi = 5;
-      }
-       if (scv.txi<5) {
-        Output ("TXI Corrected 5M");
-        scv.txi = 5;
-      }  
+  // Do a check and make sure OBS and Transmit Times is at least 5m or greater when AQS is enabled
+  if (scv.aqs) {
+    if (scv.obi<5) {
+      Output ("OBI Corrected 5M");
+      scv.obi = 5;
+    }
+    if (scv.txi<5) {
+      Output ("TXI Corrected 5M");
+      scv.txi = 5; 
     }
   }
 }
@@ -490,7 +484,7 @@ bool SD_CheckClearRainTotals() {
     EEPROM_ClearRainTotals(current_time);
 
     // Config files were successfully deleted; remove the trigger file too.
-    if (unlink(SD_crt_file) == 0) {
+    if (SD.remove(SD_crt_file)) {
         snprintf(msgbuf, sizeof(msgbuf), "CRT:%s Deleted", SD_crt_file);
         Output(msgbuf);
         return true;

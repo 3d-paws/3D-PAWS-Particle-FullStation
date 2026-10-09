@@ -365,7 +365,7 @@ float DistanceGauge_Median() {
  * 
  * Optipolar Hall Effect Sensor SS451A - Anemometer
  * speed  = (( (signals/2) * (2 * pi * radius) ) / time) * calibration_factor
- * speed in m/s =  (   ( (interrupts/2) * (2 * 3.14156 * 0.079) )  / (time_period in ms / 1000)  )  * 2.64
+ * speed in m/s =  (   ( (interrupts/2) * (2 * 3.14159 * 0.079) )  / (time_period in ms / 1000)  )  * 2.64
  *=======================================================================================================================
  */
 float Wind_SampleSpeed() {
@@ -385,9 +385,9 @@ float Wind_SampleSpeed() {
   anemometer_interrupt_stime = time_ms;
 
   if (count) {
-    // wind_speed = (  ( (count/2) * (2 * 3.14156 * ws_radius) )  / (float)( (float)delta_ms / 1000)  ) * ws_calibration;
+    // wind_speed = (  ( (count/2) * (2 * 3.14159 * ws_radius) )  / (float)( (float)delta_ms / 1000)  ) * ws_calibration;
 
-    wind_speed = ( ( count * 3.14156 * ws_radius)  /  (float)( (float)delta_ms / 1000) )  * ws_calibration;
+    wind_speed = ( ( count * 3.14159 * ws_radius)  /  (float)( (float)delta_ms / 1000) )  * ws_calibration;
   }
   else {
     wind_speed = 0.0;
@@ -435,6 +435,8 @@ int Wind_SampleDirection() {
       
       AS5600_hi_raw = AS5600_hi_raw << 8; //shift raw angle hi 8 left
       AS5600_hi_raw = AS5600_hi_raw | AS5600_lo_raw; //AND high and low raw angle value
+
+      // Do data integ check
       degree = (int) AS5600_hi_raw * 0.0879;
       if ((degree >=0) && (degree <= 360)) {
         return (degree);

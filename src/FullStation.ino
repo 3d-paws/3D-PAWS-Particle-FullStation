@@ -1,6 +1,6 @@
-PRODUCT_VERSION (51);
+PRODUCT_VERSION (52);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-260907v51"
+#define VERSION_INFO "FS-261008v52"
 
 /*
  *======================================================================================================================
@@ -320,6 +320,14 @@ PRODUCT_VERSION (51);
  *                                       On first boot, Version 50 will look for wind in config, not find it in the config and enable wind by default
  *                                       It will then write the wind variable to config file. Next boot it will see it.
  *                                       Only stations with no wind set will need the DoAction NOWIND run. 
+ *          Version 52 Release on 2026-10-08
+ *          2026-09-09 RJB Bug Fix Added call to nv_deleteConfigIfCnvFileExists(); and looking at SD card for file not NV.
+ *          2026-09-16 RJB Moved lat_deg lon_deg outside of the #ifdef ENABLE_Evapotranspiration, Added to Info
+ *          2026-09-28 RJB Changed pi from 3.14156 to 3.14159
+ *          2026-10-06 RJB Bug Fix added / 100.F to bmp5.readPressure() / 100.0F; in sensors_i2c_44_47.cpp
+ *          2026-10-08 RJB Modified code for to handle SD okay but noconfig file. It will create one.
+ *                         Added code to allow LoRa Freq range of 863.0–928.0 MHz in config file
+ *                         Switched from unlin to SD.remove(SD_crt_file) in cf.cpp
 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -1133,28 +1141,8 @@ void setup() {
   // Initialize SD card if we have one.
   SD_initialize();
 
-  if (SD_exists) {
-    SD_GetSystemVariables();  // Read in main and individual configuration files and set system variables
-
-    if (!nv_config_enabled) {
-      // There was no aqs config line in the config file, so we have not converted to using just a config file.
-      // The below save the system config variable to the config file and thus converting us.
-
-      // Because of wind bug in Version 49 we want to write the confing. when no boards are running v49, ad the "if" back
-      (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
-    }
-    else {
-      // Because of wind bug in Version 49 we want to write the confing. When no boards are running v49, remove this else code !!!!!!!!!
-      (sd_saveConfig()) ? Output ("SDSave:OK") : Output ("SDSave:ERR");
-    }
-
-    // No matter what we should update the NV config file with what was read from SD.
-    (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
-  }
-  else {
-    nv_loadConfig();
-  }
-  nv_printCfg();
+  // Initialize system config variables from SD or NV locations. Address migration to NV config solution
+  nv_scv_init();
 
   // Check Daily Reboot Timer, we do not want to allow rebooting under an hour
   if ((scv.rcdt > 0) && (scv.rcdt < 3600)) {

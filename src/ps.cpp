@@ -274,7 +274,7 @@ int Function_DoAction(String s) {
     return(0);
   }
 
-    else if (s.equals("CNV")) { // Clear NV Config Files
+  else if (s.equals("CNV")) { // Clear NV Config Files
     Output("DoAction:CNV");
     return(nv_deleteConfigFiles());
   }

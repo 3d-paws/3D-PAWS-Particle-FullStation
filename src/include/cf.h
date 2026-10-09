@@ -21,5 +21,5 @@ void SD_CheckOP15MFile();
 void SD_CheckOP2Files();
 void SD_CheckN2SandSetSSB();
 void SD_CheckOBITXIFiles();
-void SD_GetSystemVariables();
+void SD_ReadOIndividualCfgFiles();
 bool SD_CheckClearRainTotals();

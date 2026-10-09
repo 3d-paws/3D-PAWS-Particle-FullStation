@@ -54,8 +54,8 @@
     // You can set transmitter power from 5 to 23 dBm
     int     lora_txpower  = 5;
 
-    // Valid entries are 433, 866, 915
-    int     lora_freq     = 915;
+    // Valid entries are 863.0–928.0 MHz
+    float   lora_freq     = 915.0;
 
     String  wifi_auth;    // WEP WPA WPA2 UNSEC, Not used for MUON
     String  wifi_ssid;
@@ -105,7 +105,7 @@
 
 // Extern variables
 extern SCV scv;
-extern bool nv_config_enabled;
+extern bool nv_config_converted;
 
 // Function prototypes
 bool nv_loadConfig();
@@ -113,6 +113,7 @@ bool nv_saveConfig();
 bool sd_loadConfig();
 bool sd_saveConfig();
 bool saveConfig();
-void nv_printCfg();
+void nv_scv_print();
 bool nv_deleteConfigFiles();
 bool nv_deleteConfigIfCnvFileExists();
+void nv_scv_init();

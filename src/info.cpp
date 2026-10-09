@@ -245,8 +245,11 @@ else {
   }
 #endif
 
-  // Station Elevation
+  // Station Location Elevation Lat Lon
   writer.name("elev").value(scv.elevation);
+  writer.name("lat").value(scv.lat_deg);
+  writer.name("lon").value(scv.lon_deg);
+
   // Rain total rollover offset
   sprintf(Buffer32Bytes, "%d:%02d", scv.rtro_hour, scv.rtro_minute);
   writer.name("rtro").value(Buffer32Bytes);
