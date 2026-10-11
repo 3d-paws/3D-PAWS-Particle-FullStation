@@ -328,7 +328,7 @@ else {
     comma=",";    
   }
   if (LORA_exists) {
-    sprintf (buf+strlen(buf), ",lora(%d,%d,%dMHz)", scv.lora_unitid, scv.lora_txpower, scv.lora_freq);  
+    sprintf (buf+strlen(buf), ",lora(%d,%d,%.2fMHz)", scv.lora_unitid, scv.lora_txpower, scv.lora_freq);  
   }
   if (oled_type) {
     sprintf (buf+strlen(buf), ",oled(%s)", OLED32 ? "32" : "64");  
@@ -458,6 +458,27 @@ else {
     sprintf (buf+strlen(buf), "%sTMSM", comma);
     comma=",";
   }
+
+  if (PM25AQI_exists) {
+    sprintf (buf+strlen(buf), "%sPM25AQ", comma);
+    comma=",";
+  }
+
+  if (!scv.aqs) {
+    if (scv.rg1) {
+      GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
+      sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
+    }
+    if (scv.wind) { // Wind Sensor
+      GetPinName(ANEMOMETER_IRQ_PIN, Buffer32Bytes);
+      sprintf (buf+strlen(buf), "%sWS(%s)", comma, Buffer32Bytes);
+    }
+  }
+  writer.name("sensors").value(buf);
+
+  // Derived Observations
+  comma="";
+  buf[0] = '\0'; 
   if (HI_exists) {
     sprintf (buf+strlen(buf), "%sHI", comma);
     comma=",";
@@ -479,23 +500,7 @@ else {
     sprintf (buf+strlen(buf), "%sMSLP", comma);
     comma=",";  
   }
-  if (PM25AQI_exists) {
-    sprintf (buf+strlen(buf), "%sPM25AQ", comma);
-    comma=",";
-  }
-
-  if (!scv.aqs) {
-    if (scv.rg1) {
-      GetPinName(RAINGAUGE1_IRQ_PIN, Buffer32Bytes);
-      sprintf (buf+strlen(buf), "%sRG(%s)", comma, Buffer32Bytes);
-    }
-    if (scv.wind) { // Wind Sensor
-      GetPinName(ANEMOMETER_IRQ_PIN, Buffer32Bytes);
-      sprintf (buf+strlen(buf), "%sWS(%s)", comma, Buffer32Bytes);
-    }
-  }
-
-  writer.name("sensors").value(buf);
+  writer.name("derived").value(buf);
 
   // Serial Console Enable
   GetPinName(SCE_PIN, Buffer32Bytes);

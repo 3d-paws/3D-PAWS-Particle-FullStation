@@ -30,8 +30,8 @@ rtro_hour=0
 # Rain Total Rollover Minute. Valid entries are 0,15,30,45
 rtro_minute=0
 
-# Station Elevation in m, needed for MSLP
-elevation=0    
+# Station Elevation in m, needed for MSLP, -999 = unset elevation, Range -440 to 8849
+elevation=-999  
 
 lat_deg=0.0
 lon_deg=0.0

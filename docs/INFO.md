@@ -34,7 +34,8 @@ INFO event message from a Boron
   "op1": "NS",
   "op2": "NS",
   "devs": "rtc,sd,eeprom,mux,dsmux,lora(1,5,915MHz),oled(32)",
-  "sensors": "BMX1(BMP390),MCP1,SHT1,VEML,AS5600,DST(0,1,4,7),HI,WBT,WBGT WO/GLOBE,MSLP,RG(A3)",
+  "sensors": "BMX1(BMP390),MCP1,SHT1,VEML,AS5600,DST(0,1,4,7),RG(A3)",
+  "derived":"HI,WBT,WBGT WO/GLOBE,MSLP",
   "scepin(D8)": "DISABLED",
   "sce": "TRUE"
 }

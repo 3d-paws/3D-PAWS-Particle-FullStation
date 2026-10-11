@@ -533,6 +533,68 @@ bool nv_deleteConfigIfCnvFileExists() {
 
 /*
  * ======================================================================================================================
+ * nv_scv_check() - future check for QC
+ * =======================================================================================================================
+ */
+void nv_scv_check() {
+    Output ("SCV Check");
+    if ((scv.aqs != 0) && (scv.aqs != 1)) {
+      scv.aqs = 0;
+      Output("AQS:Set to Disable");
+    }
+    if ((scv.wind != 0) && (scv.wind != 1)) {
+      scv.wind = 1;
+      Output("WIND:Set to Enable");
+    }
+    if ((scv.rg1 != 0) && (scv.rg1 != 1)) {
+      Output("RG1:Set to Enable");
+      scv.rg1 = 1;
+    }
+    if ((scv.op1d5m != 0) && (scv.op1d5m != 1)) {
+      scv.op1d5m = 0;
+      Output("OP1D5M:Set to 0");
+    }
+
+    // System Configuration
+    if ((scv.rcdt < 0) || (scv.rcdt > 24)) { // though this is a loop counter 
+      sprintf (Buffer32Bytes, "RCDT:%d Now:22hrs", scv.rcdt);
+      Output(Buffer32Bytes);
+      scv.rcdt = DEFAULT_REBOOT_COUNTDOWN_TIMER;
+    }
+
+    if ((scv.txi != 5) && 
+        (scv.txi != 10) &&
+        (scv.txi != 15)) {
+      sprintf (Buffer32Bytes, "TXI:%dm Now:15m", scv.txi);
+      Output(Buffer32Bytes);
+      scv.txi = DEFAULT_OBS_TRANSMIT_INTERVAL; 
+    }
+
+    if ((scv.obi != 1) &&
+        (scv.obi != 5) && 
+        (scv.obi != 10) &&
+        (scv.obi != 15)) {
+      sprintf (Buffer32Bytes, "OBI:%dm Now:1m", scv.obi);
+      Output(Buffer32Bytes);
+      scv.obi = DEFAULT_OBS_INTERVAL; 
+    }
+
+    if ((scv.rtro_hour < 0) || (scv.rtro_hour > 23) ||
+        ((scv.rtro_minute != 0) && (scv.rtro_minute != 15) && (scv.rtro_minute != 30) && (scv.rtro_minute != 45))) {
+      Output("RTRO:Set to 0:0");
+      scv.rtro_hour = 0;
+      scv.rtro_minute = 0;
+    }
+
+    if ((scv.elevation != QC_ERR_ELEV) &&
+       ((scv.elevation < QC_MIN_ELEV) || (scv.elevation > QC_MAX_ELEV))) {
+      Output("ELEV:Set to -999");
+      scv.elevation = QC_ERR_ELEV;
+    }
+}
+
+/*
+ * ======================================================================================================================
  * nv_scv_init() - address where we are getting our configuration from.
  * =======================================================================================================================
  */
@@ -541,6 +603,7 @@ void nv_scv_init() {
     // See if we can get configs from NV. If not we run with defaults compiled in.
     if (!nv_loadConfig()) {
       Output ("SCV Using Defaults");
+      nv_scv_check();
       (nv_saveConfig()) ? Output ("NVSaveNew:OK") : Output ("NVSaveNew:ERR");
     }
   }
@@ -554,12 +617,14 @@ void nv_scv_init() {
       // SD is online and no SD CFG File. See if we have NV CFG to use.
       if (nv_loadConfig()) {
         // We read the NV config so Make a new SD config file.
+        nv_scv_check();
         (sd_saveConfig()) ? Output ("SDSaveNew:OK") : Output ("SDSaveNew:ERR");
       }
       else {
         // We have no SD or NV config file, Lets make one from any individual files on the SD card.
         // At some point this function call should go away and we go with the defaults.
         SD_ReadOIndividualCfgFiles();  // Read in main and individual configuration files and set system variables
+        nv_scv_check();
         (sd_saveConfig()) ? Output ("SDSaveNew:OK") : Output ("SDSaveNew:ERR");
         (nv_saveConfig()) ? Output ("NVSaveNew:OK") : Output ("NVSaveNew:ERR");
       }
@@ -568,11 +633,13 @@ void nv_scv_init() {
       if (!nv_config_converted) { 
         // SD CFG has not been converted
         SD_ReadOIndividualCfgFiles();  // Read in main and individual configuration files and set system variables
+        nv_scv_check();
         (sd_saveConfig()) ? Output ("SDCFG:CONVERTED") : Output ("SDCFG:FAIL2CONVERT");
         (nv_saveConfig()) ? Output ("NVSaveNew:OK")    : Output ("NVSaveNew:ERR");
       }
       else {
         // SD CFG has been converted, but because of wind bug in Version 49 we want to write the SD confing. When no boards are running v49, remove SDSave
+        nv_scv_check();
         (sd_saveConfig()) ? Output ("SDSave:OK") : Output ("SDSave:ERR");
         (nv_saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");
       }
@@ -581,3 +648,5 @@ void nv_scv_init() {
   // Show what we are running with
   nv_scv_print();
 }
+
+

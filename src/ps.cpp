@@ -453,9 +453,10 @@ int Function_DoAction(String s) {
   else if (s.startsWith("SETELEV:")) { // Pattern start of string aka 0 offset
     Output("DoAction:SETELEV");
     String rest = s.substring(8);   // get part after "SETELEV:", 8 = length of 
-    long elevation = rest.toInt();  // convert to integer
+    int elevation = rest.toInt();  // convert to integer
 
-    if ((String(elevation) == rest) && (elevation >= QC_MIN_ELEV) && (elevation <= QC_MAX_ELEV)) {
+    if ((String(elevation) == rest) && 
+        ((elevation == QC_ERR_ELEV) || ((elevation >= QC_MIN_ELEV)) && (elevation <= QC_MAX_ELEV))) {
       scv.elevation = elevation; // Set running value of elevation
       mslp_initialize(); // Set flags so we don't need to reboot.
       (saveConfig()) ? Output ("NVSave:OK") : Output ("NVSave:ERR");

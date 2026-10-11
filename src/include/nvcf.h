@@ -16,7 +16,7 @@
  */
 #define DEFAULT_OBS_INTERVAL            1        // 1 minute
 #define DEFAULT_OBS_TRANSMIT_INTERVAL   15       // Transmit observations every N minutes Set to 15 for 15min Transmits
-#define DEFAULT_REBOOT_COUNTDOWN_TIMER  79200    // Set to 0 to disable feature, approx every 22 hours
+#define DEFAULT_REBOOT_COUNTDOWN_TIMER  22       // Set to 0 to disable feature, approx every 22 hours
 
 // The below shows what is in the CONFIG.TXT file
  typedef struct {
@@ -31,14 +31,14 @@
     int     rtro_minute = 0;  // Rain Total Rollover Minute 0,15,30,45
 
     // Used for MSLP and setable via Particle console DoAction
-    int     elevation = 0;    // Station Elevation in m
+    int     elevation = -999;    // Station Elevation in m
 
     float   lat_deg = 0.0f;
     float   lon_deg = 0.0f;
 
-    int     rcdt      = DEFAULT_REBOOT_COUNTDOWN_TIMER;
-    int     txi       = DEFAULT_OBS_TRANSMIT_INTERVAL;
-    int     obi       = DEFAULT_OBS_INTERVAL;
+    int     rcdt      = DEFAULT_REBOOT_COUNTDOWN_TIMER; // 0-24
+    int     txi       = DEFAULT_OBS_TRANSMIT_INTERVAL; // 5,10,15 min transmit of saved obs
+    int     obi       = DEFAULT_OBS_INTERVAL; // 1,5,10,15 min ops intervaal
 
     // Private Key - 128 bits (16 bytes of ASCII characters)
     String  aes_pkey;

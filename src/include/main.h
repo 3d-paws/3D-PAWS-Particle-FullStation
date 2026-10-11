@@ -7,14 +7,10 @@
 
 /*
  * ======================================================================================================================
- *  Loop Timers
+ *  Defines
  * ======================================================================================================================
  */
-#define DELAY_NO_RTC                    60000    // Loop delay when we have no valided RTC
-#define DEFAULT_OBS_INTERVAL            1        // 1 minute
-#define DEFAULT_OBS_TRANSMIT_INTERVAL   15       // Transmit observations every N minutes Set to 15 for 15min Transmits
-#define DEFAULT_REBOOT_COUNTDOWN_TIMER  79200    // Set to 0 to disable feature, approx every 22 hours
-                                     
+#define DELAY_NO_RTC                    60000    // Loop delay when we have no valided RTC                                   
 
 /*
  * ======================================================================================================================

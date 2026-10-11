@@ -1419,7 +1419,8 @@ void mslp_initialize() {
     Output ("MSLP:OK");
   }
   else {
-    Output ("MSLP:ERR");
+    MSLP_exists = false;
+    Output ("MSLP:NF");
   }
 }
 

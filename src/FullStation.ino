@@ -1,6 +1,6 @@
-PRODUCT_VERSION (52);
+PRODUCT_VERSION (53);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-261008v52"
+#define VERSION_INFO "FS-261011v53"
 
 /*
  *======================================================================================================================
@@ -328,6 +328,12 @@ PRODUCT_VERSION (52);
  *          2026-10-08 RJB Modified code for to handle SD okay but noconfig file. It will create one.
  *                         Added code to allow LoRa Freq range of 863.0–928.0 MHz in config file
  *                         Switched from unlin to SD.remove(SD_crt_file) in cf.cpp
+ * 
+ *          Version 53 Release on 2026-10-11
+ *          2026-10-10 RJB Set default elevation to -999, this will turn off MLSP calculation verses having the default at 0.
+ *                         Modified code to accept -999 as a valid setting.
+ *                         Added System Config Variable check after reading in configs
+ *                         Under INFO moved reporting of HI,WBT,MSLP from sensors to new grouping called derived:
 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -1144,13 +1150,8 @@ void setup() {
   // Initialize system config variables from SD or NV locations. Address migration to NV config solution
   nv_scv_init();
 
-  // Check Daily Reboot Timer, we do not want to allow rebooting under an hour
-  if ((scv.rcdt > 0) && (scv.rcdt < 3600)) {
-    // Override the config file.
-    scv.rcdt = 79200;
-    Output ("RCDT:79200");
-  }
-  DailyRebootCountDownTimer = scv.rcdt;
+  // Set Daily Reboot Timer
+  DailyRebootCountDownTimer = scv.rcdt * 3600;
 
   // Display EEPROM Information 
   EEPROM_Dump();

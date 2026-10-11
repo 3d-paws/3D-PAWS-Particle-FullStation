@@ -6,6 +6,12 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 
 For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
+Major changes as of Version 53.
+- Set default elevation to -999, this will turn off MLSP calculation verses having the default at 0.
+- Modified code to accept -999 as a valid setting.
+- Added System Config Variable check after reading in configs
+- Under INFO moved reporting of HI,WBT,MSLP from sensors to new grouping called derived:
+
 Major changes as of Version 52.
 - Bug Fix: Fixed issues with Clear NV Configuration files if CNV.TXT exists.
 - Bug Fix: Added / 100.F to bmp5.readPressure() reading.
