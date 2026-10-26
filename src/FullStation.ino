@@ -1,6 +1,6 @@
-PRODUCT_VERSION (53);
+PRODUCT_VERSION (54);
 #define COPYRIGHT "Copyright [2026] [University Corporation for Atmospheric Research]"
-#define VERSION_INFO "FS-261011v53"
+#define VERSION_INFO "FS-261021v54"
 
 /*
  *======================================================================================================================
@@ -334,6 +334,8 @@ PRODUCT_VERSION (53);
  *                         Modified code to accept -999 as a valid setting.
  *                         Added System Config Variable check after reading in configs
  *                         Under INFO moved reporting of HI,WBT,MSLP from sensors to new grouping called derived:
+ *          Version 54 Release on 2026-10-21
+ *                         Bug fix, removed the /100.0f from the bmp58x.
 
  *  Muon Port Notes:
  *     PLATFORM_ID == PLATFORM_MSOM
@@ -744,7 +746,7 @@ PRODUCT_VERSION (53);
 #include "include/ps.h"             // Particle Support Functions
 #include "include/sensors_i2c_44_47.h" // Handle i2c Sensors in this address range
 #include "include/tf02pro.h"        // TF02Pro TOF Distance Sensor
-
+// #include "include/si.h"             // Silicon Labs Si1145 - I2C - UV/IR/Visible Light Sensor Functions
 #include "include/sensors.h"        // I2C Based Sensor Functions
 #include "include/evt.h"            // Evapotranspiration Functions
 #include "include/info.h"           // Station Information Functions
