@@ -6,6 +6,9 @@ This software is supported on a Particle Boron, Argon band Muon boards. It provi
 
 For building a station see [Building 3D-PAWS](https://www.comet.ucar.edu/build-3d-paws).
 
+Major changes as of Version 54.
+- Bug Fix: Removed the /100.0f from the bmp58x pressure reading.
+
 Major changes as of Version 53.
 - Set default elevation to -999, this will turn off MLSP calculation verses having the default at 0.
 - Modified code to accept -999 as a valid setting.
